@@ -18,7 +18,7 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
   onGameComplete,
   onError,
   width = "960px",
-  height = "580px"
+  height = "540px"
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);

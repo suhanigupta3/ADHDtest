@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
+import { getUnityConfig, UnityBuildConfig } from '../utils/unityBuildDetector';
 
 interface UnityGameProps {
   gameId: string;
@@ -20,11 +21,30 @@ const UnityGame: React.FC<UnityGameProps> = ({
   onProgress,
   onError,
   width = "100%",
-  height = "600px"
+  height = "100%"
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unityConfig, setUnityConfig] = useState<UnityBuildConfig | null>(null);
+
+  // Auto-detect Unity build configuration
+  useEffect(() => {
+    const detectBuild = async () => {
+      try {
+        const config = await getUnityConfig(gameId);
+        if (config.isValid) {
+          setUnityConfig(config);
+        } else {
+          setErrorMessage(`Unity build files not found for ${gameName}. Please check the build files are properly copied.`);
+        }
+      } catch (error) {
+        setErrorMessage(`Error detecting Unity build: ${error}`);
+      }
+    };
+
+    detectBuild();
+  }, [gameId, gameName]);
 
   const {
     unityProvider,
@@ -35,10 +55,10 @@ const UnityGame: React.FC<UnityGameProps> = ({
     addEventListener,
     removeEventListener,
   } = useUnityContext({
-    loaderUrl: `${buildPath}/Build/BerryBlitzWebBuild.loader.js`,
-    dataUrl: `${buildPath}/Build/BerryBlitzWebBuild.data.unityweb`,
-    frameworkUrl: `${buildPath}/Build/BerryBlitzWebBuild.framework.js.unityweb`,
-    codeUrl: `${buildPath}/Build/BerryBlitzWebBuild.wasm.unityweb`,
+    loaderUrl: unityConfig?.loaderUrl || '',
+    dataUrl: unityConfig?.dataUrl || '',
+    frameworkUrl: unityConfig?.frameworkUrl || '',
+    codeUrl: unityConfig?.codeUrl || '',
   });
 
   // Handle Unity loading events

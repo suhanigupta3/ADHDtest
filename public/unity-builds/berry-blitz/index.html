@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>BerryBlitz</title>
+    <title>NHA | BerryBlitz</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
@@ -20,7 +20,6 @@
       <div id="unity-footer">
         <div id="unity-logo-title-footer"></div>
         <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">BerryBlitz</div>
       </div>
     </div>
     <script>
@@ -59,7 +58,7 @@
         frameworkUrl: buildUrl + "/BerryBlitzWebBuild.framework.js.unityweb",
         codeUrl: buildUrl + "/BerryBlitzWebBuild.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "Neuro Health Alliance",
+        companyName: "ASDRP",
         productName: "BerryBlitz",
         productVersion: "1.1",
         showBanner: unityShowBanner,
@@ -108,6 +107,19 @@
 
               }).catch((message) => {
                 alert(message);
+              });
+              function getUserIdFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get("userId") || "guest";
+              }
+
+              const userId = getUserIdFromUrl();
+
+              createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
+                // Optional loading logic here
+              }).then((unityInstance) => {
+                // Send userId to Unity C# script
+                unityInstance.SendMessage("UserManager", "SetUserId", userId);
               });
             };
 

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import UnityGame from './UnityGame';
 import UnityGameIframe from './UnityGameIframe';
 
 interface GameProgress {
@@ -40,11 +39,28 @@ const games: Game[] = [
     color: 'from-darkforest-500 to-emerald-600',
     gradientClass: 'bg-gradient-to-br from-darkforest-500 to-emerald-600',
     icon: (
-      <img 
-        src="/unity-builds/berry-blitz/Player.png" 
-        alt="Player Character" 
-        className="w-14 h-14 object-contain"
-      />
+      <div className="w-14 h-14 flex items-center justify-center">
+        <img 
+          src="/unity-builds/berry-blitz/Player.png" 
+          alt="Player Character" 
+          className="w-14 h-14 object-contain"
+          onError={(e) => {
+            console.error('Failed to load Player.png');
+            // Hide the image and show fallback
+            e.currentTarget.style.display = 'none';
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+            if (fallback) fallback.style.display = 'block';
+          }}
+          onLoad={() => console.log('Player.png loaded successfully')}
+        />
+        <span 
+          className="text-3xl hidden" 
+          style={{ display: 'none' }}
+          title="Player icon fallback"
+        >
+          🐼
+        </span>
+      </div>
     )
   },
       {
@@ -90,11 +106,7 @@ const AssessmentPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  useEffect(() => {
-    loadGameProgress();
-  }, [currentUser]);
-
-  const loadGameProgress = async () => {
+  const loadGameProgress = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -119,7 +131,11 @@ const AssessmentPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    loadGameProgress();
+  }, [loadGameProgress]);
 
   const updateGameProgress = async (gameId: string) => {
     if (!currentUser) return;
@@ -361,7 +377,8 @@ const AssessmentPage: React.FC = () => {
       {selectedGame && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <motion.div
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-auto max-h-[90vh] overflow-hidden"
+            style={{ minWidth: '1000px' }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -378,7 +395,7 @@ const AssessmentPage: React.FC = () => {
               </button>
             </div>
             
-            <div className="p-6">
+            <div className="p-6 flex flex-col items-center">
               {/* Unity Game Component - Using iframe for better compatibility */}
               <UnityGameIframe
                 gameId={selectedGame.id}
@@ -391,7 +408,7 @@ const AssessmentPage: React.FC = () => {
                   // You could show a fallback or error message here
                 }}
                 width="960px"
-                height="580px"
+                height="540px"
               />
               
               {/* Fallback Controls */}
