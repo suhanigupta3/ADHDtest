@@ -1,57 +1,103 @@
-import { ChakraProvider, Box } from "@chakra-ui/react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import Welcome from "./pages/Welcome";
-import AboutADHD from "./pages/AboutADHD";
-import AboutUs from "./pages/AboutUs";
-import Games from "./pages/Games";
-import Results from "./pages/Results";
-import Consent from "./pages/Consent";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import WelcomePage from './components/WelcomePage';
+import AuthPage from './components/AuthPage';
+import Dashboard from './components/Dashboard';
 
-const theme = {
-  colors: {
-    brand: {
-      50: "#E6F6FF",
-      100: "#BAE3FF",
-      200: "#7CC4FA",
-      300: "#47A3F3",
-      400: "#2186EB",
-      500: "#0967D2",
-      600: "#0552B5",
-      700: "#03449E",
-      800: "#01337D",
-      900: "#002159",
-    },
-  },
-  fonts: {
-    heading: '"Inter", sans-serif',
-    body: '"Inter", sans-serif',
-  },
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuth();
+  return currentUser ? <>{children}</> : <Navigate to="/auth" />;
+};
+
+// Public Route Component (redirect if authenticated)
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuth();
+  return !currentUser ? <>{children}</> : <Navigate to="/dashboard" />;
 };
 
 function App() {
-  console.log("App component rendering...");
   return (
-    <ChakraProvider theme={theme}>
-      <AuthProvider>
-        <Router>
-          <Box minH="100vh" bg="gray.50">
-            <Routes>
-              <Route path="/" element={<Welcome />} />
-              <Route path="/about-adhd" element={<AboutADHD />} />
-              <Route path="/about-us" element={<AboutUs />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="/consent" element={<Consent />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-            </Routes>
-          </Box>
-        </Router>
-      </AuthProvider>
-    </ChakraProvider>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            {/* Public Routes */}
+            <Route 
+              path="/" 
+              element={
+                <PublicRoute>
+                  <WelcomePage />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/auth" 
+              element={
+                <PublicRoute>
+                  <AuthPage />
+                </PublicRoute>
+              } 
+            />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Placeholder routes for future pages */}
+            <Route 
+              path="/assessment" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold text-gray-900 mb-4">Assessment Coming Soon</h1>
+                      <p className="text-gray-600">Unity games will be integrated here.</p>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/learn" 
+              element={
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="text-center">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Educational Content Coming Soon</h1>
+                    <p className="text-gray-600">ADHD learning resources will be available here.</p>
+                  </div>
+                </div>
+              } 
+            />
+            
+            <Route 
+              path="/results" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold text-gray-900 mb-4">Results Coming Soon</h1>
+                      <p className="text-gray-600">Assessment results and insights will be displayed here.</p>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
