@@ -4,6 +4,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import WelcomePage from './components/WelcomePage';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import ConsentPage from './components/ConsentPage';
+import TermsPage from './components/TermsPage';
+import PrivacyPage from './components/PrivacyPage';
+import AboutADHDPage from './components/AboutADHDPage';
+import AssessmentPage from './components/AssessmentPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -51,31 +56,43 @@ function App() {
               } 
             />
             
+            <Route 
+              path="/consent" 
+              element={
+                <ProtectedRoute>
+                  <ConsentPage />
+                </ProtectedRoute>
+              } 
+            />
+            
             {/* Placeholder routes for future pages */}
             <Route 
               path="/assessment" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-4">Assessment Coming Soon</h1>
-                      <p className="text-gray-600">Unity games will be integrated here.</p>
-                    </div>
-                  </div>
+                  <AssessmentPage />
                 </ProtectedRoute>
               } 
             />
             
             <Route 
               path="/learn" 
-              element={
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Educational Content Coming Soon</h1>
-                    <p className="text-gray-600">ADHD learning resources will be available here.</p>
-                  </div>
-                </div>
-              } 
+              element={<AboutADHDPage />} 
+            />
+            
+            <Route 
+              path="/about-adhd" 
+              element={<AboutADHDPage />} 
+            />
+            
+            <Route 
+              path="/terms" 
+              element={<TermsPage />} 
+            />
+            
+            <Route 
+              path="/privacy" 
+              element={<PrivacyPage />} 
             />
             
             <Route 
