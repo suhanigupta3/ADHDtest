@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import WelcomePage from './components/WelcomePage';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
@@ -9,6 +11,9 @@ import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
 import AboutADHDPage from './components/AboutADHDPage';
 import AssessmentPage from './components/AssessmentPage';
+import AboutUsPage from './pages/AboutUsPage';
+import ResourcesPage from './pages/ResourcesPage';
+import ContactPage from './pages/ContactPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -16,33 +21,37 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return currentUser ? <>{children}</> : <Navigate to="/auth" />;
 };
 
-// Public Route Component (redirect if authenticated)
-const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Public Route Component (redirect if authenticated, only for auth pages)
+const AuthOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
   return !currentUser ? <>{children}</> : <Navigate to="/dashboard" />;
+};
+
+// Home Route Component (show different pages based on auth status)
+const HomeRoute: React.FC = () => {
+  const { currentUser } = useAuth();
+  return currentUser ? <Navigate to="/dashboard" /> : <WelcomePage />;
 };
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
-          <Routes>
+        <div className="App flex flex-col min-h-screen">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
             {/* Public Routes */}
             <Route 
               path="/" 
-              element={
-                <PublicRoute>
-                  <WelcomePage />
-                </PublicRoute>
-              } 
+              element={<HomeRoute />} 
             />
             <Route 
               path="/auth" 
               element={
-                <PublicRoute>
+                <AuthOnlyRoute>
                   <AuthPage />
-                </PublicRoute>
+                </AuthOnlyRoute>
               } 
             />
             
@@ -95,6 +104,22 @@ function App() {
               element={<PrivacyPage />} 
             />
             
+            {/* New Navigation Pages */}
+            <Route 
+              path="/about-us" 
+              element={<AboutUsPage />} 
+            />
+            
+            <Route 
+              path="/resources" 
+              element={<ResourcesPage />} 
+            />
+            
+            <Route 
+              path="/contact" 
+              element={<ContactPage />} 
+            />
+            
             <Route 
               path="/results" 
               element={
@@ -111,7 +136,9 @@ function App() {
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+            </Routes>
+          </main>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>
