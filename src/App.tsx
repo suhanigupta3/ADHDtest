@@ -7,6 +7,7 @@ import WelcomePage from './components/WelcomePage';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import ConsentPage from './components/ConsentPage';
+import ConsentGuard from './components/ConsentGuard';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
 import AboutADHDPage from './components/AboutADHDPage';
@@ -79,7 +80,9 @@ function App() {
               path="/assessment" 
               element={
                 <ProtectedRoute>
-                  <AssessmentPage />
+                  <ConsentGuard>
+                    <AssessmentPage />
+                  </ConsentGuard>
                 </ProtectedRoute>
               } 
             />
