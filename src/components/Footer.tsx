@@ -97,19 +97,19 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/help-center" className="text-gray-300 hover:text-white transition-colors text-sm">
                   Help Center
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/faq" className="text-gray-300 hover:text-white transition-colors text-sm">
                   FAQ
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/technical-support" className="text-gray-300 hover:text-white transition-colors text-sm">
                   Technical Support
-                </span>
+                </Link>
               </li>
             </ul>
           </div>
@@ -129,19 +129,19 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/cookie-policy" className="text-gray-300 hover:text-white transition-colors text-sm">
                   Cookie Policy
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/data-protection" className="text-gray-300 hover:text-white transition-colors text-sm">
                   Data Protection
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-gray-300 hover:text-white transition-colors text-sm cursor-pointer">
+                <Link to="/accessibility" className="text-gray-300 hover:text-white transition-colors text-sm">
                   Accessibility
-                </span>
+                </Link>
               </li>
             </ul>
           </div>

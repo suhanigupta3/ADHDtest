@@ -15,6 +15,12 @@ import AssessmentPage from './components/AssessmentPage';
 import AboutUsPage from './pages/AboutUsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import ContactPage from './pages/ContactPage';
+import HelpCenterPage from './pages/HelpCenterPage';
+import FAQPage from './pages/FAQPage';
+import TechnicalSupportPage from './pages/TechnicalSupportPage';
+import CookiePolicyPage from './pages/CookiePolicyPage';
+import DataProtectionPage from './pages/DataProtectionPage';
+import AccessibilityPage from './pages/AccessibilityPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -121,6 +127,38 @@ function App() {
             <Route 
               path="/contact" 
               element={<ContactPage />} 
+            />
+            
+            {/* Support Pages */}
+            <Route 
+              path="/help-center" 
+              element={<HelpCenterPage />} 
+            />
+            
+            <Route 
+              path="/faq" 
+              element={<FAQPage />} 
+            />
+            
+            <Route 
+              path="/technical-support" 
+              element={<TechnicalSupportPage />} 
+            />
+            
+            {/* Legal Pages */}
+            <Route 
+              path="/cookie-policy" 
+              element={<CookiePolicyPage />} 
+            />
+            
+            <Route 
+              path="/data-protection" 
+              element={<DataProtectionPage />} 
+            />
+            
+            <Route 
+              path="/accessibility" 
+              element={<AccessibilityPage />} 
             />
             
             <Route 

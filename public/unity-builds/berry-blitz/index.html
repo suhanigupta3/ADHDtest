@@ -6,6 +6,48 @@
     <title>NHA | BerryBlitz</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+
+    <!-- ✅ Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+    <!-- ✅ Firebase Initialization -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyD9e0vaP5x1dOUMGjJXkCE16VDW4Ya7f_g",
+        authDomain: "adhd-test-54cd8.firebaseapp.com",
+        projectId: "adhd-test-54cd8",
+        storageBucket: "adhd-test-54cd8.firebasestorage.app",
+        messagingSenderId: "1024963280060",
+        appId: "1:1024963280060:web:eaebf63bafa26b9f8524b9",
+        measurementId: "G-S3XQEX9E6N"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+
+      // ✅ Unity-callable Firebase functions
+      function firebaseLoginAnonymous() {
+        firebase.auth().signInAnonymously().then((userCredential) => {
+          const user = userCredential.user;
+          console.log("Logged in:", user.uid);
+          unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", user.uid);
+        }).catch((error) => {
+          console.error("Login error:", error.message);
+          unityInstance.SendMessage("FirebaseManager", "OnLoginError", error.message);
+        });
+      }
+
+      function writeScore(userId, score) {
+        firebase.firestore().collection("scores").doc(userId).set({ score: score })
+          .then(() => {
+            console.log("Score saved!");
+            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "success");
+          }).catch((err) => {
+            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "fail: " + err.message);
+          });
+      }
+    </script>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -23,6 +65,7 @@
       </div>
     </div>
     <script>
+      var unityInstance = null;
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or
@@ -95,33 +138,26 @@
       document.querySelector("#unity-loading-bar").style.display = "block";
 
       var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                document.querySelector("#unity-loading-bar").style.display = "none";
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+          }).then((instance) => {
+            unityInstance = instance; // ✅ Assign to global
 
-              }).catch((message) => {
-                alert(message);
-              });
-              function getUserIdFromUrl() {
-                const params = new URLSearchParams(window.location.search);
-                return params.get("userId") || "guest";
-              }
-
-              const userId = getUserIdFromUrl();
-
-              createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
-                // Optional loading logic here
-              }).then((unityInstance) => {
-                // Send userId to Unity C# script
-                unityInstance.SendMessage("UserManager", "SetUserId", userId);
-              });
+            document.querySelector("#unity-loading-bar").style.display = "none";
+            document.querySelector("#unity-fullscreen-button").onclick = () => {
+              unityInstance.SetFullscreen(1);
             };
+
+            // ✅ Send userId from URL to Unity
+            const userId = new URLSearchParams(window.location.search).get("userId") || "guest";
+            unityInstance.SendMessage("UserManager", "SetUserId", userId);
+
+          }).catch((message) => {
+            alert(message);
+          });
+        };
 
       document.body.appendChild(script);
 
