@@ -107,8 +107,8 @@ const AboutADHDPage: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.8,
-        staggerChildren: 0.1
+        duration: 1,
+        staggerChildren: 0.15
       }
     }
   };
@@ -118,33 +118,40 @@ const AboutADHDPage: React.FC = () => {
       scale: 0, 
       opacity: 0,
       x: 0,
-      y: 0
+      y: 0,
+      rotate: -180
     },
     visible: (custom: { x: number; y: number; delay: number }) => ({
       scale: 1,
       opacity: 1,
       x: custom.x,
       y: custom.y,
+      rotate: 0,
       transition: {
         type: "spring",
-        stiffness: 200,
-        damping: 25,
-        delay: custom.delay
+        stiffness: 300,
+        damping: 20,
+        delay: custom.delay,
+        duration: 0.8
       }
     }),
     hover: {
-      scale: 1.1,
+      scale: 1.15,
+      rotate: 5,
       transition: {
         type: "spring",
-        stiffness: 400,
-        damping: 10
+        stiffness: 500,
+        damping: 15,
+        duration: 0.3
       }
     },
     exit: {
       scale: 0,
       opacity: 0,
+      rotate: 180,
       transition: {
-        duration: 0.3
+        duration: 0.5,
+        ease: "easeInOut"
       }
     }
   };
@@ -288,30 +295,80 @@ const AboutADHDPage: React.FC = () => {
 
         {/* Spider Web Introduction */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Explore ADHD Types & Information</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Explore ADHD Types & Information</h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
             Click the center node below to reveal the different aspects of ADHD, then explore each topic in detail.
           </p>
+          {!webExpanded && (
+            <motion.div 
+              className="inline-flex items-center space-x-2 text-emerald-600 font-medium"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span>Click the center circle to begin exploration</span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Spider Web Visualization */}
         <motion.div
-          className="relative w-full h-[80vh] max-w-6xl mx-auto flex items-center justify-center"
+          className="relative w-full min-h-[70vh] max-w-7xl mx-auto"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
+          {/* Connection Lines */}
+          {webExpanded && (
+            <svg 
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 1 }}
+            >
+                {adhdData.nodes
+                 .filter((node: NodeData) => visibleNodes.has(node.id))
+                 .map((node: NodeData, index: number) => {
+                   const pos = calculatePosition(node.position.angle, node.position.distance);
+                   const centerX = 50;
+                   const centerY = 45;
+                   const nodeX = centerX + (pos.x / 15);
+                   const nodeY = centerY + (pos.y / 8);
+                   
+                   return (
+                     <motion.line
+                       key={`line-${node.id}`}
+                       x1={`${centerX}%`}
+                       y1={`${centerY}%`}
+                       x2={`${nodeX}%`}
+                       y2={`${nodeY}%`}
+                       stroke="url(#connectionGradient)"
+                       strokeWidth="2"
+                       strokeDasharray="5,5"
+                       initial={{ pathLength: 0, opacity: 0 }}
+                       animate={{ pathLength: 1, opacity: 0.4 }}
+                       transition={{ duration: 0.8, delay: index * 0.1 + 0.5 }}
+                     />
+                   );
+                 })}
+              <defs>
+                <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
+                </linearGradient>
+              </defs>
+            </svg>
+          )}
 
-
-          {/* Center Node */}
+                    {/* Center Node */}
           <motion.div
             className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{ left: '50%', top: '35%', zIndex: 10 }}
+            style={{ left: '45%', top: '30%', zIndex: 10 }}
             initial="hidden"
             animate="visible"
             custom={{ x: 0, y: 0, delay: 0 }}
@@ -321,21 +378,40 @@ const AboutADHDPage: React.FC = () => {
             onHoverEnd={() => setHoveredNode(null)}
             onClick={() => handleNodeClick('what-is-adhd', adhdData.centerNode, true)}
           >
-            <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${adhdData.centerNode.colorClass} shadow-lg cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-300 hover:shadow-xl relative`}>
-              <div className="flex flex-col items-center justify-center">
-                {getIcon(adhdData.centerNode.icon)}
-                <div className="text-sm font-semibold mt-1 text-center leading-tight">{adhdData.centerNode.title}</div>
+            <div className={`w-40 h-40 rounded-full bg-gradient-to-br ${adhdData.centerNode.colorClass} shadow-2xl cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-500 hover:shadow-2xl hover:scale-105 relative overflow-hidden group`}>
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              {/* Pulse ring when not expanded */}
+              {!webExpanded && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-4 border-white/30"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
+              
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                {getIcon(adhdData.centerNode.icon, "w-12 h-12")}
+                <div className="text-lg font-bold mt-2 text-center leading-tight px-2">
+                  {adhdData.centerNode.title}
+                </div>
+                {!webExpanded && (
+                  <div className="text-xs mt-1 opacity-90 text-center">
+                    Click to explore
+                  </div>
+                )}
               </div>
 
-              
+              {/* Success indicator when expanded */}
               {webExpanded && (
                 <motion.div
-                  className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md"
+                  className="absolute -bottom-3 -right-3 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg"
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 1, duration: 0.3 }}
+                  transition={{ delay: 1, duration: 0.5, type: "spring" }}
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </motion.div>
@@ -354,29 +430,60 @@ const AboutADHDPage: React.FC = () => {
                   <motion.div
                     key={node.id}
                     className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: '50%', top: '35%', zIndex: 10 }}
+                    style={{ left: '45%', top: '35%', zIndex: 10 }}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    custom={{ x: pos.x, y: pos.y, delay: index * 0.15 }}
+                    custom={{ x: pos.x, y: pos.y, delay: index * 0.15 + 0.3 }}
                     variants={nodeVariants}
                     whileHover="hover"
                     onHoverStart={() => setHoveredNode(node.id)}
                     onHoverEnd={() => setHoveredNode(null)}
                     onClick={() => handleNodeClick(node.id, node, false)}
                   >
-                    <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${node.colorClass} shadow-lg cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-300 hover:shadow-xl relative`}>
-                      <div className="flex flex-col items-center justify-center">
-                        {getIcon(node.icon, "w-5 h-5")}
-                        <div className="text-xs font-semibold mt-1 text-center leading-tight px-1">{node.title}</div>
+                    <div className={`w-28 h-28 rounded-full bg-gradient-to-br ${node.colorClass} shadow-xl cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-300 hover:shadow-2xl hover:scale-110 relative overflow-hidden group`}>
+                      {/* Hover glow effect */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      <div className="relative z-10 flex flex-col items-center justify-center p-2">
+                        {getIcon(node.icon, "w-6 h-6")}
+                        <div className="text-sm font-semibold mt-1 text-center leading-tight">
+                          {node.title}
+                        </div>
                       </div>
 
+                      {/* Click indicator */}
+                      <motion.div
+                        className="absolute inset-0 rounded-full border-2 border-white/50"
+                        initial={{ scale: 1, opacity: 0 }}
+                        whileHover={{ scale: 1.1, opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
                     </div>
                   </motion.div>
                 );
               })}
           </AnimatePresence>
         </motion.div>
+
+        {/* Progress Indicator */}
+        {webExpanded && (
+          <motion.div
+            className="text-center mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.5 }}
+          >
+            <div className="inline-flex items-center space-x-3 bg-white rounded-full px-6 py-3 shadow-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-700">Web Expanded</span>
+              </div>
+              <div className="w-px h-4 bg-gray-300"></div>
+              <span className="text-sm text-gray-600">Click any node to learn more</span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Instructions */}
 
@@ -423,18 +530,18 @@ const AboutADHDPage: React.FC = () => {
                 {/* Branch node content with tabs */}
                   <div>
                     {/* Tab Navigation */}
-                    <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1">
-                      {['overview', 'symptoms', 'examples', 'resources', 'myths'].map((tab) => (
+                    <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 rounded-lg p-1">
+                      {['overview', 'symptoms', 'examples', 'resources', 'myths', 'strategies'].map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+                          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
                             activeTab === tab
                               ? 'bg-white text-gray-900 shadow-sm'
                               : 'text-gray-600 hover:text-gray-900'
                           }`}
                         >
-                          {tab}
+                          {tab === 'strategies' ? 'Strategies' : tab}
                         </button>
                       ))}
                     </div>
@@ -474,17 +581,33 @@ const AboutADHDPage: React.FC = () => {
                         </div>
                       )}
 
-                      {activeTab === 'examples' && selectedNode.node.realLifeExample && (
+                      {activeTab === 'examples' && (selectedNode.node.realLifeExample || selectedNode.node.realLifeExamples) && (
                         <div>
-                          <h4 className="font-semibold text-gray-800 mb-3">Real-Life Example</h4>
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                {selectedNode.node.realLifeExample.name[0]}
-                              </span>
-                              <span className="font-semibold text-blue-900">{selectedNode.node.realLifeExample.name}</span>
-                            </div>
-                            <p className="text-blue-800">{selectedNode.node.realLifeExample.story}</p>
+                          <h4 className="font-semibold text-gray-800 mb-3">Real-Life Examples</h4>
+                          <div className="space-y-4">
+                            {selectedNode.node.realLifeExamples ? (
+                              selectedNode.node.realLifeExamples.map((example: any, index: number) => (
+                                <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                      {example.name[0]}
+                                    </span>
+                                    <span className="font-semibold text-blue-900">{example.name}</span>
+                                  </div>
+                                  <p className="text-blue-800">{example.story}</p>
+                                </div>
+                              ))
+                            ) : selectedNode.node.realLifeExample ? (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    {selectedNode.node.realLifeExample.name[0]}
+                                  </span>
+                                  <span className="font-semibold text-blue-900">{selectedNode.node.realLifeExample.name}</span>
+                                </div>
+                                <p className="text-blue-800">{selectedNode.node.realLifeExample.story}</p>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       )}
@@ -535,6 +658,55 @@ const AboutADHDPage: React.FC = () => {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'strategies' && (selectedNode.node.copingStrategies || selectedNode.node.managementStrategies || selectedNode.node.treatmentConsiderations) && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3">Management Strategies</h4>
+                          <div className="space-y-4">
+                            {selectedNode.node.copingStrategies && (
+                              <div>
+                                <h5 className="font-medium text-gray-700 mb-2">Coping Strategies</h5>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {selectedNode.node.copingStrategies.map((strategy: string, index: number) => (
+                                    <div key={index} className="flex items-start space-x-2 p-2 bg-green-50 rounded-lg">
+                                      <span className="text-green-500 mt-1">💡</span>
+                                      <span className="text-gray-700 text-sm">{strategy}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {selectedNode.node.managementStrategies && (
+                              <div>
+                                <h5 className="font-medium text-gray-700 mb-2">Management Strategies</h5>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {selectedNode.node.managementStrategies.map((strategy: string, index: number) => (
+                                    <div key={index} className="flex items-start space-x-2 p-2 bg-blue-50 rounded-lg">
+                                      <span className="text-blue-500 mt-1">🎯</span>
+                                      <span className="text-gray-700 text-sm">{strategy}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {selectedNode.node.treatmentConsiderations && (
+                              <div>
+                                <h5 className="font-medium text-gray-700 mb-2">Treatment Considerations</h5>
+                                <div className="space-y-2">
+                                  {selectedNode.node.treatmentConsiderations.map((consideration: string, index: number) => (
+                                    <div key={index} className="flex items-start space-x-2 p-2 bg-purple-50 rounded-lg">
+                                      <span className="text-purple-500 mt-1">🏥</span>
+                                      <span className="text-gray-700 text-sm">{consideration}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

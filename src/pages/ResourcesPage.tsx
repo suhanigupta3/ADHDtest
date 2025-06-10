@@ -320,30 +320,59 @@ const ResourcesPage: React.FC = () => {
               Access cutting-edge research and academic institutions advancing ADHD understanding and treatment.
             </p>
             
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between">
-                <div className="mb-4 md:mb-0">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    Jahanikia NeuroLab
-                  </h3>
-                  <p className="text-gray-600 mb-2">
-                    Department of Computer Science
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    Leading research in neurotechnology and adaptive assessment technologies for ADHD diagnosis
-                  </p>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div className="mb-4 md:mb-0">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                      Jahanikia NeuroLab
+                    </h3>
+                    <p className="text-gray-600 mb-2">
+                      Department of Computer Science
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      Leading research in neurotechnology and adaptive assessment technologies for ADHD diagnosis
+                    </p>
+                  </div>
+                  <a 
+                    href="https://www.jneurolab.org/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Visit NeuroLab
+                  </a>
                 </div>
-                <a 
-                  href="https://www.jneurolab.org/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Visit NeuroLab
-                </a>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div className="mb-4 md:mb-0">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                      Neuro Health Alliance (NHA)
+                    </h3>
+                    <p className="text-gray-600 mb-2">
+                      Empowering minds, transforming lives
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      Educational articles on ADHD, mental health research, neuroscience insights, and wellness strategies
+                    </p>
+                  </div>
+                  <a 
+                    href="https://www.neurohealthalliance.org/articles" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Read Articles
+                  </a>
+                </div>
               </div>
             </div>
           </motion.div>
