@@ -45,7 +45,7 @@ const AboutUsPage: React.FC = () => {
             
           </div>
           
-          {/* Research Partnership Section */}
+          {/* Research Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -53,7 +53,7 @@ const AboutUsPage: React.FC = () => {
             className="bg-white rounded-lg shadow-lg p-8 mb-8"
           >
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Research Partnership
+              Research
             </h2>
             <p className="text-gray-600 mb-6 leading-relaxed">
               Our ADHD assessment platform is developed in collaboration with leading research institutions 
