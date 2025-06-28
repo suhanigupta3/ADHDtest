@@ -235,10 +235,23 @@ const AssessmentPage: React.FC = () => {
           {/* Header */}
           <motion.div className="text-center mb-12" variants={itemVariants}>
             <h1 className="text-4xl font-bold text-gradient mb-6">ADHD Assessment Games</h1>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
               Complete these interactive games to assess your attention, focus, and cognitive patterns. 
               Games unlock progressively as you complete each one.
             </p>
+            
+            {/* Results Link */}
+            <div className="flex justify-center">
+              <Link 
+                to="/results" 
+                className="inline-flex items-center px-6 py-3 bg-white text-darkforest-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                View Your Results
+              </Link>
+            </div>
           </motion.div>
 
           {/* Progress Indicator */}

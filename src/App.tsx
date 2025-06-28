@@ -12,6 +12,7 @@ import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
 import AboutADHDPage from './components/AboutADHDPage';
 import AssessmentPage from './components/AssessmentPage';
+import GameResultsPage from './components/GameResultsPage';
 import AboutUsPage from './pages/AboutUsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import ContactPage from './pages/ContactPage';
@@ -165,12 +166,7 @@ function App() {
               path="/results" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-4">Results Coming Soon</h1>
-                      <p className="text-gray-600">Assessment results and insights will be displayed here.</p>
-                    </div>
-                  </div>
+                  <GameResultsPage />
                 </ProtectedRoute>
               } 
             />

@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="TemplateData/style.css">
 
     <!-- ✅ Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>  
 
     <!-- ✅ Firebase Initialization -->
     <script>
@@ -38,14 +38,171 @@
         });
       }
 
-      function writeScore(userId, score) {
-        firebase.firestore().collection("scores").doc(userId).set({ score: score })
+      // Score Management Functions
+      function saveGameScore(userId, game, score) {
+        const gameData = {};
+        gameData[`game${game}`] = score;
+        
+        firebase.firestore().collection("users").doc(userId).collection("scores").doc("gameScores").set(gameData, { merge: true })
           .then(() => {
-            console.log("Score saved!");
-            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "success");
+            console.log(`Game ${game} score saved: ${score}`);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
           }).catch((err) => {
-            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "fail: " + err.message);
+            console.error("Score save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
           });
+      }
+
+      function getMaxScore(userId) {
+        firebase.firestore().collection("users").doc(userId).get()
+          .then((doc) => {
+            if (doc.exists && doc.data().max_score) {
+              unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", doc.data().max_score.toString());
+            } else {
+              unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", "0");
+            }
+          }).catch((err) => {
+            console.error("Get max score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", "0");
+          });
+      }
+
+      function updateMaxScore(userId, newScore) {
+        firebase.firestore().collection("users").doc(userId).get()
+          .then((doc) => {
+            const currentMax = doc.exists ? (doc.data().max_score || 0) : 0;
+            if (newScore > currentMax) {
+              return firebase.firestore().collection("users").doc(userId).set({ max_score: newScore }, { merge: true });
+            }
+          }).then(() => {
+            console.log("Max score updated if necessary");
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
+          }).catch((err) => {
+            console.error("Update max score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
+          });
+      }
+
+      // Question/Answer Management Functions
+      function saveAnswer(userId, index, question, answerValue) {
+        const answerData = {
+          question: question,
+          answer: answerValue,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        firebase.firestore().collection("users").doc(userId).collection("answers").doc(`question${index}`).set(answerData)
+          .then(() => {
+            console.log(`Answer ${index} saved: ${answerValue}`);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+          }).catch((err) => {
+            console.error("Answer save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function savePlayerFile(userId, fileContent) {
+        firebase.firestore().collection("users").doc(userId).collection("files").doc("answers.json").set({
+          content: fileContent,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          console.log("Player file saved");
+          unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+        }).catch((err) => {
+          console.error("File save error:", err);
+          unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+        });
+      }
+
+      // Leaderboard Functions
+      function addLeaderboardScore(userId, score) {
+        firebase.firestore().collection("leaderboard").doc(userId).set({
+          userId: userId,
+          score: score,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          console.log("Leaderboard score added");
+          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
+        }).catch((err) => {
+          console.error("Leaderboard score error:", err);
+          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
+        });
+      }
+
+      function getHighestScore() {
+        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(1).get()
+          .then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+              const doc = querySnapshot.docs[0];
+              const data = doc.data();
+              const scoreResult = {
+                PlayerId: data.userId,
+                PlayerName: data.userId, // You might want to store player names separately
+                Score: data.score,
+                Rank: 1,
+                Tier: "Gold"
+              };
+              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify(scoreResult));
+            } else {
+              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
+                PlayerId: "none",
+                PlayerName: "No scores yet",
+                Score: 0,
+                Rank: 0,
+                Tier: "None"
+              }));
+            }
+          }).catch((err) => {
+            console.error("Get highest score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
+              PlayerId: "error",
+              PlayerName: "Error loading score",
+              Score: 0,
+              Rank: 0,
+              Tier: "Error"
+            }));
+          });
+      }
+
+      function getScores() {
+        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(10).get()
+          .then((querySnapshot) => {
+            const scores = [];
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              scores.push({
+                PlayerId: data.userId,
+                PlayerName: data.userId,
+                Score: data.score,
+                Rank: scores.length + 1,
+                Tier: "Gold"
+              });
+            });
+            console.log("Scores loaded:", scores);
+            // You can add a callback here if needed
+          }).catch((err) => {
+            console.error("Get scores error:", err);
+          });
+      }
+
+      function getPlayerScore(userId) {
+        firebase.firestore().collection("leaderboard").doc(userId).get()
+          .then((doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+              console.log("Player score:", data.score);
+              // You can add a callback here if needed
+            } else {
+              console.log("No score found for player");
+            }
+          }).catch((err) => {
+            console.error("Get player score error:", err);
+          });
+      }
+
+      // Legacy function for backward compatibility
+      function writeScore(userId, score) {
+        addLeaderboardScore(userId, score);
       }
     </script>
   </head>
