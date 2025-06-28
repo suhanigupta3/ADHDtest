@@ -1,32 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const WelcomePage: React.FC = () => {
-  // Dynamic viewport dimensions
-  const [viewportDimensions, setViewportDimensions] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setViewportDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-
-    // Set initial dimensions
-    handleResize();
-
-    // Add event listener for window resize
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup event listener on component unmount
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -244,7 +220,7 @@ const WelcomePage: React.FC = () => {
       }
     ];
     
-  }, [viewportDimensions]); // Recalculate positions when viewport size changes
+  }, []); // Recalculate positions when viewport size changes
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 relative overflow-hidden">

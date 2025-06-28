@@ -204,6 +204,98 @@
       function writeScore(userId, score) {
         addLeaderboardScore(userId, score);
       }
+
+      // New Firebase Data Structure Functions
+      // Structure: users/{userId}/games/BerryBlitz/{scores, selfReport, rounds/}
+
+      function saveRoundData(userId, roundNumber, roundDataJson) {
+        const roundData = JSON.parse(roundDataJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .collection("rounds").doc(`round${roundNumber}`).set(roundData)
+          .then(() => {
+            console.log(`Round ${roundNumber} data saved`);
+            unityInstance.SendMessage("FirebaseManager", "OnRoundDataSaved", "success");
+          }).catch((err) => {
+            console.error("Round data save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnRoundDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveGameScores(userId, scoresJson) {
+        const scores = JSON.parse(scoresJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ scores: scores }, { merge: true })
+          .then(() => {
+            console.log("Game scores saved");
+            unityInstance.SendMessage("FirebaseManager", "OnGameScoresSaved", "success");
+          }).catch((err) => {
+            console.error("Game scores save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnGameScoresSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveSelfReport(userId, selfReportJson) {
+        const selfReport = JSON.parse(selfReportJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ selfReport: selfReport }, { merge: true })
+          .then(() => {
+            console.log("Self-report saved");
+            unityInstance.SendMessage("FirebaseManager", "OnSelfReportSaved", "success");
+          }).catch((err) => {
+            console.error("Self-report save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnSelfReportSaved", "fail: " + err.message);
+          });
+      }
+
+      function updateGameTimestamp(userId) {
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+          .then(() => {
+            console.log("Game timestamp updated");
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+          }).catch((err) => {
+            console.error("Timestamp update error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveCompleteGameSession(userId, scoresJson, selfReportJson, roundsJson) {
+        const scores = JSON.parse(scoresJson);
+        const selfReport = JSON.parse(selfReportJson);
+        const rounds = JSON.parse(roundsJson);
+        
+        const gameData = {
+          scores: scores,
+          selfReport: selfReport,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // First save the main game document
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set(gameData, { merge: true })
+          .then(() => {
+            console.log("Main game data saved");
+            
+            // Then save all rounds
+            const roundPromises = rounds.map((roundData, index) => {
+              return firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+                .collection("rounds").doc(`round${index + 1}`).set(roundData);
+            });
+            
+            return Promise.all(roundPromises);
+          })
+          .then(() => {
+            console.log("Complete game session saved");
+            unityInstance.SendMessage("FirebaseManager", "OnCompleteGameSessionSaved", "success");
+          })
+          .catch((err) => {
+            console.error("Complete game session save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnCompleteGameSessionSaved", "fail: " + err.message);
+          });
+      }
     </script>
   </head>
   <body>

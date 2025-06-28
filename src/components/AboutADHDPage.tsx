@@ -21,7 +21,6 @@ interface ModalContent {
 
 const AboutADHDPage: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<ModalContent>({ node: null, isCenter: false });
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [visibleNodes, setVisibleNodes] = useState<Set<string>>(new Set(['what-is-adhd']));
@@ -55,10 +54,10 @@ const AboutADHDPage: React.FC = () => {
       setVisibleNodes(newVisible);
       
       // Open modal for branch nodes
-      setSelectedNode({ node, isCenter: false });
+      setSelectedNode({ node: node, isCenter: false });
     } else if (!isCenter) {
       // If branch node is already expanded, just open the modal
-      setSelectedNode({ node, isCenter: false });
+      setSelectedNode({ node: node, isCenter: false });
     }
     // Center node never opens a modal - information is already displayed on the page
   };
@@ -151,18 +150,6 @@ const AboutADHDPage: React.FC = () => {
       rotate: 180,
       transition: {
         duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  const lineVariants = {
-    hidden: { pathLength: 0, opacity: 0 },
-    visible: {
-      pathLength: 1,
-      opacity: 0.3,
-      transition: {
-        duration: 1,
         ease: "easeInOut"
       }
     }
@@ -374,8 +361,8 @@ const AboutADHDPage: React.FC = () => {
             custom={{ x: 0, y: 0, delay: 0 }}
             variants={nodeVariants}
             whileHover="hover"
-            onHoverStart={() => setHoveredNode('center')}
-            onHoverEnd={() => setHoveredNode(null)}
+            onHoverStart={() => setSelectedNode({ node: adhdData.centerNode, isCenter: true })}
+            onHoverEnd={() => setSelectedNode({ node: null, isCenter: false })}
             onClick={() => handleNodeClick('what-is-adhd', adhdData.centerNode, true)}
           >
             <div className={`w-40 h-40 rounded-full bg-gradient-to-br ${adhdData.centerNode.colorClass} shadow-2xl cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-500 hover:shadow-2xl hover:scale-105 relative overflow-hidden group`}>
@@ -437,8 +424,8 @@ const AboutADHDPage: React.FC = () => {
                     custom={{ x: pos.x, y: pos.y, delay: index * 0.15 + 0.3 }}
                     variants={nodeVariants}
                     whileHover="hover"
-                    onHoverStart={() => setHoveredNode(node.id)}
-                    onHoverEnd={() => setHoveredNode(null)}
+                    onHoverStart={() => setSelectedNode({ node: node, isCenter: false })}
+                    onHoverEnd={() => setSelectedNode({ node: null, isCenter: false })}
                     onClick={() => handleNodeClick(node.id, node, false)}
                   >
                     <div className={`w-28 h-28 rounded-full bg-gradient-to-br ${node.colorClass} shadow-xl cursor-pointer flex flex-col items-center justify-center text-white transition-all duration-300 hover:shadow-2xl hover:scale-110 relative overflow-hidden group`}>
@@ -508,11 +495,11 @@ const AboutADHDPage: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className={`bg-gradient-to-r ${selectedNode.node.colorClass} text-white p-6`}>
+              <div className={`bg-gradient-to-r ${adhdData.nodes.find(n => n.id === selectedNode.node.id)?.colorClass} text-white p-6`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    {getIcon(selectedNode.node.icon)}
-                    <h2 className="text-3xl font-bold">{selectedNode.node.title}</h2>
+                    {getIcon(adhdData.nodes.find(n => n.id === selectedNode.node.id)?.icon || 'brain')}
+                    <h2 className="text-3xl font-bold">{adhdData.nodes.find(n => n.id === selectedNode.node.id)?.title}</h2>
                   </div>
                   <button
                     onClick={() => setSelectedNode({ node: null, isCenter: false })}
@@ -550,12 +537,12 @@ const AboutADHDPage: React.FC = () => {
                     <div className="space-y-4">
                       {activeTab === 'overview' && (
                         <div>
-                          <p className="text-gray-700 text-lg leading-relaxed">{selectedNode.node.overview}</p>
-                          {selectedNode.node.statistics && (
+                          <p className="text-gray-700 text-lg leading-relaxed">{adhdData.nodes.find(n => n.id === selectedNode.node.id)?.overview}</p>
+                          {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.statistics && (
                             <div className="mt-6">
                               <h4 className="font-semibold text-gray-800 mb-3">Statistics</h4>
                               <ul className="space-y-2">
-                                {selectedNode.node.statistics.map((stat: string, index: number) => (
+                                {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.statistics?.map((stat: string, index: number) => (
                                   <li key={index} className="flex items-start space-x-2">
                                     <span className="text-blue-500 mt-1">📊</span>
                                     <span className="text-gray-700">{stat}</span>
@@ -567,11 +554,11 @@ const AboutADHDPage: React.FC = () => {
                         </div>
                       )}
 
-                      {activeTab === 'symptoms' && selectedNode.node.symptoms && (
+                      {activeTab === 'symptoms' && adhdData.nodes.find(n => n.id === selectedNode.node.id)?.symptoms && (
                         <div>
                           <h4 className="font-semibold text-gray-800 mb-3">Common Symptoms</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {selectedNode.node.symptoms.map((symptom: string, index: number) => (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.symptoms?.map((symptom: string, index: number) => (
                               <div key={index} className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg">
                                 <span className="text-red-500 mt-1">•</span>
                                 <span className="text-gray-700">{symptom}</span>
@@ -581,42 +568,30 @@ const AboutADHDPage: React.FC = () => {
                         </div>
                       )}
 
-                      {activeTab === 'examples' && (selectedNode.node.realLifeExample || selectedNode.node.realLifeExamples) && (
+                      {activeTab === 'examples' && adhdData.nodes.find(n => n.id === selectedNode.node.id)?.realLifeExamples && (
                         <div>
                           <h4 className="font-semibold text-gray-800 mb-3">Real-Life Examples</h4>
                           <div className="space-y-4">
-                            {selectedNode.node.realLifeExamples ? (
-                              selectedNode.node.realLifeExamples.map((example: any, index: number) => (
-                                <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                      {example.name[0]}
-                                    </span>
-                                    <span className="font-semibold text-blue-900">{example.name}</span>
-                                  </div>
-                                  <p className="text-blue-800">{example.story}</p>
-                                </div>
-                              ))
-                            ) : selectedNode.node.realLifeExample ? (
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.realLifeExamples?.map((example: any, index: number) => (
+                              <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <div className="flex items-center space-x-2 mb-2">
                                   <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    {selectedNode.node.realLifeExample.name[0]}
+                                    {example.name[0]}
                                   </span>
-                                  <span className="font-semibold text-blue-900">{selectedNode.node.realLifeExample.name}</span>
+                                  <span className="font-semibold text-blue-900">{example.name}</span>
                                 </div>
-                                <p className="text-blue-800">{selectedNode.node.realLifeExample.story}</p>
+                                <p className="text-blue-800">{example.story}</p>
                               </div>
-                            ) : null}
+                            ))}
                           </div>
                         </div>
                       )}
 
-                      {activeTab === 'resources' && selectedNode.node.resources && (
+                      {activeTab === 'resources' && adhdData.nodes.find(n => n.id === selectedNode.node.id)?.resources && (
                         <div>
                           <h4 className="font-semibold text-gray-800 mb-3">Additional Resources</h4>
                           <div className="space-y-3">
-                            {selectedNode.node.resources.map((resource: any, index: number) => (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.resources?.map((resource: any, index: number) => (
                               <a
                                 key={index}
                                 href={resource.url}
@@ -636,11 +611,11 @@ const AboutADHDPage: React.FC = () => {
                         </div>
                       )}
 
-                      {activeTab === 'myths' && selectedNode.node.myths && (
+                      {activeTab === 'myths' && adhdData.nodes.find(n => n.id === selectedNode.node.id)?.myths && (
                         <div>
                           <h4 className="font-semibold text-gray-800 mb-3">Myths vs. Facts</h4>
                           <div className="space-y-4">
-                            {selectedNode.node.myths.map((item: any, index: number) => (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.myths?.map((item: any, index: number) => (
                               <div key={index} className="border rounded-lg overflow-hidden">
                                 <div className="bg-red-50 border-b border-red-200 p-3">
                                   <div className="flex items-center space-x-2">
@@ -662,15 +637,15 @@ const AboutADHDPage: React.FC = () => {
                         </div>
                       )}
 
-                      {activeTab === 'strategies' && (selectedNode.node.copingStrategies || selectedNode.node.managementStrategies || selectedNode.node.treatmentConsiderations) && (
+                      {activeTab === 'strategies' && (adhdData.nodes.find(n => n.id === selectedNode.node.id)?.copingStrategies || adhdData.nodes.find(n => n.id === selectedNode.node.id)?.managementStrategies || adhdData.nodes.find(n => n.id === selectedNode.node.id)?.treatmentConsiderations) && (
                         <div>
                           <h4 className="font-semibold text-gray-800 mb-3">Management Strategies</h4>
                           <div className="space-y-4">
-                            {selectedNode.node.copingStrategies && (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.copingStrategies && (
                               <div>
                                 <h5 className="font-medium text-gray-700 mb-2">Coping Strategies</h5>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {selectedNode.node.copingStrategies.map((strategy: string, index: number) => (
+                                  {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.copingStrategies?.map((strategy: string, index: number) => (
                                     <div key={index} className="flex items-start space-x-2 p-2 bg-green-50 rounded-lg">
                                       <span className="text-green-500 mt-1">💡</span>
                                       <span className="text-gray-700 text-sm">{strategy}</span>
@@ -680,11 +655,11 @@ const AboutADHDPage: React.FC = () => {
                               </div>
                             )}
                             
-                            {selectedNode.node.managementStrategies && (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.managementStrategies && (
                               <div>
                                 <h5 className="font-medium text-gray-700 mb-2">Management Strategies</h5>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {selectedNode.node.managementStrategies.map((strategy: string, index: number) => (
+                                  {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.managementStrategies?.map((strategy: string, index: number) => (
                                     <div key={index} className="flex items-start space-x-2 p-2 bg-blue-50 rounded-lg">
                                       <span className="text-blue-500 mt-1">🎯</span>
                                       <span className="text-gray-700 text-sm">{strategy}</span>
@@ -694,11 +669,11 @@ const AboutADHDPage: React.FC = () => {
                               </div>
                             )}
 
-                            {selectedNode.node.treatmentConsiderations && (
+                            {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.treatmentConsiderations && (
                               <div>
                                 <h5 className="font-medium text-gray-700 mb-2">Treatment Considerations</h5>
                                 <div className="space-y-2">
-                                  {selectedNode.node.treatmentConsiderations.map((consideration: string, index: number) => (
+                                  {adhdData.nodes.find(n => n.id === selectedNode.node.id)?.treatmentConsiderations?.map((consideration: string, index: number) => (
                                     <div key={index} className="flex items-start space-x-2 p-2 bg-purple-50 rounded-lg">
                                       <span className="text-purple-500 mt-1">🏥</span>
                                       <span className="text-gray-700 text-sm">{consideration}</span>

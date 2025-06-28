@@ -5,20 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-interface ConsentData {
-  userId: string;
-  consentType: 'adult' | 'minor';
-  age: number;
-  region: string;
-  acceptedTerms: boolean;
-  acceptedPrivacy: boolean;
-  acceptedAssessment: boolean;
-  parentalConsent?: boolean;
-  consentDate: any;
-  ipAddress?: string;
-  userAgent: string;
-}
-
 const ConsentPage: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
