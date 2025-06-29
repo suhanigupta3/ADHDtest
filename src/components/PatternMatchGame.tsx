@@ -1,0 +1,1 @@
+export { PatternMatchGame as default } from './PatternMatch'; 

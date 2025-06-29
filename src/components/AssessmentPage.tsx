@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import UnityGameIframe from './UnityGameIframe';
+import GameWrapper from './GameWrapper';
 
 interface GameProgress {
   game1Completed: boolean;
@@ -63,10 +64,36 @@ const games: Game[] = [
       </div>
     )
   },
-      {
-      id: 'kitchen-quest',
-      title: 'Kitchen Quest',
-      description: 'Test your multitasking abilities and working memory with multiple cooking orders.',
+  {
+    id: 'pattern-match',
+    title: 'Pattern Match: Signal Control',
+    description: 'Test your pattern recognition and reaction time by matching colored signals in sequence.',
+    instructions: [
+      'Watch for the target pattern shown at the top',
+      'Click signals in the correct order as they appear',
+      'Faster reactions earn more points',
+      'Complete patterns to level up',
+      'You have 60 seconds to score as high as possible'
+    ],
+    color: 'from-purple-600 to-blue-600',
+    gradientClass: 'bg-gradient-to-br from-purple-600 to-blue-600',
+    icon: (
+      <div className="w-14 h-14 flex items-center justify-center">
+        <img 
+          src="/pattern-match.png" 
+          alt="Pattern Match Icon" 
+          className="w-14 h-14 object-contain"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      </div>
+    )
+  },
+  {
+    id: 'kitchen-quest',
+    title: 'Kitchen Quest',
+    description: 'Test your multitasking abilities and working memory with multiple cooking orders.',
     instructions: [
       'Manage multiple customer orders simultaneously',
       'Remember different recipes and ingredients',
@@ -77,21 +104,6 @@ const games: Game[] = [
     color: 'from-amber-600 to-yellow-700',
     gradientClass: 'bg-gradient-to-br from-amber-600 to-yellow-700',
     icon: '👨‍🍳'
-  },
-  {
-    id: 'astrodrift',
-    title: 'Astrodrift',
-    description: 'Navigate through space while avoiding obstacles and answering diagnostic questions.',
-    instructions: [
-      'Control an astronaut through space',
-      'Avoid pillar rocks and obstacles',
-      'Click on aliens to defeat them',
-      'Answer diagnostic questions when prompted',
-      'Maintain focus while multitasking'
-    ],
-    color: 'from-green-700 to-teal-600',
-    gradientClass: 'bg-gradient-to-br from-green-700 to-teal-600',
-    icon: '🚀'
   }
 ];
 
@@ -146,9 +158,9 @@ const AssessmentPage: React.FC = () => {
 
       if (gameId === 'berry-blitz') {
         updates.game1Completed = true;
-      } else if (gameId === 'kitchen-quest') {
+      } else if (gameId === 'pattern-match') {
         updates.game2Completed = true;
-      } else if (gameId === 'astrodrift') {
+      } else if (gameId === 'kitchen-quest') {
         updates.game3Completed = true;
       }
 
@@ -392,44 +404,61 @@ const AssessmentPage: React.FC = () => {
 
       {/* Game Modal */}
       {selectedGame && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            className="bg-white rounded-2xl shadow-2xl w-auto max-h-[90vh] overflow-hidden"
-            style={{ minWidth: '1000px' }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-          >
-            <div className={`${selectedGame.gradientClass} text-white p-6 flex justify-between items-center`}>
-              <h2 className="text-2xl font-bold">{selectedGame.title}</h2>
-              <button
-                onClick={closeGameModal}
-                className="text-white hover:text-gray-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="p-6 flex flex-col items-center">
-              {/* Unity Game Component - Using iframe for better compatibility */}
-              <UnityGameIframe
-                gameId={selectedGame.id}
-                gameName={selectedGame.title}
-                buildPath={`/unity-builds/${selectedGame.id}`}
-                userId={currentUser?.uid}
-                onGameComplete={() => markGameCompleted(selectedGame.id)}
-                onError={(error) => {
-                  console.error('Unity game error:', error);
-                  // You could show a fallback or error message here
+        (() => {
+          const HEADER_HEIGHT = 70;
+          const GAME_HEIGHT = 540;
+          return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <motion.div
+                className="bg-white rounded-2xl shadow-2xl flex flex-col"
+                style={{
+                  width: '960px',
+                  height: `${HEADER_HEIGHT + GAME_HEIGHT}px`,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
-                width="960px"
-                height="540px"
-              />
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <div
+                  className={`${selectedGame.gradientClass} text-white p-6 flex justify-between items-center`}
+                  style={{
+                    height: `${HEADER_HEIGHT}px`,
+                    minHeight: `${HEADER_HEIGHT}px`,
+                    maxHeight: `${HEADER_HEIGHT}px`
+                  }}
+                >
+                  <h2 className="text-2xl font-bold">{selectedGame.title}</h2>
+                  <button
+                    onClick={closeGameModal}
+                    className="text-white hover:text-gray-200"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div style={{ width: '960px', height: `${GAME_HEIGHT}px` }}>
+                  <GameWrapper
+                    gameId={selectedGame.id}
+                    gameName={selectedGame.title}
+                    buildPath={`/unity-builds/${selectedGame.id}`}
+                    userId={currentUser?.uid}
+                    onGameComplete={() => markGameCompleted(selectedGame.id)}
+                    onError={(error) => {
+                      console.error('Unity game error:', error);
+                      // You could show a fallback or error message here
+                    }}
+                    width="960px"
+                    height="540px"
+                  />
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        </div>
+          );
+        })()
       )}
     </div>
   );

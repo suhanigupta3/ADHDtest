@@ -67,6 +67,7 @@ const GameResultsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>('combined');
+  const [showInterpretationGuide, setShowInterpretationGuide] = useState(false);
 
   useEffect(() => {
     const fetchUserResults = async () => {
@@ -317,7 +318,11 @@ const GameResultsPage: React.FC = () => {
       >
         <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
         <div className="flex items-center justify-between mb-3">
-          <span className={`text-3xl font-bold ${interpretation.color}`}>
+          <span 
+            className={`text-3xl font-bold ${interpretation.color} cursor-pointer hover:opacity-80 transition-opacity`}
+            onClick={() => setShowInterpretationGuide(true)}
+            title="Click to view score interpretation guide"
+          >
             {score.toFixed(1)}
           </span>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -804,80 +809,84 @@ const GameResultsPage: React.FC = () => {
           if (!combinedScores) return null;
           
           return (
-            <div className="card p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">🎉 All Games Completed!</h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Congratulations! You've completed all assessment games. Here's your comprehensive ADHD profile:
-              </p>
-              
-              <div className="text-6xl font-bold text-darkforest-600 mb-4">
-                {combinedScores.adhd_composite.toFixed(1)}
+            <>
+              <div className="card p-8 text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">🎉 All Games Completed!</h2>
+                <p className="text-lg text-gray-600 mb-6">
+                  Congratulations! You've completed all assessment games. Here's your comprehensive ADHD profile:
+                </p>
+                
+                <div className="text-6xl font-bold text-darkforest-600 mb-4">
+                  {combinedScores.adhd_composite.toFixed(1)}
+                </div>
+                <p className="text-lg text-gray-600 mb-6">
+                  Overall ADHD Composite Score
+                </p>
+                
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+                  {renderScoreCard(
+                    'Inattention',
+                    combinedScores.inattention,
+                    'Difficulty sustaining attention and focus'
+                  )}
+                  {renderScoreCard(
+                    'Hyperactivity',
+                    combinedScores.hyperactivity,
+                    'Excessive movement and restlessness'
+                  )}
+                  {renderScoreCard(
+                    'Impulsivity',
+                    combinedScores.impulsivity,
+                    'Acting without thinking and poor impulse control'
+                  )}
+                  {renderScoreCard(
+                    'Executive Function',
+                    combinedScores.executive_function,
+                    'Planning, organization, and task management'
+                  )}
+                </div>
               </div>
-              <p className="text-lg text-gray-600 mb-6">
-                Overall ADHD Composite Score
-              </p>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-                {renderScoreCard(
-                  'Inattention',
-                  combinedScores.inattention,
-                  'Difficulty sustaining attention and focus'
-                )}
-                {renderScoreCard(
-                  'Hyperactivity',
-                  combinedScores.hyperactivity,
-                  'Excessive movement and restlessness'
-                )}
-                {renderScoreCard(
-                  'Impulsivity',
-                  combinedScores.impulsivity,
-                  'Acting without thinking and poor impulse control'
-                )}
-                {renderScoreCard(
-                  'Executive Function',
-                  combinedScores.executive_function,
-                  'Planning, organization, and task management'
-                )}
-              </div>
-            </div>
+            </>
           );
         })()}
 
         {/* Progress Summary (When not all games completed) */}
         {progress.completed > 0 && progress.completed < progress.total && userResults && (
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Assessment Progress</h3>
-            <p className="text-gray-600 mb-4">
-              Complete all {progress.total} games to receive your comprehensive ADHD assessment results and clinical recommendations.
-            </p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {progress.completedGames?.map(gameKey => {
-                const gameData = userResults[gameKey];
-                if (!gameData) return null;
-                
-                return (
-                  <div 
-                    key={gameKey} 
-                    className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
-                    onClick={() => setSelectedGame(gameKey)}
-                    title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
-                  >
-                    <h4 className="font-medium text-gray-800 mb-2">
-                      {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
-                      {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
-                      {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
-                      {getGameDisplayName(gameKey)}
-                    </h4>
-                    <div className="text-2xl font-bold text-darkforest-600 mb-1">
-                      {gameData.scores.adhd_composite.toFixed(1)}
+          <>
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Assessment Progress</h3>
+              <p className="text-gray-600 mb-4">
+                Complete all {progress.total} games to receive your comprehensive ADHD assessment results and clinical recommendations.
+              </p>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {progress.completedGames?.map(gameKey => {
+                  const gameData = userResults[gameKey];
+                  if (!gameData) return null;
+                  
+                  return (
+                    <div 
+                      key={gameKey} 
+                      className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                      onClick={() => setSelectedGame(gameKey)}
+                      title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
+                    >
+                      <h4 className="font-medium text-gray-800 mb-2">
+                        {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
+                        {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
+                        {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
+                        {getGameDisplayName(gameKey)}
+                      </h4>
+                      <div className="text-2xl font-bold text-darkforest-600 mb-1">
+                        {gameData.scores.adhd_composite.toFixed(1)}
+                      </div>
+                      <p className="text-sm text-gray-600">Score</p>
+                      <p className="text-xs text-darkforest-500 mt-1">Click to view details →</p>
                     </div>
-                    <p className="text-sm text-gray-600">Score</p>
-                    <p className="text-xs text-darkforest-500 mt-1">Click to view details →</p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     );
@@ -1031,6 +1040,84 @@ const GameResultsPage: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      {/* ADHD Score Interpretation Guide Modal */}
+      {showInterpretationGuide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">ADHD Score Interpretation Guide</h2>
+                <button
+                  onClick={() => setShowInterpretationGuide(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score Range</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interpretation</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggested Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">0.0–1.9</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">No concern</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">No follow-up needed</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">2.0–3.9</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Low concern</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">No immediate concern; track over time</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-yellow-600">4.0–6.4</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Monitor symptoms</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">Suggest monitoring or lifestyle adjustments</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-orange-600">6.5–8.4</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Moderate concern</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">Recommend structured follow-up or screening</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-red-600">8.5–10.0</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">High concern</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">Strongly recommend professional evaluation</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-4 italic">
+                Note: This assessment is for informational purposes only and should not replace professional medical evaluation.
+              </p>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowInterpretationGuide(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
