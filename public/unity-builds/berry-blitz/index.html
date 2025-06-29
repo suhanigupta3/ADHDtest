@@ -28,14 +28,28 @@
 
       // ✅ Unity-callable Firebase functions
       function firebaseLoginAnonymous() {
-        firebase.auth().signInAnonymously().then((userCredential) => {
-          const user = userCredential.user;
-          console.log("Logged in:", user.uid);
-          unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", user.uid);
-        }).catch((error) => {
-          console.error("Login error:", error.message);
-          unityInstance.SendMessage("FirebaseManager", "OnLoginError", error.message);
-        });
+        // Get userId from URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get("userId");
+        
+        console.log("🔄 Firebase login called with URL userId:", userId);
+        
+        if (userId && userId !== "anonymous" && userId !== "guest") {
+          // Use existing user ID from React app
+          console.log("✅ Using existing user ID from React:", userId);
+          unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", userId);
+        } else {
+          // Fallback to anonymous login if no valid userId provided
+          console.log("⚠️ No valid userId found, falling back to anonymous login");
+          firebase.auth().signInAnonymously().then((userCredential) => {
+            const user = userCredential.user;
+            console.log("Logged in anonymously:", user.uid);
+            unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", user.uid);
+          }).catch((error) => {
+            console.error("Login error:", error.message);
+            unityInstance.SendMessage("FirebaseManager", "OnLoginError", error.message);
+          });
+        }
       }
 
       // Score Management Functions
@@ -296,6 +310,28 @@
             unityInstance.SendMessage("FirebaseManager", "OnCompleteGameSessionSaved", "fail: " + err.message);
           });
       }
+
+      // Communication with React app (same domain)
+      function sendMessageToReact(messageJson) {
+        try {
+          const message = JSON.parse(messageJson);
+          console.log("Sending message to React:", message);
+          
+          // Check if we're in an iframe or popup
+          if (window.parent && window.parent !== window) {
+            // Send to parent window (if in iframe)
+            window.parent.postMessage(message, window.location.origin);
+          } else if (window.opener) {
+            // Send to opener window (if opened from React)
+            window.opener.postMessage(message, window.location.origin);
+          } else {
+            // Try to send to any listening window
+            window.postMessage(message, window.location.origin);
+          }
+        } catch (err) {
+          console.error("Failed to send message to React:", err);
+        }
+      }
     </script>
   </head>
   <body>
@@ -401,7 +437,14 @@
 
             // ✅ Send userId from URL to Unity
             const userId = new URLSearchParams(window.location.search).get("userId") || "guest";
+            console.log("🎮 Unity initialization - URL userId:", userId);
             unityInstance.SendMessage("UserManager", "SetUserId", userId);
+
+            // ✅ Also pass userId to FirebaseManager for immediate use
+            if (userId && userId !== "anonymous" && userId !== "guest") {
+              console.log("🎮 Passing existing user ID to Unity FirebaseManager:", userId);
+              unityInstance.SendMessage("FirebaseManager", "SetExistingUserId", userId);
+            }
 
           }).catch((message) => {
             alert(message);

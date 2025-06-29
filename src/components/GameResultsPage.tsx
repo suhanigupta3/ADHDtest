@@ -59,27 +59,44 @@ const GameResultsPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        console.log('🔍 Fetching real user data for:', currentUser.uid);
         
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          console.log('User data:', data); // Debug log
+        // Fetch Berry Blitz data from the correct Firebase structure
+        const berryBlitzDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BerryBlitz'));
+        
+        const results: UserResults = {};
+        
+        if (berryBlitzDoc.exists()) {
+          const berryBlitzData = berryBlitzDoc.data();
+          console.log('✅ Berry Blitz data found:', berryBlitzData);
           
-          if (data.results) {
-            setUserResults(data.results);
-          } else {
-            console.log('No results found in user data, using mock data for testing');
-            setUserResults(mockUserResults);
+          // Transform Firebase data to match our interface
+          if (berryBlitzData.scores && berryBlitzData.selfReport) {
+            results.berryBlitz = {
+              scores: berryBlitzData.scores,
+              selfReport: berryBlitzData.selfReport,
+              rounds: berryBlitzData.rounds || []
+            };
+            console.log('✅ Berry Blitz results processed:', results.berryBlitz);
           }
         } else {
-          console.log('User document does not exist, using mock data for testing');
+          console.log('⚠️ No Berry Blitz data found for user');
+        }
+        
+        // Check if we have any real data
+        if (Object.keys(results).length > 0) {
+          console.log('✅ Using real Firebase data:', results);
+          setUserResults(results);
+        } else {
+          console.log('⚠️ No real data found, using mock data for demonstration');
           setUserResults(mockUserResults);
         }
+        
       } catch (err) {
-        console.error('Error fetching results:', err);
-        console.log('Using mock data due to Firebase error');
+        console.error('❌ Error fetching results:', err);
+        console.log('⚠️ Using mock data due to Firebase error');
         setUserResults(mockUserResults);
-        setError(null); // Clear error since we're using mock data
+        setError('Failed to load real data. Showing demonstration data.');
       } finally {
         setLoading(false);
       }
@@ -763,4 +780,4 @@ const GameResultsPage: React.FC = () => {
   );
 };
 
-export default GameResultsPage; 
+export default GameResultsPage;

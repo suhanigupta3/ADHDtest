@@ -59,6 +59,7 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
   const handleIframeLoad = () => {
     setIsLoading(false);
     console.log(`${gameName} iframe loaded`);
+    console.log("🎮 Invoking Unity game with userId:", userId || 'anonymous');
   };
 
   const handleIframeError = () => {

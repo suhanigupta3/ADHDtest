@@ -30,14 +30,41 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const signup = async (email: string, password: string, displayName: string) => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(user, { displayName });
+    try {
+      setLoading(true);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(result.user, { displayName });
+      console.log("✅ User signed up successfully:");
+      console.log("   Email:", result.user.email);
+      console.log("   UID:", result.user.uid);
+      console.log("   Display Name:", result.user.displayName);
+      setCurrentUser(result.user);
+    } catch (error) {
+      console.error("Signup error:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      setLoading(true);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ User logged in successfully:");
+      console.log("   Email:", result.user.email);
+      console.log("   UID:", result.user.uid);
+      console.log("   Display Name:", result.user.displayName);
+      setCurrentUser(result.user);
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -49,7 +76,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("✅ User logged in successfully:");
+      console.log("   Email:", result.user.email);
+      console.log("   UID:", result.user.uid);
+      console.log("   Display Name:", result.user.displayName);
+      setCurrentUser(result.user);
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

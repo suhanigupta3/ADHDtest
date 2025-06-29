@@ -175,6 +175,7 @@ const AssessmentPage: React.FC = () => {
 
   const launchGame = (game: Game) => {
     // For now, we'll show a modal. Later this can be replaced with iframe/WebGL
+    console.log("🎮 Launching game:", game.title, "with userId:", currentUser?.uid || 'anonymous');
     setSelectedGame(game);
     // In a real implementation, you might do:
     // window.open(`/games/${game.id}`, '_blank');

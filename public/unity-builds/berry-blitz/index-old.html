@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="TemplateData/style.css">
 
     <!-- ✅ Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>  
 
     <!-- ✅ Firebase Initialization -->
     <script>
@@ -28,24 +28,309 @@
 
       // ✅ Unity-callable Firebase functions
       function firebaseLoginAnonymous() {
-        firebase.auth().signInAnonymously().then((userCredential) => {
-          const user = userCredential.user;
-          console.log("Logged in:", user.uid);
-          unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", user.uid);
-        }).catch((error) => {
-          console.error("Login error:", error.message);
-          unityInstance.SendMessage("FirebaseManager", "OnLoginError", error.message);
+        // Get userId from URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get("userId");
+        
+        console.log("🔄 Firebase login called with URL userId:", userId);
+        
+        if (userId && userId !== "anonymous" && userId !== "guest") {
+          // Use existing user ID from React app
+          console.log("✅ Using existing user ID from React:", userId);
+          unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", userId);
+        } else {
+          // Fallback to anonymous login if no valid userId provided
+          console.log("⚠️ No valid userId found, falling back to anonymous login");
+          firebase.auth().signInAnonymously().then((userCredential) => {
+            const user = userCredential.user;
+            console.log("Logged in anonymously:", user.uid);
+            unityInstance.SendMessage("FirebaseManager", "OnLoginSuccess", user.uid);
+          }).catch((error) => {
+            console.error("Login error:", error.message);
+            unityInstance.SendMessage("FirebaseManager", "OnLoginError", error.message);
+          });
+        }
+      }
+
+      // Score Management Functions
+      function saveGameScore(userId, game, score) {
+        const gameData = {};
+        gameData[`game${game}`] = score;
+        
+        firebase.firestore().collection("users").doc(userId).collection("scores").doc("gameScores").set(gameData, { merge: true })
+          .then(() => {
+            console.log(`Game ${game} score saved: ${score}`);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
+          }).catch((err) => {
+            console.error("Score save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
+          });
+      }
+
+      function getMaxScore(userId) {
+        firebase.firestore().collection("users").doc(userId).get()
+          .then((doc) => {
+            if (doc.exists && doc.data().max_score) {
+              unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", doc.data().max_score.toString());
+            } else {
+              unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", "0");
+            }
+          }).catch((err) => {
+            console.error("Get max score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnMaxScoreLoaded", "0");
+          });
+      }
+
+      function updateMaxScore(userId, newScore) {
+        firebase.firestore().collection("users").doc(userId).get()
+          .then((doc) => {
+            const currentMax = doc.exists ? (doc.data().max_score || 0) : 0;
+            if (newScore > currentMax) {
+              return firebase.firestore().collection("users").doc(userId).set({ max_score: newScore }, { merge: true });
+            }
+          }).then(() => {
+            console.log("Max score updated if necessary");
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
+          }).catch((err) => {
+            console.error("Update max score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
+          });
+      }
+
+      // Question/Answer Management Functions
+      function saveAnswer(userId, index, question, answerValue) {
+        const answerData = {
+          question: question,
+          answer: answerValue,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        firebase.firestore().collection("users").doc(userId).collection("answers").doc(`question${index}`).set(answerData)
+          .then(() => {
+            console.log(`Answer ${index} saved: ${answerValue}`);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+          }).catch((err) => {
+            console.error("Answer save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function savePlayerFile(userId, fileContent) {
+        firebase.firestore().collection("users").doc(userId).collection("files").doc("answers.json").set({
+          content: fileContent,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          console.log("Player file saved");
+          unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+        }).catch((err) => {
+          console.error("File save error:", err);
+          unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
         });
       }
 
-      function writeScore(userId, score) {
-        firebase.firestore().collection("scores").doc(userId).set({ score: score })
-          .then(() => {
-            console.log("Score saved!");
-            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "success");
+      // Leaderboard Functions
+      function addLeaderboardScore(userId, score) {
+        firebase.firestore().collection("leaderboard").doc(userId).set({
+          userId: userId,
+          score: score,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          console.log("Leaderboard score added");
+          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
+        }).catch((err) => {
+          console.error("Leaderboard score error:", err);
+          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
+        });
+      }
+
+      function getHighestScore() {
+        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(1).get()
+          .then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+              const doc = querySnapshot.docs[0];
+              const data = doc.data();
+              const scoreResult = {
+                PlayerId: data.userId,
+                PlayerName: data.userId, // You might want to store player names separately
+                Score: data.score,
+                Rank: 1,
+                Tier: "Gold"
+              };
+              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify(scoreResult));
+            } else {
+              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
+                PlayerId: "none",
+                PlayerName: "No scores yet",
+                Score: 0,
+                Rank: 0,
+                Tier: "None"
+              }));
+            }
           }).catch((err) => {
-            unityInstance.SendMessage("FirebaseManager", "OnWriteComplete", "fail: " + err.message);
+            console.error("Get highest score error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
+              PlayerId: "error",
+              PlayerName: "Error loading score",
+              Score: 0,
+              Rank: 0,
+              Tier: "Error"
+            }));
           });
+      }
+
+      function getScores() {
+        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(10).get()
+          .then((querySnapshot) => {
+            const scores = [];
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              scores.push({
+                PlayerId: data.userId,
+                PlayerName: data.userId,
+                Score: data.score,
+                Rank: scores.length + 1,
+                Tier: "Gold"
+              });
+            });
+            console.log("Scores loaded:", scores);
+            // You can add a callback here if needed
+          }).catch((err) => {
+            console.error("Get scores error:", err);
+          });
+      }
+
+      function getPlayerScore(userId) {
+        firebase.firestore().collection("leaderboard").doc(userId).get()
+          .then((doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+              console.log("Player score:", data.score);
+              // You can add a callback here if needed
+            } else {
+              console.log("No score found for player");
+            }
+          }).catch((err) => {
+            console.error("Get player score error:", err);
+          });
+      }
+
+      // Legacy function for backward compatibility
+      function writeScore(userId, score) {
+        addLeaderboardScore(userId, score);
+      }
+
+      // New Firebase Data Structure Functions
+      // Structure: users/{userId}/games/BerryBlitz/{scores, selfReport, rounds/}
+
+      function saveRoundData(userId, roundNumber, roundDataJson) {
+        const roundData = JSON.parse(roundDataJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .collection("rounds").doc(`round${roundNumber}`).set(roundData)
+          .then(() => {
+            console.log(`Round ${roundNumber} data saved`);
+            unityInstance.SendMessage("FirebaseManager", "OnRoundDataSaved", "success");
+          }).catch((err) => {
+            console.error("Round data save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnRoundDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveGameScores(userId, scoresJson) {
+        const scores = JSON.parse(scoresJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ scores: scores }, { merge: true })
+          .then(() => {
+            console.log("Game scores saved");
+            unityInstance.SendMessage("FirebaseManager", "OnGameScoresSaved", "success");
+          }).catch((err) => {
+            console.error("Game scores save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnGameScoresSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveSelfReport(userId, selfReportJson) {
+        const selfReport = JSON.parse(selfReportJson);
+        
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ selfReport: selfReport }, { merge: true })
+          .then(() => {
+            console.log("Self-report saved");
+            unityInstance.SendMessage("FirebaseManager", "OnSelfReportSaved", "success");
+          }).catch((err) => {
+            console.error("Self-report save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnSelfReportSaved", "fail: " + err.message);
+          });
+      }
+
+      function updateGameTimestamp(userId) {
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set({ lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+          .then(() => {
+            console.log("Game timestamp updated");
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+          }).catch((err) => {
+            console.error("Timestamp update error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+          });
+      }
+
+      function saveCompleteGameSession(userId, scoresJson, selfReportJson, roundsJson) {
+        const scores = JSON.parse(scoresJson);
+        const selfReport = JSON.parse(selfReportJson);
+        const rounds = JSON.parse(roundsJson);
+        
+        const gameData = {
+          scores: scores,
+          selfReport: selfReport,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // First save the main game document
+        firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+          .set(gameData, { merge: true })
+          .then(() => {
+            console.log("Main game data saved");
+            
+            // Then save all rounds
+            const roundPromises = rounds.map((roundData, index) => {
+              return firebase.firestore().collection("users").doc(userId).collection("games").doc("BerryBlitz")
+                .collection("rounds").doc(`round${index + 1}`).set(roundData);
+            });
+            
+            return Promise.all(roundPromises);
+          })
+          .then(() => {
+            console.log("Complete game session saved");
+            unityInstance.SendMessage("FirebaseManager", "OnCompleteGameSessionSaved", "success");
+          })
+          .catch((err) => {
+            console.error("Complete game session save error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnCompleteGameSessionSaved", "fail: " + err.message);
+          });
+      }
+
+      // Communication with React app (same domain)
+      function sendMessageToReact(messageJson) {
+        try {
+          const message = JSON.parse(messageJson);
+          console.log("Sending message to React:", message);
+          
+          // Check if we're in an iframe or popup
+          if (window.parent && window.parent !== window) {
+            // Send to parent window (if in iframe)
+            window.parent.postMessage(message, window.location.origin);
+          } else if (window.opener) {
+            // Send to opener window (if opened from React)
+            window.opener.postMessage(message, window.location.origin);
+          } else {
+            // Try to send to any listening window
+            window.postMessage(message, window.location.origin);
+          }
+        } catch (err) {
+          console.error("Failed to send message to React:", err);
+        }
       }
     </script>
   </head>
@@ -152,7 +437,14 @@
 
             // ✅ Send userId from URL to Unity
             const userId = new URLSearchParams(window.location.search).get("userId") || "guest";
+            console.log("🎮 Unity initialization - URL userId:", userId);
             unityInstance.SendMessage("UserManager", "SetUserId", userId);
+            
+            // ✅ Also pass userId to FirebaseManager for immediate use
+            if (userId && userId !== "anonymous" && userId !== "guest") {
+              console.log("🎮 Passing existing user ID to Unity FirebaseManager:", userId);
+              unityInstance.SendMessage("FirebaseManager", "SetExistingUserId", userId);
+            }
 
           }).catch((message) => {
             alert(message);
