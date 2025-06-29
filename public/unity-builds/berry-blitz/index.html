@@ -129,18 +129,19 @@
       }
 
       // Game Progress Functions
-      function updateGameProgress(userId, gameNumber, completed) {
+      function updateGameProgress(userId, completed) {
+        console.log("🔄 updateGameProgress called with userId: " + userId + ", completed: " + completed);
         const update = {};
-        // Ensure the value is stored as a boolean, not a string
-        update[`game${gameNumber}Completed`] = completed === true || completed === "true";
+        update["game1Completed"] = completed === true || completed === "true";
+        console.log("📝 Setting game1Completed to: " + update["game1Completed"]);
         
         firebase.firestore().collection("gameProgress").doc(userId).set(update, { merge: true })
           .then(() => {
-            console.log(`Game ${gameNumber} progress updated: ${completed}`);
-            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
+            console.log("✅ game1Completed successfully set to " + update["game1Completed"] + " for user " + userId);
+            unityInstance.SendMessage("FirebaseManager", "OnGameProgressUpdated", "success");
           }).catch((err) => {
-            console.error("Game progress update error:", err);
-            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
+            console.error("❌ Failed to update game1Completed: " + err.message);
+            unityInstance.SendMessage("FirebaseManager", "OnGameProgressUpdated", "fail: " + err.message);
           });
       }
 

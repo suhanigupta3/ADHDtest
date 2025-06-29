@@ -8,6 +8,7 @@ import { mockUserResults } from '../utils/mockResults';
 interface GameRound {
   // Berry Blitz fields
   timeToTargetFruit?: number;
+  totalRoundDuration?: number;
   stepsTaken?: number;
   optimalSteps?: number;
   redundantMoves?: number;
@@ -252,25 +253,56 @@ const GameResultsPage: React.FC = () => {
   };
 
   const getScoreInterpretation = (score: number): { level: string; color: string; description: string } => {
-    if (score <= 3) {
+    if (score >= 0.0 && score <= 1.9) {
+      return { 
+        level: 'No Concern', 
+        color: 'text-green-600', 
+        description: 'No follow-up needed' 
+      };
+    } else if (score >= 2.0 && score <= 3.9) {
       return { 
         level: 'Low Concern', 
         color: 'text-green-600', 
-        description: 'Minimal ADHD symptoms detected. No immediate clinical concern.' 
+        description: 'No immediate concern; track over time' 
       };
-    } else if (score <= 6) {
+    } else if (score >= 4.0 && score <= 6.4) {
       return { 
         level: 'Monitor Symptoms', 
         color: 'text-yellow-600', 
-        description: 'Some ADHD symptoms present. Consider monitoring and follow-up.' 
+        description: 'Suggest monitoring or lifestyle adjustments' 
+      };
+    } else if (score >= 6.5 && score <= 8.4) {
+      return { 
+        level: 'Moderate Concern', 
+        color: 'text-orange-600', 
+        description: 'Recommend structured follow-up or screening' 
+      };
+    } else if (score >= 8.5 && score <= 10.0) {
+      return { 
+        level: 'High Concern', 
+        color: 'text-red-600', 
+        description: 'Strongly recommend professional evaluation' 
       };
     } else {
       return { 
-        level: 'Recommend Clinical Testing', 
-        color: 'text-red-600', 
-        description: 'Significant ADHD symptoms detected. Professional evaluation recommended.' 
+        level: 'Invalid Score', 
+        color: 'text-gray-600', 
+        description: 'Score outside expected range' 
       };
     }
+  };
+
+  const formatTimeToReadable = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    let result = '';
+    if (hours > 0) result += `${hours}${hours === 1 ? 'hr' : 'hrs'}, `;
+    if (minutes > 0) result += `${minutes}m, `;
+    result += `${secs.toFixed(2)}s`;
+    
+    return result;
   };
 
   const renderScoreCard = (title: string, score: number, description: string) => {
@@ -340,7 +372,10 @@ const GameResultsPage: React.FC = () => {
                 
                 {/* Berry Blitz specific columns */}
                 {isBerryBlitz && rounds[0]?.timeToTargetFruit !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time to Target (ms)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time to Target</th>
+                )}
+                {isBerryBlitz && rounds[0]?.totalRoundDuration !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Round Duration</th>
                 )}
                 {isBerryBlitz && rounds[0]?.stepsTaken !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Taken</th>
@@ -350,9 +385,6 @@ const GameResultsPage: React.FC = () => {
                 )}
                 {isBerryBlitz && rounds[0]?.redundantMoves !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redundant Moves</th>
-                )}
-                {isBerryBlitz && rounds[0]?.collisionsWithShuriken !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collisions</th>
                 )}
                 {isBerryBlitz && rounds[0]?.roundScore !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round Score</th>
@@ -389,7 +421,12 @@ const GameResultsPage: React.FC = () => {
                   {/* Berry Blitz specific data */}
                   {isBerryBlitz && round.timeToTargetFruit !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {(round.timeToTargetFruit * 1000).toFixed(1)}
+                      {formatTimeToReadable(round.timeToTargetFruit / 1000)}
+                    </td>
+                  )}
+                  {isBerryBlitz && round.totalRoundDuration !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatTimeToReadable(round.totalRoundDuration / 1000)}
                     </td>
                   )}
                   {isBerryBlitz && round.stepsTaken !== undefined && (
@@ -405,11 +442,6 @@ const GameResultsPage: React.FC = () => {
                   {isBerryBlitz && round.redundantMoves !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.redundantMoves}
-                    </td>
-                  )}
-                  {isBerryBlitz && round.collisionsWithShuriken !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.collisionsWithShuriken}
                     </td>
                   )}
                   {isBerryBlitz && round.roundScore !== undefined && (
@@ -470,6 +502,10 @@ const GameResultsPage: React.FC = () => {
       q5_followThrough: 'Follow Through',
     };
 
+    // Define fixed order for questions
+    const questionOrder = ['q1_focusDifficulty', 'q2_forgetfulness', 'q3_restlessness', 'q4_impulsivity', 'q5_followThrough'];
+    const orderedQuestions = questionOrder.filter(question => questions.includes(question));
+
     const scoreLabels: { [key: number]: string } = {
       1: 'Never',
       2: 'Rarely', 
@@ -494,7 +530,7 @@ const GameResultsPage: React.FC = () => {
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Self-Report Responses</h3>
         <div className="space-y-4">
-          {questions.map(question => {
+          {orderedQuestions.map(question => {
             const score = selfReport[question as keyof SelfReport] || 0;
             return (
               <div key={question} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
@@ -541,6 +577,7 @@ const GameResultsPage: React.FC = () => {
 
     if (gameName === 'berryBlitz' && gameData.rounds.length > 0) {
       const avgTime = gameData.rounds.reduce((sum, r) => sum + (r.timeToTargetFruit || 0), 0) / gameData.rounds.length;
+      const avgTotalDuration = gameData.rounds.reduce((sum, r) => sum + (r.totalRoundDuration || 0), 0) / gameData.rounds.length;
       const totalRedundant = gameData.rounds.reduce((sum, r) => sum + (r.redundantMoves || 0), 0);
       const totalCollisions = gameData.rounds.reduce((sum, r) => sum + (r.collisionsWithShuriken || 0), 0);
       const avgRoundScore = gameData.rounds.reduce((sum, r) => sum + (r.roundScore || 0), 0) / gameData.rounds.length;
@@ -548,7 +585,11 @@ const GameResultsPage: React.FC = () => {
       insights.push(
         <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
           <span className="text-sm font-medium text-blue-700">Average Time to Target</span>
-          <span className="text-sm text-blue-600 font-semibold">{(avgTime * 1000).toFixed(1)}ms</span>
+          <span className="text-sm text-blue-600 font-semibold">{formatTimeToReadable(avgTime / 1000)}</span>
+        </div>,
+        <div key="totalDuration" className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+          <span className="text-sm font-medium text-purple-700">Average Total Round Duration</span>
+          <span className="text-sm text-purple-600 font-semibold">{formatTimeToReadable(avgTotalDuration / 1000)}</span>
         </div>,
         <div key="redundant" className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
           <span className="text-sm font-medium text-yellow-700">Total Redundant Moves</span>
@@ -578,7 +619,7 @@ const GameResultsPage: React.FC = () => {
       insights.push(
         <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
           <span className="text-sm font-medium text-blue-700">Average Completion Time</span>
-          <span className="text-sm text-blue-600 font-semibold">{(avgTime / 1000).toFixed(1)}s</span>
+          <span className="text-sm text-blue-600 font-semibold">{formatTimeToReadable(avgTime)}</span>
         </div>,
         <div key="asteroids" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
           <span className="text-sm font-medium text-green-700">Asteroids Avoided</span>
@@ -594,7 +635,7 @@ const GameResultsPage: React.FC = () => {
         </div>,
         <div key="reaction" className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
           <span className="text-sm font-medium text-orange-700">Average Reaction Time</span>
-          <span className="text-sm text-orange-600 font-semibold">{avgReactionTime.toFixed(0)}ms</span>
+          <span className="text-sm text-orange-600 font-semibold">{formatTimeToReadable(avgReactionTime)}</span>
         </div>,
         <div key="accuracy" className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
           <span className="text-sm font-medium text-indigo-700">Question Accuracy</span>
@@ -709,6 +750,9 @@ const GameResultsPage: React.FC = () => {
                   </div>
 
                   <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
+                    {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
+                    {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
+                    {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
                     {getGameDisplayName(gameKey)}
                   </h3>
                   
@@ -717,11 +761,16 @@ const GameResultsPage: React.FC = () => {
                   </p>
 
                   {isCompleted && userResults && userResults[gameKey] && (
-                    <div className="text-center">
+                    <div 
+                      className="text-center cursor-pointer hover:bg-green-100 transition-colors duration-200 rounded-lg p-2"
+                      onClick={() => setSelectedGame(gameKey)}
+                      title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
+                    >
                       <div className="text-2xl font-bold text-green-600 mb-1">
                         {userResults[gameKey]?.scores.adhd_composite.toFixed(1)}
                       </div>
                       <p className="text-sm text-gray-600">Composite Score</p>
+                      <p className="text-xs text-green-500 mt-1">Click to view details →</p>
                     </div>
                   )}
 
@@ -807,12 +856,23 @@ const GameResultsPage: React.FC = () => {
                 if (!gameData) return null;
                 
                 return (
-                  <div key={gameKey} className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">{getGameDisplayName(gameKey)}</h4>
+                  <div 
+                    key={gameKey} 
+                    className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                    onClick={() => setSelectedGame(gameKey)}
+                    title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
+                  >
+                    <h4 className="font-medium text-gray-800 mb-2">
+                      {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
+                      {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
+                      {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
+                      {getGameDisplayName(gameKey)}
+                    </h4>
                     <div className="text-2xl font-bold text-darkforest-600 mb-1">
                       {gameData.scores.adhd_composite.toFixed(1)}
                     </div>
                     <p className="text-sm text-gray-600">Score</p>
+                    <p className="text-xs text-darkforest-500 mt-1">Click to view details →</p>
                   </div>
                 );
               })}
@@ -860,7 +920,7 @@ const GameResultsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">No Results Available</h1>
           <p className="text-gray-600 mb-4">Complete some assessments to see your results here.</p>
           <a href="/assessment" className="btn-primary">
-            Start Assessment
+            Start Assessment"
           </a>
         </div>
       </div>

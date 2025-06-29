@@ -182,11 +182,14 @@ const AssessmentPage: React.FC = () => {
   };
 
   const closeGameModal = () => {
+    loadGameProgress();
     setSelectedGame(null);
   };
 
   const markGameCompleted = (gameId: string) => {
-    updateGameProgress(gameId);
+    // Unity already updates Firebase, so we just need to reload progress and close modal
+    console.log(`🎮 Game ${gameId} completed - reloading progress from Firebase`);
+    loadGameProgress();
     closeGameModal();
   };
 
@@ -424,22 +427,6 @@ const AssessmentPage: React.FC = () => {
                 width="960px"
                 height="540px"
               />
-              
-              {/* Fallback Controls */}
-              <div className="flex justify-center space-x-4 mt-6">
-                <button
-                  onClick={() => markGameCompleted(selectedGame.id)}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Mark as Completed (Demo)
-                </button>
-                <button
-                  onClick={closeGameModal}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </motion.div>
         </div>
