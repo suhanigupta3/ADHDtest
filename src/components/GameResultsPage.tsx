@@ -368,26 +368,26 @@ const GameResultsPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Round</th>
                 
                 {/* Berry Blitz specific columns */}
                 {isBerryBlitz && rounds[0]?.timeToTargetFruit !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time to Target</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Time to Target</th>
                 )}
                 {isBerryBlitz && rounds[0]?.totalRoundDuration !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Round Duration</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Total Duration</th>
                 )}
                 {isBerryBlitz && rounds[0]?.stepsTaken !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Taken</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Steps</th>
                 )}
                 {isBerryBlitz && rounds[0]?.optimalSteps !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Optimal Steps</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Optimal</th>
                 )}
                 {isBerryBlitz && rounds[0]?.redundantMoves !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redundant Moves</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Redundant</th>
                 )}
                 {isBerryBlitz && rounds[0]?.roundScore !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round Score</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Score</th>
                 )}
                 
                 {/* Astro Drift specific columns */}
@@ -414,38 +414,38 @@ const GameResultsPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {rounds.map((round, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     Round {index + 1}
                   </td>
                   
                   {/* Berry Blitz specific data */}
                   {isBerryBlitz && round.timeToTargetFruit !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {formatTimeToReadable(round.timeToTargetFruit / 1000)}
                     </td>
                   )}
                   {isBerryBlitz && round.totalRoundDuration !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {formatTimeToReadable(round.totalRoundDuration / 1000)}
                     </td>
                   )}
                   {isBerryBlitz && round.stepsTaken !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {round.stepsTaken}
                     </td>
                   )}
                   {isBerryBlitz && round.optimalSteps !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {round.optimalSteps}
                     </td>
                   )}
                   {isBerryBlitz && round.redundantMoves !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {round.redundantMoves}
                     </td>
                   )}
                   {isBerryBlitz && round.roundScore !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {round.roundScore}
                     </td>
                   )}

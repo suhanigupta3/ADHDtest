@@ -130,10 +130,12 @@
 
       // Game Progress Functions
       function updateGameProgress(userId, completed) {
-        console.log("🔄 updateGameProgress called with userId: " + userId + ", completed: " + completed);
+        console.log("🔄 updateGameProgress called with userId: " + userId + ", completed: " + completed + " (type: " + typeof completed + ")");
         const update = {};
-        update["game1Completed"] = completed === true || completed === "true";
-        console.log("📝 Setting game1Completed to: " + update["game1Completed"]);
+        // Handle both boolean and string values
+        const isCompleted = completed === true || completed === "true" || completed === "True";
+        update["game1Completed"] = isCompleted;
+        console.log("📝 Setting game1Completed to: " + update["game1Completed"] + " (isCompleted: " + isCompleted + ")");
         
         firebase.firestore().collection("gameProgress").doc(userId).set(update, { merge: true })
           .then(() => {
