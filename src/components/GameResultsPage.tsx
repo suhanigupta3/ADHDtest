@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { mockUserResults } from '../utils/mockResults';
 
 interface GameRound {
+  // Berry Blitz fields
   timeToTargetFruit?: number;
   stepsTaken?: number;
   optimalSteps?: number;
@@ -13,6 +14,18 @@ interface GameRound {
   idleTime?: number;
   collisionsWithShuriken?: number;
   transitionAdaptTime?: number;
+  
+  // Astro Drift fields
+  timeToComplete?: number;
+  asteroidsAvoided?: number;
+  asteroidsHit?: number;
+  aliensDefeated?: number;
+  questionsAnswered?: number;
+  questionsCorrect?: number;
+  reactionTime?: number;
+  focusBreaks?: number;
+  navigationErrors?: number;
+  optimalPathDeviation?: number;
 }
 
 interface SelfReport {
@@ -61,16 +74,14 @@ const GameResultsPage: React.FC = () => {
         setLoading(true);
         console.log('🔍 Fetching real user data for:', currentUser.uid);
         
-        // Fetch Berry Blitz data from the correct Firebase structure
-        const berryBlitzDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BerryBlitz'));
-        
         const results: UserResults = {};
         
+        // Fetch Berry Blitz data
+        const berryBlitzDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BerryBlitz'));
         if (berryBlitzDoc.exists()) {
           const berryBlitzData = berryBlitzDoc.data();
           console.log('✅ Berry Blitz data found:', berryBlitzData);
           
-          // Transform Firebase data to match our interface
           if (berryBlitzData.scores && berryBlitzData.selfReport) {
             results.berryBlitz = {
               scores: berryBlitzData.scores,
@@ -81,6 +92,24 @@ const GameResultsPage: React.FC = () => {
           }
         } else {
           console.log('⚠️ No Berry Blitz data found for user');
+        }
+        
+        // Fetch Astro Drift data
+        const astroDriftDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'AstroDrift'));
+        if (astroDriftDoc.exists()) {
+          const astroDriftData = astroDriftDoc.data();
+          console.log('✅ Astro Drift data found:', astroDriftData);
+          
+          if (astroDriftData.scores && astroDriftData.selfReport) {
+            results.astrodrift = {
+              scores: astroDriftData.scores,
+              selfReport: astroDriftData.selfReport,
+              rounds: astroDriftData.rounds || []
+            };
+            console.log('✅ Astro Drift results processed:', results.astrodrift);
+          }
+        } else {
+          console.log('⚠️ No Astro Drift data found for user');
         }
         
         // Check if we have any real data
@@ -241,6 +270,10 @@ const GameResultsPage: React.FC = () => {
                            gameName === 'astrodrift' ? 'Astro Drift' : 
                            gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
 
+    // Determine which fields to show based on game type
+    const isBerryBlitz = gameName === 'berryBlitz';
+    const isAstroDrift = gameName === 'astrodrift';
+
     return (
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Performance Details</h3>
@@ -249,20 +282,42 @@ const GameResultsPage: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
-                {rounds[0]?.timeToTargetFruit !== undefined && (
+                
+                {/* Berry Blitz specific columns */}
+                {isBerryBlitz && rounds[0]?.timeToTargetFruit !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time to Target (ms)</th>
                 )}
-                {rounds[0]?.stepsTaken !== undefined && (
+                {isBerryBlitz && rounds[0]?.stepsTaken !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Taken</th>
                 )}
-                {rounds[0]?.optimalSteps !== undefined && (
+                {isBerryBlitz && rounds[0]?.optimalSteps !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Optimal Steps</th>
                 )}
-                {rounds[0]?.redundantMoves !== undefined && (
+                {isBerryBlitz && rounds[0]?.redundantMoves !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redundant Moves</th>
                 )}
-                {rounds[0]?.collisionsWithShuriken !== undefined && (
+                {isBerryBlitz && rounds[0]?.collisionsWithShuriken !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collisions</th>
+                )}
+                
+                {/* Astro Drift specific columns */}
+                {isAstroDrift && rounds[0]?.timeToComplete !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time (ms)</th>
+                )}
+                {isAstroDrift && rounds[0]?.asteroidsAvoided !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asteroids Avoided</th>
+                )}
+                {isAstroDrift && rounds[0]?.asteroidsHit !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asteroids Hit</th>
+                )}
+                {isAstroDrift && rounds[0]?.aliensDefeated !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aliens Defeated</th>
+                )}
+                {isAstroDrift && rounds[0]?.questionsCorrect !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questions Correct</th>
+                )}
+                {isAstroDrift && rounds[0]?.reactionTime !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reaction Time (ms)</th>
                 )}
               </tr>
             </thead>
@@ -272,29 +327,63 @@ const GameResultsPage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     Round {index + 1}
                   </td>
-                  {round.timeToTargetFruit !== undefined && (
+                  
+                  {/* Berry Blitz specific data */}
+                  {isBerryBlitz && round.timeToTargetFruit !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.timeToTargetFruit}
                     </td>
                   )}
-                  {round.stepsTaken !== undefined && (
+                  {isBerryBlitz && round.stepsTaken !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.stepsTaken}
                     </td>
                   )}
-                  {round.optimalSteps !== undefined && (
+                  {isBerryBlitz && round.optimalSteps !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.optimalSteps}
                     </td>
                   )}
-                  {round.redundantMoves !== undefined && (
+                  {isBerryBlitz && round.redundantMoves !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.redundantMoves}
                     </td>
                   )}
-                  {round.collisionsWithShuriken !== undefined && (
+                  {isBerryBlitz && round.collisionsWithShuriken !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.collisionsWithShuriken}
+                    </td>
+                  )}
+                  
+                  {/* Astro Drift specific data */}
+                  {isAstroDrift && round.timeToComplete !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.timeToComplete}
+                    </td>
+                  )}
+                  {isAstroDrift && round.asteroidsAvoided !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.asteroidsAvoided}
+                    </td>
+                  )}
+                  {isAstroDrift && round.asteroidsHit !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.asteroidsHit}
+                    </td>
+                  )}
+                  {isAstroDrift && round.aliensDefeated !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.aliensDefeated}
+                    </td>
+                  )}
+                  {isAstroDrift && round.questionsCorrect !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.questionsCorrect}/5
+                    </td>
+                  )}
+                  {isAstroDrift && round.reactionTime !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.reactionTime}
                     </td>
                   )}
                 </tr>
@@ -404,6 +493,44 @@ const GameResultsPage: React.FC = () => {
         <div key="collisions" className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
           <span className="text-sm font-medium text-red-700">Total Collisions</span>
           <span className="text-sm text-red-600 font-semibold">{totalCollisions}</span>
+        </div>
+      );
+    }
+
+    if (gameName === 'astrodrift' && gameData.rounds.length > 0) {
+      const avgTime = gameData.rounds.reduce((sum, r) => sum + (r.timeToComplete || 0), 0) / gameData.rounds.length;
+      const totalAsteroidsAvoided = gameData.rounds.reduce((sum, r) => sum + (r.asteroidsAvoided || 0), 0);
+      const totalAsteroidsHit = gameData.rounds.reduce((sum, r) => sum + (r.asteroidsHit || 0), 0);
+      const totalAliensDefeated = gameData.rounds.reduce((sum, r) => sum + (r.aliensDefeated || 0), 0);
+      const avgReactionTime = gameData.rounds.reduce((sum, r) => sum + (r.reactionTime || 0), 0) / gameData.rounds.length;
+      const totalQuestionsCorrect = gameData.rounds.reduce((sum, r) => sum + (r.questionsCorrect || 0), 0);
+      const totalQuestionsAnswered = gameData.rounds.reduce((sum, r) => sum + (r.questionsAnswered || 0), 0);
+      const accuracyRate = totalQuestionsAnswered > 0 ? (totalQuestionsCorrect / totalQuestionsAnswered * 100) : 0;
+      
+      insights.push(
+        <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+          <span className="text-sm font-medium text-blue-700">Average Completion Time</span>
+          <span className="text-sm text-blue-600 font-semibold">{(avgTime / 1000).toFixed(1)}s</span>
+        </div>,
+        <div key="asteroids" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+          <span className="text-sm font-medium text-green-700">Asteroids Avoided</span>
+          <span className="text-sm text-green-600 font-semibold">{totalAsteroidsAvoided}</span>
+        </div>,
+        <div key="hits" className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+          <span className="text-sm font-medium text-red-700">Asteroids Hit</span>
+          <span className="text-sm text-red-600 font-semibold">{totalAsteroidsHit}</span>
+        </div>,
+        <div key="aliens" className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+          <span className="text-sm font-medium text-purple-700">Aliens Defeated</span>
+          <span className="text-sm text-purple-600 font-semibold">{totalAliensDefeated}</span>
+        </div>,
+        <div key="reaction" className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+          <span className="text-sm font-medium text-orange-700">Average Reaction Time</span>
+          <span className="text-sm text-orange-600 font-semibold">{avgReactionTime.toFixed(0)}ms</span>
+        </div>,
+        <div key="accuracy" className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
+          <span className="text-sm font-medium text-indigo-700">Question Accuracy</span>
+          <span className="text-sm text-indigo-600 font-semibold">{accuracyRate.toFixed(1)}%</span>
         </div>
       );
     }
