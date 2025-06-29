@@ -128,95 +128,20 @@
         });
       }
 
-      // Leaderboard Functions
-      function addLeaderboardScore(userId, score) {
-        firebase.firestore().collection("leaderboard").doc(userId).set({
-          userId: userId,
-          score: score,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          console.log("Leaderboard score added");
-          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "success");
-        }).catch((err) => {
-          console.error("Leaderboard score error:", err);
-          unityInstance.SendMessage("FirebaseManager", "OnScoreSaved", "fail: " + err.message);
-        });
-      }
-
-      function getHighestScore() {
-        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(1).get()
-          .then((querySnapshot) => {
-            if (!querySnapshot.empty) {
-              const doc = querySnapshot.docs[0];
-              const data = doc.data();
-              const scoreResult = {
-                PlayerId: data.userId,
-                PlayerName: data.userId, // You might want to store player names separately
-                Score: data.score,
-                Rank: 1,
-                Tier: "Gold"
-              };
-              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify(scoreResult));
-            } else {
-              unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
-                PlayerId: "none",
-                PlayerName: "No scores yet",
-                Score: 0,
-                Rank: 0,
-                Tier: "None"
-              }));
-            }
+      // Game Progress Functions
+      function updateGameProgress(userId, gameNumber, completed) {
+        const update = {};
+        // Ensure the value is stored as a boolean, not a string
+        update[`game${gameNumber}Completed`] = completed === true || completed === "true";
+        
+        firebase.firestore().collection("gameProgress").doc(userId).set(update, { merge: true })
+          .then(() => {
+            console.log(`Game ${gameNumber} progress updated: ${completed}`);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "success");
           }).catch((err) => {
-            console.error("Get highest score error:", err);
-            unityInstance.SendMessage("FirebaseManager", "OnHighestScoreLoaded", JSON.stringify({
-              PlayerId: "error",
-              PlayerName: "Error loading score",
-              Score: 0,
-              Rank: 0,
-              Tier: "Error"
-            }));
+            console.error("Game progress update error:", err);
+            unityInstance.SendMessage("FirebaseManager", "OnDataSaved", "fail: " + err.message);
           });
-      }
-
-      function getScores() {
-        firebase.firestore().collection("leaderboard").orderBy("score", "desc").limit(10).get()
-          .then((querySnapshot) => {
-            const scores = [];
-            querySnapshot.forEach((doc) => {
-              const data = doc.data();
-              scores.push({
-                PlayerId: data.userId,
-                PlayerName: data.userId,
-                Score: data.score,
-                Rank: scores.length + 1,
-                Tier: "Gold"
-              });
-            });
-            console.log("Scores loaded:", scores);
-            // You can add a callback here if needed
-          }).catch((err) => {
-            console.error("Get scores error:", err);
-          });
-      }
-
-      function getPlayerScore(userId) {
-        firebase.firestore().collection("leaderboard").doc(userId).get()
-          .then((doc) => {
-            if (doc.exists) {
-              const data = doc.data();
-              console.log("Player score:", data.score);
-              // You can add a callback here if needed
-            } else {
-              console.log("No score found for player");
-            }
-          }).catch((err) => {
-            console.error("Get player score error:", err);
-          });
-      }
-
-      // Legacy function for backward compatibility
-      function writeScore(userId, score) {
-        addLeaderboardScore(userId, score);
       }
 
       // New Firebase Data Structure Functions

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { mockUserResults } from '../utils/mockResults';
 
 interface GameRound {
@@ -14,6 +14,7 @@ interface GameRound {
   idleTime?: number;
   collisionsWithShuriken?: number;
   transitionAdaptTime?: number;
+  roundScore?: number;
   
   // Astro Drift fields
   timeToComplete?: number;
@@ -81,12 +82,35 @@ const GameResultsPage: React.FC = () => {
         if (berryBlitzDoc.exists()) {
           const berryBlitzData = berryBlitzDoc.data();
           console.log('✅ Berry Blitz data found:', berryBlitzData);
+          console.log('🔍 Berry Blitz data structure:', {
+            hasScores: !!berryBlitzData.scores,
+            hasSelfReport: !!berryBlitzData.selfReport,
+            hasRounds: !!berryBlitzData.rounds,
+            roundsLength: berryBlitzData.rounds?.length || 0,
+            scoresKeys: berryBlitzData.scores ? Object.keys(berryBlitzData.scores) : [],
+            selfReportKeys: berryBlitzData.selfReport ? Object.keys(berryBlitzData.selfReport) : []
+          });
           
           if (berryBlitzData.scores && berryBlitzData.selfReport) {
+            // Fetch rounds from the subcollection
+            let rounds: GameRound[] = [];
+            try {
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'BerryBlitz', 'rounds'));
+              rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
+              console.log('✅ Berry Blitz rounds fetched:', rounds);
+            } catch (roundsError) {
+              console.log('⚠️ Could not fetch rounds subcollection:', roundsError);
+              // If rounds subcollection doesn't exist, try to use rounds from main document
+              if (berryBlitzData.rounds && Array.isArray(berryBlitzData.rounds)) {
+                rounds = berryBlitzData.rounds;
+                console.log('✅ Using rounds from main document:', rounds);
+              }
+            }
+            
             results.berryBlitz = {
               scores: berryBlitzData.scores,
               selfReport: berryBlitzData.selfReport,
-              rounds: berryBlitzData.rounds || []
+              rounds: rounds
             };
             console.log('✅ Berry Blitz results processed:', results.berryBlitz);
           }
@@ -101,10 +125,25 @@ const GameResultsPage: React.FC = () => {
           console.log('✅ Astro Drift data found:', astroDriftData);
           
           if (astroDriftData.scores && astroDriftData.selfReport) {
+            // Fetch rounds from the subcollection
+            let rounds: GameRound[] = [];
+            try {
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'AstroDrift', 'rounds'));
+              rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
+              console.log('✅ Astro Drift rounds fetched:', rounds);
+            } catch (roundsError) {
+              console.log('⚠️ Could not fetch Astro Drift rounds subcollection:', roundsError);
+              // If rounds subcollection doesn't exist, try to use rounds from main document
+              if (astroDriftData.rounds && Array.isArray(astroDriftData.rounds)) {
+                rounds = astroDriftData.rounds;
+                console.log('✅ Using Astro Drift rounds from main document:', rounds);
+              }
+            }
+            
             results.astrodrift = {
               scores: astroDriftData.scores,
               selfReport: astroDriftData.selfReport,
-              rounds: astroDriftData.rounds || []
+              rounds: rounds
             };
             console.log('✅ Astro Drift results processed:', results.astrodrift);
           }
@@ -264,8 +303,8 @@ const GameResultsPage: React.FC = () => {
   };
 
   const renderGameRoundsTable = (rounds: GameRound[], gameName: string) => {
-    if (!rounds || rounds.length === 0) return null;
-
+    console.log(`🔍 Rendering rounds table for ${gameName}:`, rounds);
+    
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'astrodrift' ? 'Astro Drift' : 
                            gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
@@ -273,6 +312,22 @@ const GameResultsPage: React.FC = () => {
     // Determine which fields to show based on game type
     const isBerryBlitz = gameName === 'berryBlitz';
     const isAstroDrift = gameName === 'astrodrift';
+
+    // If no rounds data, show a message instead of hiding the entire section
+    if (!rounds || rounds.length === 0) {
+      return (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Performance Details</h3>
+          <div className="text-center py-8">
+            <div className="text-gray-400 text-4xl mb-4">📊</div>
+            <p className="text-gray-600 mb-2">No detailed performance data available</p>
+            <p className="text-sm text-gray-500">
+              Round-by-round performance metrics were not recorded for this session
+            </p>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="card p-6">
@@ -298,6 +353,9 @@ const GameResultsPage: React.FC = () => {
                 )}
                 {isBerryBlitz && rounds[0]?.collisionsWithShuriken !== undefined && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collisions</th>
+                )}
+                {isBerryBlitz && rounds[0]?.roundScore !== undefined && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round Score</th>
                 )}
                 
                 {/* Astro Drift specific columns */}
@@ -331,7 +389,7 @@ const GameResultsPage: React.FC = () => {
                   {/* Berry Blitz specific data */}
                   {isBerryBlitz && round.timeToTargetFruit !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.timeToTargetFruit}
+                      {(round.timeToTargetFruit * 1000).toFixed(1)}
                     </td>
                   )}
                   {isBerryBlitz && round.stepsTaken !== undefined && (
@@ -352,6 +410,11 @@ const GameResultsPage: React.FC = () => {
                   {isBerryBlitz && round.collisionsWithShuriken !== undefined && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {round.collisionsWithShuriken}
+                    </td>
+                  )}
+                  {isBerryBlitz && round.roundScore !== undefined && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {round.roundScore}
                     </td>
                   )}
                   
@@ -480,11 +543,12 @@ const GameResultsPage: React.FC = () => {
       const avgTime = gameData.rounds.reduce((sum, r) => sum + (r.timeToTargetFruit || 0), 0) / gameData.rounds.length;
       const totalRedundant = gameData.rounds.reduce((sum, r) => sum + (r.redundantMoves || 0), 0);
       const totalCollisions = gameData.rounds.reduce((sum, r) => sum + (r.collisionsWithShuriken || 0), 0);
+      const avgRoundScore = gameData.rounds.reduce((sum, r) => sum + (r.roundScore || 0), 0) / gameData.rounds.length;
       
       insights.push(
         <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
           <span className="text-sm font-medium text-blue-700">Average Time to Target</span>
-          <span className="text-sm text-blue-600 font-semibold">{avgTime.toFixed(0)}ms</span>
+          <span className="text-sm text-blue-600 font-semibold">{(avgTime * 1000).toFixed(1)}ms</span>
         </div>,
         <div key="redundant" className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
           <span className="text-sm font-medium text-yellow-700">Total Redundant Moves</span>
@@ -493,6 +557,10 @@ const GameResultsPage: React.FC = () => {
         <div key="collisions" className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
           <span className="text-sm font-medium text-red-700">Total Collisions</span>
           <span className="text-sm text-red-600 font-semibold">{totalCollisions}</span>
+        </div>,
+        <div key="roundScore" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+          <span className="text-sm font-medium text-green-700">Average Round Score</span>
+          <span className="text-sm text-green-600 font-semibold">{avgRoundScore.toFixed(1)}</span>
         </div>
       );
     }
