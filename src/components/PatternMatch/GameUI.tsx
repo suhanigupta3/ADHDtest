@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameState, Target } from './types';
+import { GameState, Target, RoundMetrics } from './types';
 import { getRoundInstructions, getInRoundInstruction } from './utils';
 import ShapeRenderer from './ShapeRenderer';
 
@@ -7,37 +7,77 @@ interface GameUIProps {
   gameState: GameState;
   elapsedTime: number;
   stimulusRotation: number;
+  roundMetrics?: RoundMetrics[];
   onStartGame: () => void;
   onStartRound: () => void;
   onStimulusClick: () => void;
   onScreenClick: (e: React.MouseEvent) => void;
+  onShowQuestions: () => void;
+  onQuestionAnswer: (questionIndex: number, answer: number) => void;
+  onQuestionNav: (newIndex: number) => void;
+  showSelfReport?: boolean;
+  selfReportSubmitted?: boolean;
+  onSelfReportSubmit?: (answers: number[]) => void;
 }
+
+const selfReportQuestions = [
+  "How often do you find it difficult to focus on tasks that require sustained mental effort?",
+  "How often do you make careless mistakes in work or school tasks due to inattention?",
+  "How often do you feel the urge to act quickly without thinking through the consequences?",
+  "How often do you find it difficult to stick to rules or instructions when they change?",
+  "How often do you feel like you're constantly shifting between thoughts or actions?"
+];
+const selfReportLabels = [
+  "Never",
+  "Rarely",
+  "Sometimes",
+  "Often",
+  "Very Often"
+];
 
 const GameUI: React.FC<GameUIProps> = ({
   gameState,
   elapsedTime,
   stimulusRotation,
+  roundMetrics = [],
   onStartGame,
   onStartRound,
   onStimulusClick,
-  onScreenClick
+  onScreenClick,
+  onShowQuestions,
+  onQuestionAnswer,
+  onQuestionNav,
+  showSelfReport = false,
+  selfReportSubmitted = false,
+  onSelfReportSubmit
 }) => {
+  // Self-report state (must be top-level for hooks order)
+  const [answers, setAnswers] = React.useState<number[]>([0, 0, 0, 0, 0]);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  // --- Add localAnswer state for question slider ---
+  const currentQuestionIndex = gameState.currentQuestionIndex;
+  const currentAnswer = gameState.questionAnswers[currentQuestionIndex];
+  const [localAnswer, setLocalAnswer] = React.useState<number>(currentAnswer || 3);
+  React.useEffect(() => {
+    setLocalAnswer(currentAnswer || 3);
+  }, [currentQuestionIndex, currentAnswer]);
+
   // Show initial instructions
   if (gameState.showInstructions) {
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: 'linear-gradient(to bottom right, #f5f3ff, #e0e7ff)' }}>
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center" style={{ width: '820px', minHeight: '440px', padding: '40px 32px 24px 32px' }}>
+        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center" style={{ width: '860px', maxHeight: '440px', padding: '32px 32px 32px 32px' }}>
           {/* Instructions Box */}
           <div className="w-full flex flex-col items-center">
-            <h2 className="font-extrabold text-2xl text-purple-700 mb-6 tracking-wide text-center">How to Play</h2>
-            <ul className="text-gray-800 space-y-4 text-lg w-full max-w-2xl mx-auto list-none px-0">
-              <li className="flex items-start gap-3"><span className="mt-1">🎯</span><span>Watch for the <b>target shape and pattern</b> shown on the left</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">➡️</span><span>When a stimulus appears on the right, decide if it matches the target</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">1️⃣</span><span><b>Round 1:</b> Click if <b>shape OR pattern</b> matches</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">2️⃣</span><span><b>Round 2:</b> Click if <b>BOTH shape AND pattern</b> match</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">3️⃣</span><span><b>Round 3:</b> Click if <b>BOTH match</b> (shapes may be rotated)</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">✨</span><span>Some trials may have <b>distractions</b> (visual effects) – stay focused!</span></li>
-              <li className="flex items-start gap-3"><span className="mt-1">🏁</span><span>Complete all <b>3 rounds</b> to finish the assessment</span></li>
+            <h2 className="font-extrabold text-3xl md:text-4xl text-purple-700 mb-8 tracking-wide text-center">How to Play</h2>
+            <ul className="text-gray-800 space-y-4 text-lg w-full max-w-2xl mx-auto list-disc list-inside px-0">
+              <li>Watch for the <b>target shape and pattern</b> shown on the left</li>
+              <li>When a stimulus appears on the right, decide if it matches the target</li>
+              <li><b>Round 1:</b> Click if <b>shape OR pattern</b> matches</li>
+              <li><b>Round 2:</b> Click if <b>BOTH shape AND pattern</b> match</li>
+              <li><b>Round 3:</b> Click if <b>BOTH match</b> (shapes may be rotated)</li>
+              <li>Some trials may have <b>distractions</b> (visual effects) – stay focused!</li>
             </ul>
           </div>
           {/* Start Button */}
@@ -56,20 +96,218 @@ const GameUI: React.FC<GameUIProps> = ({
 
   // Show round start screen
   if (gameState.showRoundStart) {
+    const instructions = getRoundInstructions(gameState.currentRound);
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff', borderRadius: '1.25rem', boxShadow: '0 8px 32px rgba(60,60,120,0.10)' }}>
-        <div className="flex flex-col items-center justify-center w-full h-full">
-          <h1 className="text-5xl font-extrabold text-purple-700 mb-4 tracking-wide">
-            Starting Round {gameState.currentRound}
+        <div className="flex flex-col items-center justify-center w-full h-full px-8">
+          <h1 className="text-4xl font-extrabold text-purple-700 mb-6 tracking-wide">
+            Round {gameState.currentRound}
           </h1>
-          <p className="text-xl text-gray-600">Get ready...</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
+          <p className="text-lg text-gray-700 mb-4 text-center max-w-2xl">{instructions.text}</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left mb-8 max-w-xl w-full">
+            <h3 className="font-bold text-blue-800 mb-2">Example:</h3>
+            <p className="text-blue-700 text-base">{instructions.example}</p>
+          </div>
+          <button
+            onClick={onStartRound}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+          >
+            Start Round
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show scores screen after 3rd round
+  if (gameState.showScores) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: 'linear-gradient(to bottom right, #f5f3ff, #e0e7ff)' }}>
+        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '900px', maxHeight: '500px' }}>
+          <h1 className="text-4xl font-extrabold text-purple-700 mb-8 tracking-wide text-center">Game Complete!</h1>
+          
+          {/* Scores Grid */}
+          <div className="grid grid-cols-3 gap-6 mb-8 w-full">
+            {roundMetrics.map((metrics, index) => (
+              <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6 text-center">
+                <h3 className="text-2xl font-bold text-purple-700 mb-4">Round {index + 1}</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Accuracy:</span>
+                    <span className="font-semibold text-blue-600">
+                      {metrics.totalTrials > 0 ? Math.round((metrics.correctTrials / metrics.totalTrials) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Correct Hits:</span>
+                    <span className="font-semibold text-green-600">{metrics.correctTrials}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">False Alarms:</span>
+                    <span className="font-semibold text-red-600">{metrics.falsePositives}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Missed Targets:</span>
+                    <span className="font-semibold text-orange-600">{metrics.missedTargets}</span>
+                  </div>
+                  {metrics.reactionTimeValid > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Avg RT:</span>
+                      <span className="font-semibold text-purple-600">{Math.round(metrics.reactionTimeValid)}ms</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <button
+            onClick={onShowQuestions}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+          >
+            Answer Questions
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show Thank You screen if flagged
+  if (gameState.showThankYou) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
+        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+          <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+          <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
+          <p className="text-gray-500 text-center">You may now close this window.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show questions screen
+  if (gameState.showQuestions) {
+    if (currentQuestionIndex >= selfReportQuestions.length) {
+      // All questions answered
+      return (
+        <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
+          <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+            <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+            <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
+            <p className="text-gray-500 text-center">You may now close this window.</p>
+          </div>
+        </div>
+      );
+    }
+
+    const currentQuestion = selfReportQuestions[currentQuestionIndex];
+
+    const handleSliderChange = (val: number) => {
+      setLocalAnswer(val);
+    };
+    const handleLabelClick = (val: number) => {
+      setLocalAnswer(val);
+    };
+    const handleNext = () => {
+      if (localAnswer) {
+        onQuestionAnswer(currentQuestionIndex, localAnswer);
+      }
+    };
+    const handleBack = () => {
+      if (currentQuestionIndex > 0) {
+        onQuestionNav(currentQuestionIndex - 1);
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
+        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '800px' }}>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-purple-700 mb-4">Question {currentQuestionIndex + 1} of {selfReportQuestions.length}</h2>
+            <p className="text-lg text-gray-700">{currentQuestion}</p>
+          </div>
+          {/* Slider with labels */}
+          <div className="w-full flex flex-col items-center gap-6">
+            <div className="w-full flex flex-col items-center">
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={localAnswer}
+                onChange={e => handleSliderChange(Number(e.target.value))}
+                className="w-full max-w-lg accent-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                style={{ WebkitAppearance: 'none', appearance: 'none', height: '6px', borderRadius: '3px', background: '#e0e7ff', outline: 'none', marginBottom: '24px' }}
+              />
+              <div className="w-full max-w-lg flex flex-row justify-between mt-[-18px]">
+                {selfReportLabels.map((label, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleLabelClick(idx + 1)}
+                    className={`text-xs md:text-base px-2 py-1 rounded transition-colors duration-150 font-medium focus:outline-none ${
+                      localAnswer === idx + 1
+                        ? 'bg-purple-100 text-purple-700 border border-purple-400'
+                        : 'text-gray-700 hover:bg-purple-50 border border-transparent'
+                    }`}
+                    style={{ minWidth: 60 }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Back/Next buttons */}
+          <div className="flex flex-row gap-4 mt-8">
+            <button
+              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-300 ${
+                currentQuestionIndex === 0
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-gray-400 to-purple-400 text-white hover:from-gray-500 hover:to-purple-500'
+              }`}
+              disabled={currentQuestionIndex === 0}
+              onClick={handleBack}
+            >
+              Back
+            </button>
+            <button
+              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-300 ${
+                localAnswer
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              disabled={!localAnswer}
+              onClick={handleNext}
+            >
+              Next
+            </button>
+          </div>
+          {/* Progress dots */}
+          <div className="mt-8 text-center">
+            <div className="flex justify-center space-x-2">
+              {selfReportQuestions.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-3 h-3 rounded-full ${
+                    index < currentQuestionIndex
+                      ? 'bg-green-500'
+                      : index === currentQuestionIndex
+                      ? 'bg-purple-500'
+                      : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   // Show round instructions
-  if (!gameState.isPlaying && !gameState.gameComplete) {
+  if (!gameState.isPlaying && !gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     const instructions = getRoundInstructions(gameState.currentRound);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
@@ -102,8 +340,68 @@ const GameUI: React.FC<GameUIProps> = ({
     );
   }
 
-  // Show game complete screen
-  if (gameState.gameComplete) {
+  // Show self-report form after thank you screen (legacy - keeping for compatibility)
+  if (showSelfReport) {
+    const handleChange = (qIdx: number, value: number) => {
+      setAnswers(prev => prev.map((a, i) => (i === qIdx ? value : a)));
+    };
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (onSelfReportSubmit) onSelfReportSubmit(answers);
+      setSubmitted(true);
+    };
+    if (selfReportSubmitted || submitted) {
+      return (
+        <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
+          <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+            <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+            <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
+            <p className="text-gray-500 text-center">You may now close this window.</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8 gap-6" style={{ width: '800px' }}>
+          <h2 className="text-2xl font-bold text-purple-700 mb-2">Self-Report Questionnaire</h2>
+          <p className="text-gray-700 mb-4 text-center">Please answer the following questions about your experience and attention during the game.</p>
+          <div className="flex flex-col gap-6 w-full">
+            {selfReportQuestions.map((q, i) => (
+              <div key={i} className="w-full">
+                <label className="block text-lg font-medium text-gray-800 mb-2">{q}</label>
+                <div className="flex flex-row gap-4 justify-center">
+                  {selfReportLabels.map((label, v) => (
+                    <label key={v} className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name={`q${i}`}
+                        value={v + 1}
+                        checked={answers[i] === v + 1}
+                        onChange={() => handleChange(i, v + 1)}
+                        required
+                      />
+                      <span className="text-xs mt-1">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            type="submit"
+            className="mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            disabled={answers.some(a => a === 0)}
+          >
+            Submit
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Show game complete screen (legacy - keeping for compatibility)
+  if (gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-center items-center" style={{ width: '960px', height: '540px' }}>

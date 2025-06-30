@@ -377,100 +377,47 @@ const ShapeRenderer: React.FC<ShapeRendererProps> = ({
 
   // Zigzag pattern
   if (pattern === 'zigzag') {
-    if (shape === 'triangle') {
-      return (
-        <svg className={size} viewBox="0 0 64 64" style={{ display: 'block', ...style }}>
-          <defs>
-            <clipPath id="shape-clip-triangle-zigzag">
-              <polygon points="32,8 8,56 56,56" />
-            </clipPath>
-          </defs>
-          <g clipPath="url(#shape-clip-triangle-zigzag)">
-            {[...Array(6)].map((_, i) => (
-              <path
-                key={i}
-                d={`M ${8 + i * 8} ${12 + i * 8} L ${16 + i * 8} ${20 + i * 8} L ${24 + i * 8} ${12 + i * 8}`}
-                stroke="#333"
-                strokeWidth="2"
-                fill="none"
-              />
-            ))}
-          </g>
-          <polygon points="32,8 8,56 56,56" fill="none" stroke="#333" strokeWidth="3" />
-        </svg>
+    // Helper to generate a zigzag path string
+    const getZigzagPath = (x: number, y: number, width: number, height: number, segments: number = 7, amplitude: number = 5): string => {
+      let d = `M ${x} ${y + amplitude}`;
+      for (let i = 1; i <= segments; i++) {
+        const px = x + (i * width) / segments;
+        const py = i % 2 === 0 ? y + amplitude : y + height - amplitude;
+        d += ` L ${px} ${py}`;
+      }
+      return d;
+    };
+    // Render multiple horizontal zigzag lines
+    const zigzags = [];
+    const lines = 5;
+    for (let i = 0; i < lines; i++) {
+      zigzags.push(
+        <path
+          key={i}
+          d={getZigzagPath(8, 10 + i * 9, 48, 9, 7, 5)}
+          stroke="#333"
+          strokeWidth="2"
+          fill="none"
+        />
       );
     }
-    if (shape === 'hexagon') {
-      return (
-        <svg className={size} viewBox="0 0 64 64" style={{ display: 'block', ...style }}>
-          <defs>
-            <clipPath id="shape-clip-hexagon-zigzag">
-              <polygon points="16,8 48,8 60,32 48,56 16,56 4,32" />
-            </clipPath>
-          </defs>
-          <g clipPath="url(#shape-clip-hexagon-zigzag)">
-            {[...Array(6)].map((_, i) => (
-              <path
-                key={i}
-                d={`M ${4 + i * 9} ${12 + i * 8} L ${13 + i * 9} ${20 + i * 8} L ${22 + i * 9} ${12 + i * 8}`}
-                stroke="#333"
-                strokeWidth="2"
-                fill="none"
-              />
-            ))}
-          </g>
-          <polygon points="16,8 48,8 60,32 48,56 16,56 4,32" fill="none" stroke="#333" strokeWidth="3" />
-        </svg>
-      );
-    }
-    if (shape === 'star') {
-      return (
-        <svg className={size} viewBox="0 0 64 64" style={{ display: 'block', ...style }}>
-          <defs>
-            <clipPath id="shape-clip-star-zigzag">
-              <polygon points="32,8 39,26 58,26 42,38 48,56 32,45 16,56 22,38 6,26 25,26" />
-            </clipPath>
-          </defs>
-          <g clipPath="url(#shape-clip-star-zigzag)">
-            {[...Array(6)].map((_, i) => (
-              <path
-                key={i}
-                d={`M ${6 + i * 9} ${12 + i * 8} L ${15 + i * 9} ${20 + i * 8} L ${24 + i * 9} ${12 + i * 8}`}
-                stroke="#333"
-                strokeWidth="2"
-                fill="none"
-              />
-            ))}
-          </g>
-          <polygon points="32,8 39,26 58,26 42,38 48,56 32,45 16,56 22,38 6,26 25,26" fill="none" stroke="#333" strokeWidth="3" />
-        </svg>
-      );
-    }
+    // Shape-specific clip paths
+    let clipId = `shape-clip-${shape}-zigzag`;
+    let clipShape = null;
+    if (shape === 'circle') clipShape = <circle cx="32" cy="32" r="28" />;
+    if (shape === 'square') clipShape = <rect x="8" y="8" width="48" height="48" rx="0" />;
+    if (shape === 'triangle') clipShape = <polygon points="32,8 8,56 56,56" />;
+    if (shape === 'hexagon') clipShape = <polygon points="16,8 48,8 60,32 48,56 16,56 4,32" />;
+    if (shape === 'star') clipShape = <polygon points="32,8 39,26 58,26 42,38 48,56 32,45 16,56 22,38 6,26 25,26" />;
     return (
-      <svg
-        className={size}
-        viewBox="0 0 64 64"
-        style={{ display: 'block', ...style }}
-      >
+      <svg className={size} viewBox="0 0 64 64" style={{ display: 'block', ...style }}>
         <defs>
-          <clipPath id={`shape-clip-${shape}-zigzag`}> 
-            {shape === 'circle' && <circle cx="32" cy="32" r="28" />}
-            {shape === 'square' && <rect x="8" y="8" width="48" height="48" rx="0" />}
-          </clipPath>
+          <clipPath id={clipId}>{clipShape}</clipPath>
         </defs>
-        <g clipPath={`url(#shape-clip-${shape}-zigzag)`}>
-          {[...Array(6)].map((_, i) => (
-            <path
-              key={i}
-              d={`M ${8 + i * 8} ${12 + i * 8} L ${16 + i * 8} ${20 + i * 8} L ${24 + i * 8} ${12 + i * 8}`}
-              stroke="#333"
-              strokeWidth="2"
-              fill="none"
-            />
-          ))}
+        <g clipPath={`url(#${clipId})`}>
+          {zigzags}
         </g>
-        {shape === 'circle' && <circle cx="32" cy="32" r="28" fill="none" stroke="#333" strokeWidth="3" />}
-        {shape === 'square' && <rect x="8" y="8" width="48" height="48" rx="0" fill="none" stroke="#333" strokeWidth="3" />}
+        {clipShape && React.cloneElement(clipShape, { fill: 'none', stroke: '#333', strokeWidth: 3 })}
       </svg>
     );
   }

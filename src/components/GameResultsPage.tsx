@@ -4,31 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { mockUserResults } from '../utils/mockResults';
-
-interface GameRound {
-  // Berry Blitz fields
-  timeToTargetFruit?: number;
-  totalRoundDuration?: number;
-  stepsTaken?: number;
-  optimalSteps?: number;
-  redundantMoves?: number;
-  idleTime?: number;
-  collisionsWithShuriken?: number;
-  transitionAdaptTime?: number;
-  roundScore?: number;
-  
-  // Astro Drift fields
-  timeToComplete?: number;
-  asteroidsAvoided?: number;
-  asteroidsHit?: number;
-  aliensDefeated?: number;
-  questionsAnswered?: number;
-  questionsCorrect?: number;
-  reactionTime?: number;
-  focusBreaks?: number;
-  navigationErrors?: number;
-  optimalPathDeviation?: number;
-}
+import type { GameRound } from './PatternMatch/types';
 
 interface SelfReport {
   q1_focusDifficulty?: number;
@@ -54,7 +30,7 @@ interface GameData {
 
 interface UserResults {
   berryBlitz?: GameData;
-  astrodrift?: GameData;
+  patternMatch?: GameData;
   kitchenQuest?: GameData;
   [key: string]: GameData | undefined;
 }
@@ -83,95 +59,77 @@ const GameResultsPage: React.FC = () => {
         const berryBlitzDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BerryBlitz'));
         if (berryBlitzDoc.exists()) {
           const berryBlitzData = berryBlitzDoc.data();
-          console.log('✅ Berry Blitz data found:', berryBlitzData);
-          console.log('🔍 Berry Blitz data structure:', {
-            hasScores: !!berryBlitzData.scores,
-            hasSelfReport: !!berryBlitzData.selfReport,
-            hasRounds: !!berryBlitzData.rounds,
-            roundsLength: berryBlitzData.rounds?.length || 0,
-            scoresKeys: berryBlitzData.scores ? Object.keys(berryBlitzData.scores) : [],
-            selfReportKeys: berryBlitzData.selfReport ? Object.keys(berryBlitzData.selfReport) : []
-          });
-          
           if (berryBlitzData.scores && berryBlitzData.selfReport) {
-            // Fetch rounds from the subcollection
             let rounds: GameRound[] = [];
             try {
               const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'BerryBlitz', 'rounds'));
               rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
-              console.log('✅ Berry Blitz rounds fetched:', rounds);
             } catch (roundsError) {
-              console.log('⚠️ Could not fetch rounds subcollection:', roundsError);
-              // If rounds subcollection doesn't exist, try to use rounds from main document
               if (berryBlitzData.rounds && Array.isArray(berryBlitzData.rounds)) {
                 rounds = berryBlitzData.rounds;
-                console.log('✅ Using rounds from main document:', rounds);
               }
             }
-            
             results.berryBlitz = {
               scores: berryBlitzData.scores,
               selfReport: berryBlitzData.selfReport,
               rounds: rounds
             };
-            console.log('✅ Berry Blitz results processed:', results.berryBlitz);
           }
-        } else {
-          console.log('⚠️ No Berry Blitz data found for user');
         }
-        
-        // Fetch Astro Drift data
-        const astroDriftDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'AstroDrift'));
-        if (astroDriftDoc.exists()) {
-          const astroDriftData = astroDriftDoc.data();
-          console.log('✅ Astro Drift data found:', astroDriftData);
-          
-          if (astroDriftData.scores && astroDriftData.selfReport) {
-            // Fetch rounds from the subcollection
+        // Fetch PatternMatch data
+        const patternMatchDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'PatternMatch'));
+        if (patternMatchDoc.exists()) {
+          const patternMatchData = patternMatchDoc.data();
+          if (patternMatchData.scores && patternMatchData.selfReport) {
             let rounds: GameRound[] = [];
             try {
-              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'AstroDrift', 'rounds'));
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'PatternMatch', 'rounds'));
               rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
-              console.log('✅ Astro Drift rounds fetched:', rounds);
             } catch (roundsError) {
-              console.log('⚠️ Could not fetch Astro Drift rounds subcollection:', roundsError);
-              // If rounds subcollection doesn't exist, try to use rounds from main document
-              if (astroDriftData.rounds && Array.isArray(astroDriftData.rounds)) {
-                rounds = astroDriftData.rounds;
-                console.log('✅ Using Astro Drift rounds from main document:', rounds);
+              if (patternMatchData.rounds && Array.isArray(patternMatchData.rounds)) {
+                rounds = patternMatchData.rounds;
               }
             }
-            
-            results.astrodrift = {
-              scores: astroDriftData.scores,
-              selfReport: astroDriftData.selfReport,
+            results.patternMatch = {
+              scores: patternMatchData.scores,
+              selfReport: patternMatchData.selfReport,
               rounds: rounds
             };
-            console.log('✅ Astro Drift results processed:', results.astrodrift);
           }
-        } else {
-          console.log('⚠️ No Astro Drift data found for user');
         }
-        
-        // Check if we have any real data
+        // Fetch Kitchen Quest data
+        const kitchenQuestDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'KitchenQuest'));
+        if (kitchenQuestDoc.exists()) {
+          const kitchenQuestData = kitchenQuestDoc.data();
+          if (kitchenQuestData.scores && kitchenQuestData.selfReport) {
+            let rounds: GameRound[] = [];
+            try {
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'KitchenQuest', 'rounds'));
+              rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
+            } catch (roundsError) {
+              if (kitchenQuestData.rounds && Array.isArray(kitchenQuestData.rounds)) {
+                rounds = kitchenQuestData.rounds;
+              }
+            }
+            results.kitchenQuest = {
+              scores: kitchenQuestData.scores,
+              selfReport: kitchenQuestData.selfReport,
+              rounds: rounds
+            };
+          }
+        }
         if (Object.keys(results).length > 0) {
-          console.log('✅ Using real Firebase data:', results);
           setUserResults(results);
         } else {
-          console.log('⚠️ No real data found, using mock data for demonstration');
           setUserResults(mockUserResults);
         }
-        
       } catch (err) {
-        console.error('❌ Error fetching results:', err);
-        console.log('⚠️ Using mock data due to Firebase error');
         setUserResults(mockUserResults);
         setError('Failed to load real data. Showing demonstration data.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchUserResults();
   }, [currentUser]);
 
@@ -209,14 +167,11 @@ const GameResultsPage: React.FC = () => {
 
   const getGameProgress = () => {
     if (!userResults) return { completed: 0, total: 3, percentage: 0, nextGame: null };
-    
-    const gameOrder = ['berryBlitz', 'astrodrift', 'kitchenQuest'];
+    const gameOrder = ['berryBlitz', 'patternMatch', 'kitchenQuest'];
     const completedGames = gameOrder.filter(game => userResults[game]?.scores);
     const completedCount = completedGames.length;
     const totalGames = gameOrder.length;
     const percentage = (completedCount / totalGames) * 100;
-    
-    // Find the next game to complete
     let nextGame = null;
     for (const game of gameOrder) {
       if (!userResults[game]?.scores) {
@@ -224,7 +179,6 @@ const GameResultsPage: React.FC = () => {
         break;
       }
     }
-    
     return {
       completed: completedCount,
       total: totalGames,
@@ -238,7 +192,7 @@ const GameResultsPage: React.FC = () => {
   const getGameDisplayName = (gameKey: string) => {
     const nameMap: { [key: string]: string } = {
       berryBlitz: 'Berry Blitz',
-      astrodrift: 'Astro Drift',
+      patternMatch: 'Pattern Match',
       kitchenQuest: 'Kitchen Quest'
     };
     return nameMap[gameKey] || gameKey;
@@ -247,7 +201,7 @@ const GameResultsPage: React.FC = () => {
   const getGameDescription = (gameKey: string) => {
     const descriptions: { [key: string]: string } = {
       berryBlitz: 'Navigate through obstacles to collect fruits while avoiding shurikens',
-      astrodrift: 'Control your spaceship through asteroid fields with precision',
+      patternMatch: 'Match patterns as quickly and accurately as possible',
       kitchenQuest: 'Manage multiple cooking tasks while maintaining focus and organization'
     };
     return descriptions[gameKey] || 'Complete this game to continue your assessment';
@@ -343,12 +297,12 @@ const GameResultsPage: React.FC = () => {
     console.log(`🔍 Rendering rounds table for ${gameName}:`, rounds);
     
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
-                           gameName === 'astrodrift' ? 'Astro Drift' : 
+                           gameName === 'patternMatch' ? 'Pattern Match' : 
                            gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
 
     // Determine which fields to show based on game type
     const isBerryBlitz = gameName === 'berryBlitz';
-    const isAstroDrift = gameName === 'astrodrift';
+    const isPatternMatch = gameName === 'patternMatch';
 
     // If no rounds data, show a message instead of hiding the entire section
     if (!rounds || rounds.length === 0) {
@@ -394,25 +348,17 @@ const GameResultsPage: React.FC = () => {
                 {isBerryBlitz && rounds[0]?.roundScore !== undefined && (
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Score</th>
                 )}
-                
-                {/* Astro Drift specific columns */}
-                {isAstroDrift && rounds[0]?.timeToComplete !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time (ms)</th>
-                )}
-                {isAstroDrift && rounds[0]?.asteroidsAvoided !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asteroids Avoided</th>
-                )}
-                {isAstroDrift && rounds[0]?.asteroidsHit !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asteroids Hit</th>
-                )}
-                {isAstroDrift && rounds[0]?.aliensDefeated !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aliens Defeated</th>
-                )}
-                {isAstroDrift && rounds[0]?.questionsCorrect !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questions Correct</th>
-                )}
-                {isAstroDrift && rounds[0]?.reactionTime !== undefined && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reaction Time (ms)</th>
+
+                {/* PatternMatch specific columns */}
+                {isPatternMatch && (
+                  <>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hits</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">False Positives</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missed</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (s)</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg RT (ms)</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                  </>
                 )}
               </tr>
             </thead>
@@ -454,37 +400,17 @@ const GameResultsPage: React.FC = () => {
                       {round.roundScore}
                     </td>
                   )}
-                  
-                  {/* Astro Drift specific data */}
-                  {isAstroDrift && round.timeToComplete !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.timeToComplete}
-                    </td>
-                  )}
-                  {isAstroDrift && round.asteroidsAvoided !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.asteroidsAvoided}
-                    </td>
-                  )}
-                  {isAstroDrift && round.asteroidsHit !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.asteroidsHit}
-                    </td>
-                  )}
-                  {isAstroDrift && round.aliensDefeated !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.aliensDefeated}
-                    </td>
-                  )}
-                  {isAstroDrift && round.questionsCorrect !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.questionsCorrect}/5
-                    </td>
-                  )}
-                  {isAstroDrift && round.reactionTime !== undefined && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {round.reactionTime}
-                    </td>
+
+                  {/* PatternMatch specific data */}
+                  {isPatternMatch && (
+                    <>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.correctHits}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.falsePositives}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.missedTargets}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.roundDurationMs ? (round.roundDurationMs / 1000).toFixed(1) : '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.averageReactionTimeMs ?? '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{calculatePatternMatchRoundScore(round)}</td>
+                    </>
                   )}
                 </tr>
               ))}
@@ -499,21 +425,45 @@ const GameResultsPage: React.FC = () => {
     const questions = Object.keys(selfReport).filter(key => selfReport[key as keyof SelfReport] !== undefined);
     if (questions.length === 0) return null;
 
-    const questionLabels: { [key: string]: string } = {
-      q1_focusDifficulty: 'Focus Difficulty',
-      q2_forgetfulness: 'Forgetfulness',
-      q3_restlessness: 'Restlessness',
-      q4_impulsivity: 'Impulsivity',
-      q5_followThrough: 'Follow Through',
-    };
-
-    // Define fixed order for questions
-    const questionOrder = ['q1_focusDifficulty', 'q2_forgetfulness', 'q3_restlessness', 'q4_impulsivity', 'q5_followThrough'];
+    // Use different question keys/labels for PatternMatch
+    let questionLabels: { [key: string]: string };
+    let questionOrder: string[];
+    if (gameName === 'patternMatch') {
+      questionLabels = {
+        q1_focus_difficulty: 'Focus Difficulty',
+        q2_careless_mistakes: 'Careless Mistakes',
+        q3_act_without_thinking: 'Act Without Thinking',
+        q4_rule_following_difficulty: 'Rule Following Difficulty',
+        q5_mind_shifting: 'Mind Shifting',
+      };
+      questionOrder = [
+        'q1_focus_difficulty',
+        'q2_careless_mistakes',
+        'q3_act_without_thinking',
+        'q4_rule_following_difficulty',
+        'q5_mind_shifting',
+      ];
+    } else {
+      questionLabels = {
+        q1_focusDifficulty: 'Focus Difficulty',
+        q2_forgetfulness: 'Forgetfulness',
+        q3_restlessness: 'Restlessness',
+        q4_impulsivity: 'Impulsivity',
+        q5_followThrough: 'Follow Through',
+      };
+      questionOrder = [
+        'q1_focusDifficulty',
+        'q2_forgetfulness',
+        'q3_restlessness',
+        'q4_impulsivity',
+        'q5_followThrough',
+      ];
+    }
     const orderedQuestions = questionOrder.filter(question => questions.includes(question));
 
     const scoreLabels: { [key: number]: string } = {
       1: 'Never',
-      2: 'Rarely', 
+      2: 'Rarely',
       3: 'Sometimes',
       4: 'Often',
       5: 'Very Often'
@@ -522,13 +472,13 @@ const GameResultsPage: React.FC = () => {
     const scoreInterpretations: { [key: number]: string } = {
       1: 'Symptom is essentially absent',
       2: 'Symptom occurs infrequently',
-      3: 'Symptom occurs occasionally', 
+      3: 'Symptom occurs occasionally',
       4: 'Symptom occurs regularly',
       5: 'Symptom is consistently present'
     };
 
-    const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
-                           gameName === 'astrodrift' ? 'Astro Drift' : 
+    const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' :
+                           gameName === 'patternMatch' ? 'Pattern Match' :
                            gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
 
     return (
@@ -558,7 +508,7 @@ const GameResultsPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  <span 
+                  <span
                     className="text-sm text-gray-600 ml-2 w-20 text-right"
                     title={scoreInterpretations[score] || 'Unknown interpretation'}
                   >
@@ -575,7 +525,7 @@ const GameResultsPage: React.FC = () => {
 
   const renderGameInsights = (gameData: GameData, gameName: string) => {
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
-                           gameName === 'astrodrift' ? 'Astro Drift' : 
+                           gameName === 'patternMatch' ? 'Pattern Match' : 
                            gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
 
     let insights = [];
@@ -607,44 +557,6 @@ const GameResultsPage: React.FC = () => {
         <div key="roundScore" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
           <span className="text-sm font-medium text-green-700">Average Round Score</span>
           <span className="text-sm text-green-600 font-semibold">{avgRoundScore.toFixed(1)}</span>
-        </div>
-      );
-    }
-
-    if (gameName === 'astrodrift' && gameData.rounds.length > 0) {
-      const avgTime = gameData.rounds.reduce((sum, r) => sum + (r.timeToComplete || 0), 0) / gameData.rounds.length;
-      const totalAsteroidsAvoided = gameData.rounds.reduce((sum, r) => sum + (r.asteroidsAvoided || 0), 0);
-      const totalAsteroidsHit = gameData.rounds.reduce((sum, r) => sum + (r.asteroidsHit || 0), 0);
-      const totalAliensDefeated = gameData.rounds.reduce((sum, r) => sum + (r.aliensDefeated || 0), 0);
-      const avgReactionTime = gameData.rounds.reduce((sum, r) => sum + (r.reactionTime || 0), 0) / gameData.rounds.length;
-      const totalQuestionsCorrect = gameData.rounds.reduce((sum, r) => sum + (r.questionsCorrect || 0), 0);
-      const totalQuestionsAnswered = gameData.rounds.reduce((sum, r) => sum + (r.questionsAnswered || 0), 0);
-      const accuracyRate = totalQuestionsAnswered > 0 ? (totalQuestionsCorrect / totalQuestionsAnswered * 100) : 0;
-      
-      insights.push(
-        <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-          <span className="text-sm font-medium text-blue-700">Average Completion Time</span>
-          <span className="text-sm text-blue-600 font-semibold">{formatTimeToReadable(avgTime)}</span>
-        </div>,
-        <div key="asteroids" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-          <span className="text-sm font-medium text-green-700">Asteroids Avoided</span>
-          <span className="text-sm text-green-600 font-semibold">{totalAsteroidsAvoided}</span>
-        </div>,
-        <div key="hits" className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-          <span className="text-sm font-medium text-red-700">Asteroids Hit</span>
-          <span className="text-sm text-red-600 font-semibold">{totalAsteroidsHit}</span>
-        </div>,
-        <div key="aliens" className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-          <span className="text-sm font-medium text-purple-700">Aliens Defeated</span>
-          <span className="text-sm text-purple-600 font-semibold">{totalAliensDefeated}</span>
-        </div>,
-        <div key="reaction" className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-          <span className="text-sm font-medium text-orange-700">Average Reaction Time</span>
-          <span className="text-sm text-orange-600 font-semibold">{formatTimeToReadable(avgReactionTime)}</span>
-        </div>,
-        <div key="accuracy" className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
-          <span className="text-sm font-medium text-indigo-700">Question Accuracy</span>
-          <span className="text-sm text-indigo-600 font-semibold">{accuracyRate.toFixed(1)}%</span>
         </div>
       );
     }
@@ -756,7 +668,7 @@ const GameResultsPage: React.FC = () => {
 
                   <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
                     {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
-                    {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
+                    {gameKey === 'patternMatch' && <span className="mr-2">🚀</span>}
                     {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
                     {getGameDisplayName(gameKey)}
                   </h3>
@@ -872,7 +784,7 @@ const GameResultsPage: React.FC = () => {
                     >
                       <h4 className="font-medium text-gray-800 mb-2">
                         {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
-                        {gameKey === 'astrodrift' && <span className="mr-2">🚀</span>}
+                        {gameKey === 'patternMatch' && <span className="mr-2">🚀</span>}
                         {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
                         {getGameDisplayName(gameKey)}
                       </h4>
@@ -975,7 +887,7 @@ const GameResultsPage: React.FC = () => {
                 }`}
               >
                 {game === 'berryBlitz' ? 'Berry Blitz' : 
-                 game === 'astrodrift' ? 'Astro Drift' : 
+                 game === 'patternMatch' ? 'Pattern Match' : 
                  game === 'kitchenQuest' ? 'Kitchen Quest' : game}
               </button>
             ))}
@@ -996,7 +908,7 @@ const GameResultsPage: React.FC = () => {
                     <div className="text-center mb-8">
                       <h2 className="text-3xl font-bold text-gray-800 mb-2">
                         {selectedGame === 'berryBlitz' ? 'Berry Blitz' : 
-                         selectedGame === 'astrodrift' ? 'Astro Drift' : 
+                         selectedGame === 'patternMatch' ? 'Pattern Match' : 
                          selectedGame === 'kitchenQuest' ? 'Kitchen Quest' : selectedGame} Results
                       </h2>
                     </div>
@@ -1121,5 +1033,38 @@ const GameResultsPage: React.FC = () => {
     </div>
   );
 };
+
+function calculatePatternMatchRoundScore(round: GameRound) {
+  // Defensive: avoid division by zero
+  const correctHits = round.correctHits ?? 0;
+  const falsePositives = round.falsePositives ?? 0;
+  const missedTargets = round.missedTargets ?? 0;
+  // Compute correctSkips from totalTrials if available
+  let correctSkips = 0;
+  if (typeof round.totalTrials === 'number') {
+    correctSkips = round.totalTrials - correctHits - falsePositives - missedTargets;
+    if (correctSkips < 0) correctSkips = 0;
+  }
+  const totalTargets = correctHits + missedTargets;
+  const totalNonTargets = correctSkips + falsePositives;
+  const avgRT = round.averageReactionTimeMs ?? 0;
+  const targetSwitchCount = round.targetSwitchCount ?? 0;
+  const hitWeight = 1.0;
+  const skipWeight = 0.5;
+  const falsePositivePenalty = 0.7;
+  const missPenalty = 1.0;
+  const reactionTimePenalty = Math.max(0, (avgRT - 500) / 1000); // Example: penalize RT > 500ms
+  const switchBonus = Math.min(targetSwitchCount * 0.1, 1.0); // Example: up to +1 bonus
+  const difficultyWeight = round.roundDifficultyWeight ?? 1.0;
+  const score = (
+    (correctHits / (totalTargets || 1)) * hitWeight +
+    (correctSkips / (totalNonTargets || 1)) * skipWeight -
+    (falsePositives / (totalNonTargets || 1)) * falsePositivePenalty -
+    (missedTargets / (totalTargets || 1)) * missPenalty -
+    reactionTimePenalty +
+    switchBonus
+  ) * difficultyWeight;
+  return Math.max(0, score).toFixed(2);
+}
 
 export default GameResultsPage;

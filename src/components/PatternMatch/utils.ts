@@ -86,19 +86,19 @@ export const getRoundInstructions = (round: number) => {
   if (round === 1) {
     return {
       title: 'Round 1: Match Shape OR Pattern',
-      text: 'Click if the shape OR the pattern matches the target. Otherwise, do nothing.',
+      text: 'Click if the shape OR the pattern matches the target.',
       example: "Target = Triangle + Stripes. Click for Circle + Stripes or Triangle + Dots. Don't click for Square + Checkers."
     };
   } else if (round === 2) {
     return {
       title: 'Round 2: Match Shape AND Pattern',
-      text: 'Click only if BOTH the shape AND the pattern match the target. Otherwise, do nothing.',
+      text: 'Click only if BOTH the shape AND the pattern match the target.',
       example: "Target = Square + Dots. Click for Square + Dots. Don't click for Square + Stripes or Triangle + Dots."
     };
   } else {
     return {
       title: 'Round 3: Match Shape AND Pattern (with Rotation)',
-      text: 'Click only if BOTH the shape AND the pattern match the target (even if the shape is rotated). Otherwise, do nothing.',
+      text: 'Click only if BOTH the shape AND the pattern match the target (even if the shape is rotated).',
       example: "Target = Star + Checkered. Click for Star + Checkered at any rotation. Don't click for Star + Dots or Circle + Checkered."
     };
   }
@@ -107,11 +107,11 @@ export const getRoundInstructions = (round: number) => {
 // Helper: Get in-round instruction text
 export const getInRoundInstruction = (round: number) => {
   if (round === 1) {
-    return 'If the shape OR pattern matches the target, Click anywhere or press SPACEBAR, else Do Nothing.';
+    return 'If the shape OR pattern matches the target, Click anywhere or press SPACEBAR.';
   } else if (round === 2) {
-    return 'If BOTH the shape AND pattern match the target, Click anywhere or press SPACEBAR, else Do Nothing.';
+    return 'If BOTH the shape AND pattern match the target, Click anywhere or press SPACEBAR.';
   } else {
-    return 'If BOTH the shape AND pattern match the target (even if the shape is rotated), Click anywhere or press SPACEBAR, else Do Nothing.';
+    return 'If BOTH the shape AND pattern match the target (even if the shape is rotated), Click anywhere or press SPACEBAR.';
   }
 };
 
