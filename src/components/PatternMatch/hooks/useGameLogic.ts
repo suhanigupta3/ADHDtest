@@ -11,12 +11,115 @@ import { SHAPES, PATTERNS, TRIALS_PER_ROUND, TOTAL_ROUNDS, TRIAL_DURATION_MS, RO
 import { db } from '../../../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 
+// Score Interpretation Table
+// 0.0–1.9: No concern (No follow-up needed)
+// 2.0–3.9: Low concern (Track over time)
+// 4.0–6.4: Monitor symptoms (Recommend lifestyle adjustments)
+// 6.5–8.4: Moderate concern (Suggest clinical screening)
+// 8.5–10.0: High concern (Strongly recommend professional evaluation)
+
+// --- Domain scoring constants ---
+const MAX_SELF_REPORT_SCORE = 5;  // Responses range from 1–5
+const DOMAIN_SCALE = 3;           // All domain scores normalized to 0–3 for blending
+
 function average(arr: number[]): number {
+  if (!arr.length) return 0;
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-function clamp(x: number): number {
-  return Math.max(0, Math.min(x, 10));
+function clamp(x: number, min = 0, max = 10): number {
+  return Math.max(min, Math.min(max, x));
+}
+
+function normalizeSelfReport(value: number) {
+  return (value / MAX_SELF_REPORT_SCORE) * DOMAIN_SCALE;
+}
+
+// --- New ADHD scoring logic ---
+const RT_MIN = 200;    // ms (fastest plausible RT)
+const RT_MAX = 1000;   // ms (slowest plausible RT)
+
+function clamp10(x: number): number {
+  return Math.max(0, Math.min(10, x));
+}
+
+function normalizeSR(q: number): number {
+  return ((q - 1) / 4) * 10;
+}
+
+function computeADHDScores(patternMatch: { rounds: any[]; selfReport: any }) {
+  const { rounds, selfReport } = patternMatch;
+
+  // 1. Aggregate weighted sums
+  let totalTrialsAll = 0;
+  let missedTargetsAll = 0;
+  let falsePositivesAll = 0;
+  let correctHitsAll = 0;
+  let sumRTbyHits = 0;
+  let weightHits = 0;
+  let targetSwitchAll = 0;
+  let minSwitchAll = 0;
+  let moveDuringStimAll = 0;
+
+  for (const r of rounds) {
+    const w = r.roundDifficultyWeight ?? 1;
+    totalTrialsAll     += w * (r.totalTrials ?? 0);
+    missedTargetsAll   += w * (r.missedTargets ?? 0);
+    falsePositivesAll  += w * (r.falsePositives ?? 0);
+    correctHitsAll     += w * (r.correctHits ?? 0);
+    sumRTbyHits        += w * (r.correctHits ?? 0) * (r.averageReactionTimeMs ?? 0);
+    weightHits         += w * (r.correctHits ?? 0);
+    targetSwitchAll    += w * (r.targetSwitchCount ?? 0);
+    minSwitchAll       += w * (r.minimumTargetSwitchExpected ?? 0);
+    // Support both r.mouseTracking.movementDuringStimulusCount and r.movementDuringStimulusCount
+    let moveStim = 0;
+    if (r.mouseTracking && typeof r.mouseTracking.movementDuringStimulusCount === 'number') {
+      moveStim = r.mouseTracking.movementDuringStimulusCount;
+    } else if (typeof r.movementDuringStimulusCount === 'number') {
+      moveStim = r.movementDuringStimulusCount;
+    }
+    moveDuringStimAll  += w * moveStim;
+  }
+
+  const avgRT_weighted = weightHits > 0 ? sumRTbyHits / weightHits : RT_MAX;
+
+  // 2. Game‐based scores (0–10)
+  const gameInattention = totalTrialsAll > 0 ? ((missedTargetsAll + falsePositivesAll) / totalTrialsAll) * 10 : 0;
+
+  const FA_rate = totalTrialsAll > 0 ? (falsePositivesAll / totalTrialsAll) * 10 : 0;
+  const RT_rate = clamp10(((RT_MAX - avgRT_weighted) / (RT_MAX - RT_MIN)) * 10);
+  const gameImpulsivity = 0.5 * FA_rate + 0.5 * RT_rate;
+
+  const switchDeficit = minSwitchAll > 0 ? Math.max(0, minSwitchAll - targetSwitchAll) : 0;
+  const gameExecutive = minSwitchAll > 0 ? clamp10((switchDeficit / minSwitchAll) * 10) : 0;
+
+  const gameHyperactivity = totalTrialsAll > 0 ? (moveDuringStimAll / totalTrialsAll) * 10 : 0;
+
+  // 3. Self‐report scores (0–10)
+  const srInattention = selfReport && selfReport.q1_focus_difficulty && selfReport.q2_careless_mistakes
+    ? normalizeSR((selfReport.q1_focus_difficulty + selfReport.q2_careless_mistakes) / 2)
+    : 0;
+  const srImpulsivity = selfReport && selfReport.q3_act_without_thinking
+    ? normalizeSR(selfReport.q3_act_without_thinking)
+    : 0;
+  const srExecutive = selfReport && selfReport.q4_rule_following_difficulty && selfReport.q5_mind_shifting
+    ? normalizeSR((selfReport.q4_rule_following_difficulty + selfReport.q5_mind_shifting) / 2)
+    : 0;
+  // If you have hyperactivity SR items, compute similarly; otherwise set to 0
+  const srHyperactivity = 0;
+
+  // 4. Combine 60% game + 40% self‐report, clamp to [0,10]
+  const inattention        = clamp10(0.6 * gameInattention   + 0.4 * srInattention);
+  const impulsivity        = clamp10(0.6 * gameImpulsivity   + 0.4 * srImpulsivity);
+  const executive_function = clamp10(0.6 * gameExecutive     + 0.4 * srExecutive);
+  const hyperactivity      = clamp10(0.6 * gameHyperactivity + 0.4 * srHyperactivity);
+
+  return {
+    inattention,
+    impulsivity,
+    executive_function,
+    hyperactivity
+  };
 }
 
 interface UseGameLogicProps {
@@ -62,6 +165,9 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   const [showRoundInstructions, setShowRoundInstructions] = useState(true);
   const [stimulusRotation, setStimulusRotation] = useState(0);
   const [roundMetrics, setRoundMetrics] = useState<RoundMetrics[]>([]);
+
+  // Add mouseMoveCount state
+  const [mouseMoveCount, setMouseMoveCount] = useState(0);
 
   // Handle user response
   const handleUserResponse = useCallback((clicked: boolean, distractionActive?: boolean) => {
@@ -129,6 +235,12 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           if (gameState.currentRound === 3 && userId) {
             uploadRound3IfNeeded(gameState, userId);
           }
+          // Calculate and set roundMetrics for all 3 rounds
+          const finalRoundMetrics = [1, 2, 3].map(rn => {
+            const roundTrials = [...prev.trials, trial].filter((t: any) => t.round === rn);
+            return calculateRoundMetrics(roundTrials);
+          });
+          setRoundMetrics(finalRoundMetrics);
           return {
             ...prev,
             gameComplete: true,
@@ -388,7 +500,9 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         let roundDifficultyWeight = 1.0;
         let targetSwitchCount = r.filter((t: any) => t.targetChanged).length;
         let minimumTargetSwitchExpected = 3;
-        let mouseMoveCount = 0; // set to 0 if not tracked
+        let roundMouseMoveCount = (gameState.currentRound === rn && gameState.isPlaying) ? mouseMoveCount : 0;
+        let movementDuringStimulusCount = 0; // set to 0 if not tracked
+        let cursorDistanceTraveledPx = 0; // set to 0 if not tracked
         if (rn === 2) roundDifficultyWeight = 1.2;
         if (rn === 3) roundDifficultyWeight = 1.4;
         return {
@@ -401,51 +515,33 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           roundDifficultyWeight,
           targetSwitchCount,
           minimumTargetSwitchExpected,
-          mouseMoveCount
+          mouseMoveCount: roundMouseMoveCount,
+          movementDuringStimulusCount,
+          cursorDistanceTraveledPx
         };
       });
 
-      // Executive Function
-      const executive_function = clamp(average(rounds.map(r => {
-        const switchScore = Math.min(r.targetSwitchCount / 3, 1);  // expect 3+ switches
-        const accuracy = r.correctHits / (r.correctHits + r.missedTargets);
-        return switchScore * accuracy * r.roundDifficultyWeight;
-      })) * 10);
+      // Build selfReport from latestAnswers (if available)
+      const selfReport = latestAnswers && latestAnswers.length === 5 ? {
+        q1_focus_difficulty: latestAnswers[0],
+        q2_careless_mistakes: latestAnswers[1],
+        q3_act_without_thinking: latestAnswers[2],
+        q4_rule_following_difficulty: latestAnswers[3],
+        q5_mind_shifting: latestAnswers[4]
+      } : {};
 
-      // Inattention
-      const inattention = clamp(average(rounds.map(r => {
-        const hitRate = r.correctHits / (r.correctHits + r.missedTargets);  // max 1
-        const rtPenalty = Math.min(r.averageReactionTimeMs / 1000, 2);  // max 2 sec
-        return (hitRate / rtPenalty) * r.roundDifficultyWeight;
-      })) * 10);
-
-      // Impulsivity
-      const impulsivity = clamp(average(rounds.map(r => {
-        const errorRate = r.falsePositives / (r.correctSkips + r.falsePositives + 1);
-        return (1 - errorRate) * r.roundDifficultyWeight;
-      })) * 10);
-
-      // Hyperactivity
-      const hyperactivity = clamp(average(rounds.map(r => (
-        r.mouseMoveCount / r.totalTrials
-      ))));  // pre-normalized
-
-      // Composite
-      const adhd_composite = clamp(
-        inattention * 0.35 +
-        executive_function * 0.35 +
-        impulsivity * 0.25 +
-        hyperactivity * 0.05
+      // Use new aggregate scoring function
+      const scores = computeADHDScores({ rounds, selfReport });
+      const adhd_composite = clamp10(
+        scores.inattention * 0.35 +
+        scores.executive_function * 0.35 +
+        scores.impulsivity * 0.25 +
+        scores.hyperactivity * 0.05
       );
-      const scores = {
-        adhd_composite: Number(adhd_composite.toFixed(2)),
-        executive_function: Number(executive_function.toFixed(2)),
-        hyperactivity: Number(hyperactivity.toFixed(2)),
-        impulsivity: Number(impulsivity.toFixed(2)),
-        inattention: Number(inattention.toFixed(2))
-      };
-      console.log('[PatternMatch][FIREBASE] Posting scores to Firebase (final formulas):', scores);
-      await setDoc(doc(db, 'users', userId, 'games', 'PatternMatch'), { scores }, { merge: true });
+      const scoresWithComposite = { ...scores, adhd_composite };
+
+      console.log('[PatternMatch][FIREBASE] Posting scores to Firebase (final formulas):', scoresWithComposite);
+      await setDoc(doc(db, 'users', userId, 'games', 'PatternMatch'), { scores: scoresWithComposite }, { merge: true });
       console.log('[PatternMatch][FIREBASE] Successfully posted scores to Firebase');
       // --- NEW: Mark game2Completed in gameProgress ---
       try {
@@ -457,13 +553,6 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       // Post self-report answers to Firebase
       const allValid = latestAnswers.length === 5 && latestAnswers.every(a => typeof a === 'number' && !isNaN(a));
       if (allValid) {
-        const selfReport = {
-          q1_focus_difficulty: latestAnswers[0],
-          q2_careless_mistakes: latestAnswers[1],
-          q3_act_without_thinking: latestAnswers[2],
-          q4_rule_following_difficulty: latestAnswers[3],
-          q5_mind_shifting: latestAnswers[4]
-        };
         try {
           await setDoc(doc(db, 'users', userId, 'games', 'PatternMatch'), { selfReport }, { merge: true });
           console.log('[PatternMatch][FIREBASE] Successfully posted self-report to Firebase:', selfReport);
@@ -507,8 +596,20 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     }
   }, [userId, onError, roundMetrics, onGameComplete, gameState.questionAnswers, gameState.trials]);
 
-  // When starting a new round, show instructions and wait for user to click Start
+  // Track mouse movement only while a round is active
+  useEffect(() => {
+    if (gameState.isPlaying) {
+      const handleMouseMove = () => setMouseMoveCount(count => count + 1);
+      window.addEventListener('mousemove', handleMouseMove);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+  }, [gameState.isPlaying]);
+
+  // Reset mouseMoveCount at the start of each round
   const startRound = () => {
+    setMouseMoveCount(0);
     setShowRoundInstructions(false);
     setGameState(prev => ({
       ...prev,
