@@ -70,7 +70,7 @@ const GameUI: React.FC<GameUIProps> = ({
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center" style={{ width: '860px', maxHeight: '440px', padding: '32px 32px 32px 32px' }}>
           {/* Instructions Box */}
           <div className="w-full flex flex-col items-center">
-            <h2 className="font-extrabold text-3xl md:text-4xl text-purple-700 mb-8 tracking-wide text-center">How to Play</h2>
+            <h2 className="font-extrabold text-3xl md:text-4xl text-sleek-700 mb-8 tracking-wide text-center">How to Play</h2>
             <ul className="text-gray-800 space-y-4 text-lg w-full max-w-2xl mx-auto list-disc list-inside px-0">
               <li>Watch for the <b>target shape and pattern</b> shown on the left</li>
               <li>When a stimulus appears on the right, decide if it matches the target</li>
@@ -84,7 +84,7 @@ const GameUI: React.FC<GameUIProps> = ({
           <div className="w-full flex justify-center items-center mt-10">
             <button
               onClick={onStartGame}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+              className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
             >
               Start Game
             </button>
@@ -100,7 +100,7 @@ const GameUI: React.FC<GameUIProps> = ({
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff', borderRadius: '1.25rem', boxShadow: '0 8px 32px rgba(60,60,120,0.10)' }}>
         <div className="flex flex-col items-center justify-center w-full h-full px-8">
-          <h1 className="text-4xl font-extrabold text-purple-700 mb-6 tracking-wide">
+          <h1 className="text-4xl font-extrabold text-sleek-700 mb-6 tracking-wide">
             Round {gameState.currentRound}
           </h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
@@ -111,7 +111,7 @@ const GameUI: React.FC<GameUIProps> = ({
           </div>
           <button
             onClick={onStartRound}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
           >
             Start Round
           </button>
@@ -125,13 +125,13 @@ const GameUI: React.FC<GameUIProps> = ({
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: 'linear-gradient(to bottom right, #f5f3ff, #e0e7ff)' }}>
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '900px', maxHeight: '500px' }}>
-          <h1 className="text-4xl font-extrabold text-purple-700 mb-8 tracking-wide text-center">Game Complete!</h1>
+          <h1 className="text-4xl font-extrabold text-sleek-700 mb-8 tracking-wide text-center">Game Complete!</h1>
           
           {/* Scores Grid */}
           <div className="grid grid-cols-3 gap-6 mb-8 w-full">
             {roundMetrics.map((metrics, index) => (
-              <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6 text-center">
-                <h3 className="text-2xl font-bold text-purple-700 mb-4">Round {index + 1}</h3>
+              <div key={index} className="bg-gradient-to-br from-emerald-50 to-sleek-50 border border-emerald-200 rounded-xl p-6 text-center">
+                <h3 className="text-2xl font-bold text-sleek-700 mb-4">Round {index + 1}</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Accuracy:</span>
@@ -149,12 +149,12 @@ const GameUI: React.FC<GameUIProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Missed Targets:</span>
-                    <span className="font-semibold text-orange-600">{metrics.missedTargets}</span>
+                    <span className="font-semibold text-amber-600">{metrics.missedTargets}</span>
                   </div>
                   {metrics.reactionTimeValid > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Avg RT:</span>
-                      <span className="font-semibold text-purple-600">{Math.round(metrics.reactionTimeValid)}ms</span>
+                      <span className="font-semibold text-sleek-600">{Math.round(metrics.reactionTimeValid)}ms</span>
                     </div>
                   )}
                 </div>
@@ -164,7 +164,7 @@ const GameUI: React.FC<GameUIProps> = ({
           
           <button
             onClick={onShowQuestions}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
           >
             Answer Questions
           </button>
@@ -178,7 +178,7 @@ const GameUI: React.FC<GameUIProps> = ({
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
-          <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+          <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
           <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
           <p className="text-gray-500 text-center">You may now close this window.</p>
         </div>
@@ -193,7 +193,7 @@ const GameUI: React.FC<GameUIProps> = ({
       return (
         <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
           <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
-            <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+            <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
             <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
             <p className="text-gray-500 text-center">You may now close this window.</p>
           </div>
@@ -224,7 +224,7 @@ const GameUI: React.FC<GameUIProps> = ({
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '800px' }}>
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">Question {currentQuestionIndex + 1} of {selfReportQuestions.length}</h2>
+            <h2 className="text-2xl font-bold text-sleek-700 mb-4">Question {currentQuestionIndex + 1} of {selfReportQuestions.length}</h2>
             <p className="text-lg text-gray-700">{currentQuestion}</p>
           </div>
           {/* Slider with labels */}
@@ -237,7 +237,7 @@ const GameUI: React.FC<GameUIProps> = ({
                 step={1}
                 value={localAnswer}
                 onChange={e => handleSliderChange(Number(e.target.value))}
-                className="w-full max-w-lg accent-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full max-w-lg accent-sleek-600 focus:outline-none focus:ring-2 focus:ring-sleek-400"
                 style={{ WebkitAppearance: 'none', appearance: 'none', height: '6px', borderRadius: '3px', background: '#e0e7ff', outline: 'none', marginBottom: '24px' }}
               />
               <div className="w-full max-w-lg flex flex-row justify-between mt-[-18px]">
@@ -248,8 +248,8 @@ const GameUI: React.FC<GameUIProps> = ({
                     onClick={() => handleLabelClick(idx + 1)}
                     className={`text-xs md:text-base px-2 py-1 rounded transition-colors duration-150 font-medium focus:outline-none ${
                       localAnswer === idx + 1
-                        ? 'bg-purple-100 text-purple-700 border border-purple-400'
-                        : 'text-gray-700 hover:bg-purple-50 border border-transparent'
+                        ? 'bg-sleek-100 text-sleek-700 border border-sleek-400'
+                        : 'text-gray-700 hover:bg-sleek-50 border border-transparent'
                     }`}
                     style={{ minWidth: 60 }}
                   >
@@ -262,10 +262,10 @@ const GameUI: React.FC<GameUIProps> = ({
           {/* Back/Next buttons */}
           <div className="flex flex-row gap-4 mt-8">
             <button
-              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-300 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-sleek-300 ${
                 currentQuestionIndex === 0
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-gray-400 to-purple-400 text-white hover:from-gray-500 hover:to-purple-500'
+                  : 'bg-gradient-to-r from-gray-400 to-sleek-400 text-white hover:from-gray-500 hover:to-sleek-500'
               }`}
               disabled={currentQuestionIndex === 0}
               onClick={handleBack}
@@ -273,9 +273,9 @@ const GameUI: React.FC<GameUIProps> = ({
               Back
             </button>
             <button
-              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-300 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-sleek-300 ${
                 localAnswer
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                  ? 'bg-gradient-to-r from-sleek-600 to-emerald-600 text-white hover:from-sleek-700 hover:to-emerald-700'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
               disabled={!localAnswer}
@@ -294,7 +294,7 @@ const GameUI: React.FC<GameUIProps> = ({
                     index < currentQuestionIndex
                       ? 'bg-green-500'
                       : index === currentQuestionIndex
-                      ? 'bg-purple-500'
+                      ? 'bg-sleek-500'
                       : 'bg-gray-300'
                   }`}
                 />
@@ -310,10 +310,10 @@ const GameUI: React.FC<GameUIProps> = ({
   if (!gameState.isPlaying && !gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     const instructions = getRoundInstructions(gameState.currentRound);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50">
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-between" style={{ width: '960px', height: '540px' }}>
           <div className="flex flex-col items-center justify-center h-full px-8">
-            <h1 className="text-3xl font-extrabold text-purple-700 mb-6 tracking-wide">
+            <h1 className="text-3xl font-extrabold text-sleek-700 mb-6 tracking-wide">
               {instructions.title}
             </h1>
             <div className="text-lg text-gray-700 space-y-4 max-w-2xl text-center">
@@ -330,7 +330,7 @@ const GameUI: React.FC<GameUIProps> = ({
           <div className="w-full flex justify-center items-center pb-4 pt-2">
             <button
               onClick={onStartRound}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+              className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
             >
               Start Round
             </button>
@@ -354,7 +354,7 @@ const GameUI: React.FC<GameUIProps> = ({
       return (
         <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
           <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
-            <h2 className="text-3xl font-extrabold text-purple-700 mb-6">Thank you!</h2>
+            <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
             <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
             <p className="text-gray-500 text-center">You may now close this window.</p>
           </div>
@@ -364,7 +364,7 @@ const GameUI: React.FC<GameUIProps> = ({
     return (
       <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
         <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8 gap-6" style={{ width: '800px' }}>
-          <h2 className="text-2xl font-bold text-purple-700 mb-2">Self-Report Questionnaire</h2>
+          <h2 className="text-2xl font-bold text-sleek-700 mb-2">Self-Report Questionnaire</h2>
           <p className="text-gray-700 mb-4 text-center">Please answer the following questions about your experience and attention during the game.</p>
           <div className="flex flex-col gap-6 w-full">
             {selfReportQuestions.map((q, i) => (
@@ -390,7 +390,7 @@ const GameUI: React.FC<GameUIProps> = ({
           </div>
           <button
             type="submit"
-            className="mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-purple-700 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            className="mt-6 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
             disabled={answers.some(a => a === 0)}
           >
             Submit
@@ -403,13 +403,13 @@ const GameUI: React.FC<GameUIProps> = ({
   // Show game complete screen (legacy - keeping for compatibility)
   if (gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50">
         <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-center items-center" style={{ width: '960px', height: '540px' }}>
-          <h1 className="text-4xl font-extrabold text-purple-700 mb-4 tracking-wide">
+          <h1 className="text-4xl font-extrabold text-sleek-700 mb-4 tracking-wide">
             Game Complete!
           </h1>
           <p className="text-xl text-gray-600 mb-6">
-            Thank you for completing the Pattern Match assessment.
+            Thank you for completing the Signal Snap assessment.
           </p>
           <div className="text-center text-gray-700">
             <p>Your results have been recorded.</p>
@@ -428,8 +428,8 @@ const GameUI: React.FC<GameUIProps> = ({
         <div className="w-full flex justify-between items-center pt-4 pb-2">
           <div style={{ width: 80 }} /> {/* Spacer for left */}
           <div className="flex gap-8 text-lg font-semibold">
-            <span className="text-gray-700">Round: <span className="text-purple-600 font-bold">{gameState.currentRound}/3</span></span>
-            <span className="text-gray-700">Trial: <span className="text-blue-600 font-bold">{gameState.currentTrial}/30</span></span>
+            <span className="text-gray-700">Round: <span className="text-sleek-600 font-bold">{gameState.currentRound}/3</span></span>
+            <span className="text-gray-700">Trial: <span className="text-emerald-600 font-bold">{gameState.currentTrial}/30</span></span>
           </div>
           <div className="text-right pr-4 min-w-[80px]">
             <span className="text-gray-500 text-base">Timer:</span>
@@ -440,7 +440,12 @@ const GameUI: React.FC<GameUIProps> = ({
         <div className="flex flex-1 flex-row items-center justify-between px-8 py-4 gap-6">
           {/* Left: Current Target (40%) */}
           <div className="flex flex-col items-center justify-center" style={{ flexBasis: '40%', maxWidth: '40%' }}>
-            <h3 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2">🎯 Current Target</h3>
+            <h3 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-sleek-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Current Target
+            </h3>
             <div className="mb-2">
               <ShapeRenderer 
                 shape={gameState.currentTarget.shape} 
@@ -451,18 +456,24 @@ const GameUI: React.FC<GameUIProps> = ({
             <p className="text-center text-gray-800 text-lg font-semibold">
               {gameState.currentTarget.shape.charAt(0).toUpperCase() + gameState.currentTarget.shape.slice(1)}
             </p>
-            <p className="text-center text-blue-500 text-base font-medium">
+            <p className="text-center text-emerald-500 text-base font-medium">
               {gameState.currentTarget.pattern.charAt(0).toUpperCase() + gameState.currentTarget.pattern.slice(1)}
             </p>
           </div>
           {/* Right: Current Stimulus (60%) */}
           <div className="flex flex-col items-center justify-center" style={{ flexBasis: '60%', maxWidth: '60%' }}>
-            <h3 className="text-xl font-bold text-gray-700 mb-2 flex items-center gap-2">👁️ Current Stimulus</h3>
+            <h3 className="text-xl font-bold text-gray-700 mb-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Current Stimulus
+            </h3>
             <div className={`flex justify-center items-center mb-4 transition-all duration-300 ${gameState.showStimulus ? 'animate-pulse' : ''}`} style={{ minHeight: '200px' }}>
               {gameState.showStimulus && gameState.currentStimulus ? (
                 <button
                   onClick={onStimulusClick}
-                  className="cursor-pointer hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
+                  className="cursor-pointer hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
                   title="Click if this matches the target"
                 >
                   <ShapeRenderer 
@@ -501,7 +512,7 @@ const GameUI: React.FC<GameUIProps> = ({
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div
-              className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-300"
+                              className="bg-gradient-to-r from-sleek-500 to-emerald-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${(gameState.currentTrial / 30) * 100}%` }}
             />
           </div>

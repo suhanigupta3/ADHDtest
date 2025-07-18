@@ -9,7 +9,7 @@ const TechnicalSupportPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
@@ -22,41 +22,41 @@ const TechnicalSupportPage: React.FC = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="bg-red-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <div className="bg-sleek-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="h-8 w-8 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Report Issue</h3>
-            <p className="text-gray-600 text-sm mb-4">Experiencing a problem? Let us know.</p>
-            <Link to="/contact" className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
-              Report Issue
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Report a Bug</h3>
+            <p className="text-gray-600 mb-4">Found a technical issue? Let us know so we can fix it.</p>
+            <Link to="/contact" className="bg-sleek-600 text-white px-4 py-2 rounded-lg hover:bg-sleek-700 transition-colors text-sm">
+              Report Bug
             </Link>
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            <div className="bg-emerald-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">System Check</h3>
-            <p className="text-gray-600 text-sm mb-4">Verify your system compatibility.</p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-              Run Check
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Get Help</h3>
+            <p className="text-gray-600 mb-4">Need assistance? Our support team is here to help.</p>
+            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm">
+              Contact Support
             </button>
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-sleek-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="h-8 w-8 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
-            <p className="text-gray-600 text-sm mb-4">Chat with our support team.</p>
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
-              Start Chat
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Feature Request</h3>
+            <p className="text-gray-600 mb-4">Have an idea for improvement? We'd love to hear it.</p>
+            <button className="bg-sleek-600 text-white px-4 py-2 rounded-lg hover:bg-sleek-700 transition-colors text-sm">
+              Suggest Feature
             </button>
           </div>
         </div>
@@ -250,11 +250,12 @@ const TechnicalSupportPage: React.FC = () => {
                 <div className="mt-4 text-gray-600">
                   <p className="mb-4">If you encounter error messages:</p>
                   <ol className="list-decimal list-inside space-y-2">
-                    <li>Take a screenshot of the error message</li>
-                    <li>Note what you were doing when the error occurred</li>
+                    <li>Note down the exact error message</li>
                     <li>Try refreshing the page</li>
-                    <li>Check the browser console for additional error details (F12 → Console tab)</li>
-                    <li>Contact our support team with the error details</li>
+                    <li>Clear your browser cache and cookies</li>
+                    <li>Try using a different browser</li>
+                    <li>Check your internet connection</li>
+                    <li>Contact support with the error details</li>
                   </ol>
                 </div>
               )}
@@ -262,29 +263,30 @@ const TechnicalSupportPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Contact Support */}
-        <div className="bg-emerald-50 rounded-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Still Need Help?</h2>
-          <p className="text-gray-600 mb-6">
-            If the troubleshooting steps above don't resolve your issue, please contact our technical support team.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/contact"
-              className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-            >
-              Contact Technical Support
-            </Link>
-            <a
-              href="mailto:technical@adhdassessment.com"
-              className="bg-white text-emerald-600 px-6 py-3 rounded-lg hover:bg-emerald-50 transition-colors font-medium border border-emerald-200"
-            >
-              Email: technical@adhdassessment.com
-            </a>
+        {/* Contact Information */}
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900">Still Need Help?</h2>
           </div>
-          <div className="mt-4 text-sm text-gray-500">
-            <p>Support Hours: Monday - Friday, 9:00 AM - 6:00 PM EST</p>
-            <p>Average Response Time: 2-4 hours during business hours</p>
+          <div className="p-6">
+            <p className="text-gray-600 mb-4">
+              If you're still experiencing issues after trying the troubleshooting steps above, 
+              please don't hesitate to contact our support team.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link 
+                to="/contact" 
+                className="bg-sleek-600 text-white px-6 py-3 rounded-lg hover:bg-sleek-700 transition-colors text-center"
+              >
+                Contact Support
+              </Link>
+              <a 
+                href="mailto:support@adhdassessment.com" 
+                className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors text-center"
+              >
+                Email Support
+              </a>
+            </div>
           </div>
         </div>
       </div>

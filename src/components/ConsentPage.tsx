@@ -1,66 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const ConsentPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showFullConsent, setShowFullConsent] = useState(false);
   
-
-  
+  // Form state
   const [age, setAge] = useState<number | null>(null);
   const [region, setRegion] = useState('US');
   const [consentType, setConsentType] = useState<'adult' | 'minor'>('adult');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showAgeError, setShowAgeError] = useState(false);
   
   // Consent checkboxes
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedAssessment, setAcceptedAssessment] = useState(false);
+  const [acceptedResearch, setAcceptedResearch] = useState(false);
   const [parentalConsent, setParentalConsent] = useState(false);
-  
-  // Form validation
-  const [showAgeError, setShowAgeError] = useState(false);
-  
-  useEffect(() => {
-    if (age !== null) {
-      setConsentType(age < 18 ? 'minor' : 'adult');
-      setShowAgeError(false);
-    }
-  }, [age]);
 
   const isFormValid = () => {
-    const basicConsent = acceptedTerms && acceptedPrivacy && acceptedAssessment;
+    const basicConsent = acceptedTerms && acceptedPrivacy && acceptedAssessment && acceptedResearch;
     const minorConsent = consentType === 'minor' ? parentalConsent : true;
-    const ageProvided = age !== null && age >= 13; // Minimum age requirement
-    
+    const ageProvided = age !== null && age >= 13;
     return basicConsent && minorConsent && ageProvided;
   };
 
   const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const newAge = parseInt(e.target.value);
+    setAge(newAge);
+    setShowAgeError(false);
     
-    if (value === '') {
-      setAge(null);
-      return;
-    }
-    
-    const ageValue = parseInt(value);
-    
-    // Allow any valid number input, validation will be done on submission
-    if (!isNaN(ageValue) && ageValue >= 0) {
-      setAge(ageValue);
+    if (newAge < 18) {
+      setConsentType('minor');
+    } else {
+      setConsentType('adult');
     }
   };
 
   const saveConsentToFirebase = async (): Promise<boolean> => {
-    if (!currentUser || !age) return false;
+    if (!currentUser) return false;
 
     try {
+      setLoading(true);
+      setError(null);
+
       const consentData: any = {
         userId: currentUser.uid,
         consentType,
@@ -69,8 +58,8 @@ const ConsentPage: React.FC = () => {
         acceptedTerms,
         acceptedPrivacy,
         acceptedAssessment,
+        acceptedResearch,
         consentDate: serverTimestamp(),
-        userAgent: navigator.userAgent,
       };
 
       // Only include parentalConsent field for minors
@@ -79,60 +68,38 @@ const ConsentPage: React.FC = () => {
       }
 
       await setDoc(doc(db, 'userConsents', currentUser.uid), consentData);
+      console.log('Consent saved successfully');
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving consent:', error);
-      
-      if (error.code === 'permission-denied') {
-        setError('Permission denied. Please check your account permissions and try again.');
-      } else if (error.code === 'network-request-failed') {
-        setError('Network error. Please check your internet connection and try again.');
-      } else {
         setError('Failed to save consent information. Please try again.');
-      }
-      
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-
-
   const handleProceed = async () => {
-    if (!age) {
+    if (!isFormValid()) {
       setShowAgeError(true);
       return;
     }
 
-    if (age < 13) {
-      setError('You must be at least 13 years old to use this assessment platform.');
-      return;
-    }
-
-    if (!isFormValid()) {
-      setError('Please accept all required terms to continue.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
     const consentSaved = await saveConsentToFirebase();
     
     if (consentSaved) {
-      navigate('/assessment');
+      // Redirect to assessment
+      window.location.href = '/assessment';
     }
-    
-    setLoading(false);
   };
 
   const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      y: 0,
       transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
+        staggerChildren: 0.1,
+        delayChildren: 0.2
       }
     }
   };
@@ -149,37 +116,221 @@ const ConsentPage: React.FC = () => {
     }
   };
 
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100">
-    
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-sleek-50 to-emerald-50">
+      <div className="container mx-auto px-4 py-8">
         <motion.div
-          className="max-w-4xl mx-auto"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          className="max-w-4xl mx-auto"
         >
           {/* Header */}
           <motion.div className="text-center mb-8" variants={itemVariants}>
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-primary rounded-full mb-4 shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Informed Consent
             </h1>
             
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Before we begin your ADHD assessment, we need your informed consent. Please review the information below carefully.
+            <p className="text-lg text-gray-700 max-w-3xl mx-auto">
+              Before we begin your A(rDx)HD assessment, we need your informed consent. 
+              Please review all information carefully before providing your consent.
             </p>
           </motion.div>
 
-          {/* Age and Region Selection */}
-          <motion.div className="card p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
+          {/* Study Description */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Study Description</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                You are invited to participate in an ADHD assessment. Your participation 
+                in this assessment will take approximately 20-30 minutes, wherein you will play interactive games 
+                and answer a series of questions that are meant to test whether you have ADHD. This will be 
+                done through our secure website and will require no video/audio taping.
+              </p>
+              <p>
+                This survey will be kept in confidentiality and will only be shared between the researchers 
+                from the group itself at scientific/professional meetings or in published scientific journals. 
+                Names, ages, and personal information will not be released to the public.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Future Use of Information */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Future Use of Private Information</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                Research using private information is an important way to try to understand human behavior/mind. 
+                You are being given this information because the investigators want to save private information 
+                for future research.
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>Your information will be stored in a secure database and your identity will remain completely anonymous.</li>
+                <li>Because your information will not be linked to your name after it is stored, you cannot withdraw your consent to the use of the information after it is taken.</li>
+                <li>Identifiers might be removed from identifiable private information and, after such removal, the information could be used for future research studies or distributed to another investigator for future research studies without additional informed consent from you.</li>
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Risks and Benefits */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Risks and Benefits</h3>
+            <div className="space-y-4 text-gray-700">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Risks:</h4>
+                <p className="text-emerald-800">There are no risks associated with this assessment; all information about one's health will be protected and only used at scientific meetings (no personal reasons).</p>
+              </div>
+              <div className="bg-sleek-50 border border-sleek-200 rounded-lg p-4">
+                <h4 className="font-semibold text-sleek-900 mb-2">Benefits:</h4>
+                <p className="text-sleek-800">There are no foreseeable benefits which may reasonably be expected to result from this assessment. We cannot and do not guarantee or promise that you will receive any benefits from this assessment.</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-900 mb-2">Voluntary Participation:</h4>
+                <p className="text-amber-800">
+                                  Participation is voluntary and if you wish to remove yourself/your child from this assessment for any reason, 
+                you may do so prior to signing the consent. However, once you sign the consent form, you must gain 
+                approval to withdraw from the assessment.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Time Involvement */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Time Involvement</h3>
+            <p className="text-gray-700">
+              Your participation in this experiment will last for approximately 20-30 minutes.
+            </p>
+          </motion.div>
+
+          {/* Payments */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Payments/Reimbursements</h3>
+            <p className="text-gray-700">
+              You will receive no compensation for your participation.
+            </p>
+          </motion.div>
+
+          {/* Certificate of Confidentiality */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Certificate of Confidentiality</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                The researchers with this Certificate may not disclose or use information or documents that may 
+                identify you in any federal, state, or local civil, criminal, administrative, legislative, or 
+                other action, suit, or proceeding, or be used as evidence, for example, if there is a court 
+                subpoena, unless you have consented for this use.
+              </p>
+              <p>
+                Information or documents protected by this Certificate cannot be disclosed to anyone else who 
+                is not connected with the research except:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>If there is a federal, state, or local law that requires disclosure (such as to report child abuse or communicable diseases)</li>
+                <li>If you have consented to the disclosure, including for your medical treatment</li>
+                <li>If it is used for other scientific research, as allowed by federal regulations protecting research subjects</li>
+              </ul>
+              <p>
+                The Certificate cannot be used to refuse a request for information from personnel of the United 
+                States federal or state government agency sponsoring the project that is needed for auditing or 
+                program evaluation.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Authorization for Health Information */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Authorization to Use Your Health Information for Assessment Purposes</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                Because information about you and your health is personal and private, it generally cannot be 
+                used in this assessment without your written authorization. Once you read and sign this consent, 
+                it will provide that authorization.
+              </p>
+              <div className="bg-sleek-50 border border-sleek-200 rounded-lg p-4">
+                <h4 className="font-semibold text-sleek-900 mb-2">Purpose of Assessment:</h4>
+                <p className="text-sleek-800">
+                  The purpose of this assessment is to detect any symptoms of ADHD and provide a report on 
+                  your results. You will first create an account on our website to store your reports and progress. 
+                  Next, you will be given the opportunity to choose the gamified assessment you would like to take. 
+                  The results will then be compiled, examined, and stored as a report in your profile. Your responses 
+                  to the questionnaire will also be utilized to determine whether you have the possibility of having ADHD. 
+                  This will allow you to receive necessary assistance from medical professionals.
+                </p>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Personal Information Collected:</h4>
+                <p className="text-emerald-800">
+                  Your health information related to this assessment may be used or disclosed in connection with this 
+                  assessment, including, but not limited to name and email. However, none of this information 
+                  is linked to your personal data.
+                </p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-900 mb-2">Authorization Expiration:</h4>
+                <p className="text-amber-800">
+                  Your authorization for the use and/or disclosure of your health information will end on July 21st, 
+                  2027 or when the assessment project ends, whichever is earlier.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Participant Rights */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Participant Rights</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                If you have read this form and have decided to participate in this project, please understand 
+                your participation is voluntary and you have the right to withdraw your consent or discontinue 
+                participation at any time without penalty or loss of benefits to which you are otherwise entitled. 
+                However, once you sign the consent you cannot withdraw from the assessment unless you gain approval.
+              </p>
+              <p>
+                The results of this assessment may be presented at scientific or professional meetings or 
+                published in scientific journals. Your identity will not be disclosed.
+              </p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Participants' Bill of Rights:</h4>
+                <p className="text-emerald-800 mb-2">As a research participant you have the following rights:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-emerald-800">
+                  <li>Be informed of the nature and purpose of the experiment</li>
+                  <li>Be given an explanation of the methods of the assessment</li>
+                  <li>Be given a description of any attendant discomforts and risks reasonably to be expected</li>
+                  <li>Be given an explanation of any benefits to the subject reasonably to be expected, if applicable</li>
+                  <li>Be given an opportunity to ask questions concerning the assessment or the procedures involved</li>
+                  <li>Be instructed that consent to participate in the assessment may be withdrawn at any time</li>
+                  <li>Be given a copy of the signed and dated consent form</li>
+                  <li>Be given the opportunity to decide to consent or not to consent without coercion</li>
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Withdrawal Information */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Withdrawal from Assessment</h3>
+            <div className="space-y-4 text-gray-700">
+              <p>The Protocol Director may withdraw you from the assessment without your consent for one or more of the following reasons:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>Failure to follow the instructions of the Protocol Director and study staff</li>
+                <li>The Protocol Director decides that continuing your participation could be harmful to you</li>
+                <li>Pregnancy</li>
+                                  <li>You need treatment not allowed in the assessment</li>
+                  <li>The assessment is canceled</li>
+                <li>Other administrative reasons</li>
+                <li>Unanticipated circumstances</li>
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Personal Information */}
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -192,15 +343,15 @@ const ConsentPage: React.FC = () => {
                   max="100"
                   value={age || ''}
                   onChange={handleAgeChange}
-                  className={`input-field ${showAgeError && !age ? 'border-red-400 focus:ring-red-500 focus:border-red-500' : ''}`}
+                  className={`input-field ${showAgeError && !age ? 'border-sleek-400 focus:ring-sleek-500 focus:border-sleek-500' : ''}`}
                   placeholder="Enter your age"
                   required
                 />
                 {showAgeError && !age && (
-                  <p className="text-red-600 text-sm mt-1">Age is required</p>
+                  <p className="text-sleek-600 text-sm mt-1">Age is required</p>
                 )}
                 {age && age < 13 && (
-                  <p className="text-red-600 text-sm mt-1">You must be at least 13 years old</p>
+                  <p className="text-sleek-600 text-sm mt-1">You must be at least 13 years old</p>
                 )}
               </div>
               
@@ -221,72 +372,25 @@ const ConsentPage: React.FC = () => {
                   <option value="OTHER">Other</option>
                 </select>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Consent Information */}
-          <motion.div className="card p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              {consentType === 'minor' ? 'Minor Consent Information' : 'Assessment Information'}
-            </h3>
-            
-            <div className="text-sm text-gray-700 space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">Important Notice</h4>
-                <p className="text-blue-800">
-                  This assessment is for educational and screening purposes only. It is NOT a medical diagnosis 
-                  and cannot replace professional medical evaluation by a qualified healthcare provider.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-800 mb-2">What This Assessment Involves:</h4>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
-                  <li>Interactive games designed to assess attention and cognitive patterns</li>
-                  <li>Questions about your daily life and experiences</li>
-                  <li>Educational content about ADHD</li>
-                  <li>Personalized recommendations based on your responses</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-800 mb-2">Data Collection and Privacy:</h4>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
-                  <li>We collect anonymous assessment data to improve our tools</li>
-                  <li>Your personal information is encrypted and securely stored</li>
-                  <li>We do not share individual results with third parties</li>
-                  <li>You can delete your data at any time</li>
-                </ul>
               </div>
 
               {consentType === 'minor' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-900 mb-2">Parental Consent Required</h4>
-                  <p className="text-yellow-800">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mt-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Parental Consent Required</h4>
+                <p className="text-emerald-800">
                     As a minor, you need parental or guardian consent to use this assessment. 
                     Please ensure a parent or guardian has reviewed this information and agrees to your participation.
                   </p>
                 </div>
               )}
-
-              <div>
-                <h4 className="font-medium text-gray-800 mb-2">Your Rights:</h4>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
-                  <li>You can stop the assessment at any time</li>
-                  <li>You can request your data be deleted</li>
-                  <li>You can contact us with questions or concerns</li>
-                  <li>Results are provided for informational purposes only</li>
-                </ul>
-              </div>
-            </div>
           </motion.div>
 
           {/* Consent Checkboxes */}
-          <motion.div className="card p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Consent Agreement</h3>
+          <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Consent Agreement</h3>
             
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+              <div className="bg-sleek-50 border border-sleek-200 text-sleek-700 px-4 py-3 rounded-lg mb-4">
                 {error}
               </div>
             )}
@@ -297,10 +401,10 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-darkforest-600 focus:ring-darkforest-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  I have read and agree to the <Link to="/terms" className="text-darkforest-700 hover:text-darkforest-800 underline">Terms of Service</Link>.
+                  I have read and agree to the <Link to="/terms" className="text-sleek-700 hover:text-sleek-800 underline">Terms of Service</Link>.
                 </span>
               </label>
 
@@ -309,10 +413,10 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedPrivacy}
                   onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-darkforest-600 focus:ring-darkforest-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  I have read and agree to the <Link to="/privacy" className="text-darkforest-700 hover:text-darkforest-800 underline">Privacy Policy</Link>.
+                  I have read and agree to the <Link to="/privacy" className="text-sleek-700 hover:text-sleek-800 underline">Privacy Policy</Link>.
                 </span>
               </label>
 
@@ -321,10 +425,22 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedAssessment}
                   onChange={(e) => setAcceptedAssessment(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-darkforest-600 focus:ring-darkforest-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
                   I understand this assessment is for educational purposes only and does not constitute medical advice or diagnosis.
+                </span>
+              </label>
+
+              <label className="flex items-start space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedResearch}
+                  onChange={(e) => setAcceptedResearch(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">
+                  I have read and understood all the assessment information above and consent to participate in this assessment.
                 </span>
               </label>
 
@@ -334,7 +450,7 @@ const ConsentPage: React.FC = () => {
                     type="checkbox"
                     checked={parentalConsent}
                     onChange={(e) => setParentalConsent(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-darkforest-600 focus:ring-darkforest-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
                   />
                   <span className="text-sm text-gray-700">
                     I confirm that my parent or legal guardian has reviewed this information and consents to my participation in this assessment.
@@ -360,28 +476,20 @@ const ConsentPage: React.FC = () => {
               whileHover={isFormValid() && !loading ? { scale: 1.05 } : {}}
               whileTap={isFormValid() && !loading ? { scale: 0.95 } : {}}
             >
-              {loading ? 'Saving...' : 'I Agree - Proceed to Assessment'}
+              {loading ? 'Saving...' : 'I Consent - Proceed to Assessment'}
             </motion.button>
-
-
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link to="/dashboard" className="btn-secondary text-center block px-8 py-4 text-lg">
-                Cancel
+                Decline - Return to Dashboard
               </Link>
             </motion.div>
           </motion.div>
 
-          {/* Footer */}
-          <motion.div 
-            className="text-center mt-8 text-sm text-gray-500"
-            variants={itemVariants}
-          >
-            <p>
+          {/* Footer Note */}
+          <motion.div className="text-center mt-8" variants={itemVariants}>
+            <p className="text-sm text-gray-500">
               By proceeding, your consent will be recorded with timestamp for legal compliance.
-            </p>
-            <p className="mt-2">
-              Questions? Contact us at <a href="mailto:support@adhdassessment.com" className="text-darkforest-700 hover:text-darkforest-800 underline">support@adhdassessment.com</a>
             </p>
           </motion.div>
         </motion.div>

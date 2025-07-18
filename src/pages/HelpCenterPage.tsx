@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 
 const HelpCenterPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Help Center</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions and get the support you need for your ADHD assessment journey.
+            Find answers to common questions and get the support you need for your A(rDx)HD assessment journey.
           </p>
         </div>
 
@@ -30,7 +30,7 @@ const HelpCenterPage: React.FC = () => {
         {/* Help Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {/* Getting Started */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
               <div className="bg-emerald-100 p-3 rounded-full">
                 <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,10 +48,10 @@ const HelpCenterPage: React.FC = () => {
           </div>
 
           {/* Account Management */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-sleek-100 p-3 rounded-full">
+                <svg className="h-6 w-6 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
@@ -66,10 +66,10 @@ const HelpCenterPage: React.FC = () => {
           </div>
 
           {/* Assessment Help */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
-              <div className="bg-purple-100 p-3 rounded-full">
-                <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-emerald-100 p-3 rounded-full">
+                <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
@@ -84,10 +84,10 @@ const HelpCenterPage: React.FC = () => {
           </div>
 
           {/* Technical Support */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
-              <div className="bg-red-100 p-3 rounded-full">
-                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-sleek-100 p-3 rounded-full">
+                <svg className="h-6 w-6 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
@@ -102,10 +102,10 @@ const HelpCenterPage: React.FC = () => {
           </div>
 
           {/* Privacy & Security */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
-              <div className="bg-green-100 p-3 rounded-full">
-                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-emerald-100 p-3 rounded-full">
+                <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
@@ -120,10 +120,10 @@ const HelpCenterPage: React.FC = () => {
           </div>
 
           {/* Contact & Support */}
-          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-[#C8D8C8]">
             <div className="flex items-center mb-4">
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-sleek-100 p-3 rounded-full">
+                <svg className="h-6 w-6 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -139,7 +139,7 @@ const HelpCenterPage: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-12">
+        <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-8 mb-12 border border-[#C8D8C8]">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Need More Help?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link to="/contact" className="flex flex-col items-center p-6 border border-gray-200 rounded-lg hover:border-emerald-500 transition-colors">

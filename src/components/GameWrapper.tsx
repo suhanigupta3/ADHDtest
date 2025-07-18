@@ -1,6 +1,7 @@
 import React from 'react';
 import UnityGameIframe from './UnityGameIframe';
 import PatternMatchGame from './PatternMatchGame';
+import BounceBackGame from './BounceBackGame';
 
 interface GameWrapperProps {
   gameId: string;
@@ -25,12 +26,31 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
 }) => {
   // Check if this is a React-based game
   const isReactGame = gameId === 'pattern-match';
+  const isBounceBack = gameId === 'kitchen-quest'; // Replace Kitchen Quest with Bounce Back
+
+  if (isBounceBack) {
+    return (
+      <BounceBackGame
+        onGameComplete={(gameData) => {
+          console.log('Bounce Back completed with data:', gameData);
+          if (onGameComplete) {
+            onGameComplete();
+          }
+        }}
+        onError={onError || (() => {})}
+        width={width}
+        height={height}
+        isStandalone={false}
+        userId={userId}
+      />
+    );
+  }
 
   if (isReactGame) {
     return (
       <PatternMatchGame
         onGameComplete={(roundMetrics) => {
-          console.log(`Pattern Match completed with ${roundMetrics.length} rounds`);
+          console.log(`Signal Snap completed with ${roundMetrics.length} rounds`);
           console.log('Round metrics:', roundMetrics);
           if (onGameComplete) {
             onGameComplete();

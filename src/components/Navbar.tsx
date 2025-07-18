@@ -53,22 +53,22 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity focus-visible-ring">
             <img 
               src="/adhd-logo.png" 
-              alt="ADHD Assessment Logo" 
-              className="w-10 h-10 object-contain"
+              alt="A(rDx)HD Logo" 
+              className="w-8 h-8 object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center hidden">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="w-8 h-8 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-full flex items-center justify-center hidden">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-gray-900">ADHD Assessment</span>
+            <span className="text-xl font-bold text-gray-900">A(rDx)HD</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -77,10 +77,10 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible-ring ${
                   isActivePath(item.path)
-                    ? 'text-darkforest-700 bg-darkforest-50'
-                    : 'text-gray-700 hover:text-darkforest-700 hover:bg-gray-50'
+                    ? 'text-sleek-700 bg-sleek-50 border border-sleek-200'
+                    : 'text-gray-700 hover:text-sleek-700 hover:bg-gray-50'
                 }`}
               >
                 {item.name}
@@ -98,7 +98,7 @@ const Navbar: React.FC = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 bg-sleek-600 text-white rounded-md text-sm font-medium hover:bg-sleek-700 transition-colors focus-visible-ring"
                 >
                   Logout
                 </button>
@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link
                 to="/auth"
-                className="px-4 py-2 bg-darkforest-600 text-white rounded-md text-sm font-medium hover:bg-darkforest-700 transition-colors"
+                className="px-4 py-2 bg-sleek-600 text-white rounded-md text-sm font-medium hover:bg-sleek-700 transition-colors focus-visible-ring"
               >
                 Login
               </Link>
@@ -117,7 +117,8 @@ const Navbar: React.FC = () => {
           <div className="md:hidden">
             <button
               onClick={toggleMobileMenu}
-              className="text-gray-700 hover:text-darkforest-700 focus:outline-none focus:text-darkforest-700"
+              className="text-gray-700 hover:text-sleek-700 focus:outline-none focus:text-sleek-700 focus-visible-ring p-2"
+              aria-label="Toggle mobile menu"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isMobileMenuOpen ? (
@@ -146,10 +147,10 @@ const Navbar: React.FC = () => {
                     key={item.path}
                     to={item.path}
                     onClick={closeMobileMenu}
-                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors focus-visible-ring ${
                       isActivePath(item.path)
-                        ? 'text-darkforest-700 bg-darkforest-50'
-                        : 'text-gray-700 hover:text-darkforest-700 hover:bg-gray-50'
+                        ? 'text-sleek-700 bg-sleek-50 border border-sleek-200'
+                        : 'text-gray-700 hover:text-sleek-700 hover:bg-gray-50'
                     }`}
                   >
                     {item.name}
@@ -170,7 +171,7 @@ const Navbar: React.FC = () => {
                         handleLogout();
                         closeMobileMenu();
                       }}
-                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-sleek-600 hover:text-sleek-700 hover:bg-sleek-50 transition-colors focus-visible-ring"
                     >
                       Logout
                     </button>
@@ -180,7 +181,7 @@ const Navbar: React.FC = () => {
                     <Link
                       to="/auth"
                       onClick={closeMobileMenu}
-                      className="block px-3 py-2 bg-darkforest-600 text-white rounded-md text-base font-medium hover:bg-darkforest-700 transition-colors text-center"
+                      className="block px-3 py-2 bg-sleek-600 text-white rounded-md text-base font-medium hover:bg-sleek-700 transition-colors text-center focus-visible-ring"
                     >
                       Login
                     </Link>

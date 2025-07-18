@@ -14,7 +14,7 @@ const FAQPage: React.FC = () => {
   const faqs: FAQItem[] = [
     {
       category: 'general',
-      question: 'What is the ADHD Assessment Platform?',
+      question: 'What is the A(rDx)HD Platform?',
       answer: 'Our platform is an innovative digital tool that uses gamification and adaptive assessment technologies to help identify ADHD symptoms. It provides a comprehensive evaluation through interactive activities designed to measure attention, focus, and other cognitive functions related to ADHD.'
     },
     {
@@ -25,7 +25,7 @@ const FAQPage: React.FC = () => {
     {
       category: 'assessment',
       question: 'How long does the assessment take?',
-      answer: 'The complete assessment typically takes 30-45 minutes. You can pause and resume the assessment at any time. We recommend taking breaks if needed to ensure accurate results.'
+      answer: 'The complete assessment typically takes approximately 20-30 minutes. You can pause and resume the assessment at any time. We recommend taking breaks if needed to ensure accurate results.'
     },
     {
       category: 'assessment',
@@ -102,13 +102,13 @@ const FAQPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions about our ADHD assessment platform.
+            Find answers to common questions about our A(rDx)HD platform.
           </p>
         </div>
 
@@ -147,7 +147,7 @@ const FAQPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="space-y-4">
             {filteredFAQs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div key={index} className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm border border-[#C8D8C8]">
                 <button
                   onClick={() => toggleFAQ(index)}
                   className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"

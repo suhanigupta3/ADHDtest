@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const DataProtectionPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="max-w-4xl mx-auto">
@@ -18,17 +18,17 @@ const DataProtectionPage: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-8 space-y-8 border border-[#C8D8C8]">
             
             {/* Our Commitment */}
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Commitment to Data Protection</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                At ADHD Assessment Platform, we take data protection seriously. We understand that your personal information, 
+                At A(rDx)HD Platform, we take data protection seriously. We understand that your personal information, 
                 especially health-related data, requires the highest level of security and care.
               </p>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                <p className="text-emerald-800 text-sm">
+              <div className="bg-sleek-100 border border-sleek-200 rounded-lg p-4">
+                <p className="text-sleek-800 text-sm">
                   We are committed to maintaining the highest standards of data protection and privacy in accordance with 
                   international regulations including GDPR, HIPAA guidelines, and other applicable data protection laws.
                 </p>
@@ -69,8 +69,8 @@ const DataProtectionPage: React.FC = () => {
                 {/* Physical Safeguards */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-purple-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
@@ -89,8 +89,8 @@ const DataProtectionPage: React.FC = () => {
                 {/* Compliance Standards */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-orange-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     </div>
@@ -116,22 +116,22 @@ const DataProtectionPage: React.FC = () => {
               </p>
               
               <div className="space-y-4">
-                <div className="border-l-4 border-red-500 bg-red-50 p-4">
-                  <h4 className="font-semibold text-red-800 mb-2">Highly Sensitive Data</h4>
-                  <p className="text-red-700 text-sm mb-2">Assessment results, behavioral data, cognitive measurements</p>
-                  <p className="text-red-600 text-xs">Protected with highest-level encryption and access controls</p>
+                <div className="border-l-4 border-sleek-500 bg-sleek-50 p-4">
+                  <h4 className="font-semibold text-sleek-800 mb-2">Highly Sensitive Data</h4>
+                  <p className="text-sleek-700 text-sm mb-2">Assessment results, behavioral data, cognitive measurements</p>
+                  <p className="text-sleek-600 text-xs">Protected with highest-level encryption and access controls</p>
                 </div>
                 
-                <div className="border-l-4 border-yellow-500 bg-yellow-50 p-4">
-                  <h4 className="font-semibold text-yellow-800 mb-2">Personal Information</h4>
-                  <p className="text-yellow-700 text-sm mb-2">Name, email address, demographic information</p>
-                  <p className="text-yellow-600 text-xs">Protected with standard encryption and access logging</p>
+                <div className="border-l-4 border-emerald-500 bg-emerald-50 p-4">
+                  <h4 className="font-semibold text-emerald-800 mb-2">Personal Information</h4>
+                  <p className="text-emerald-700 text-sm mb-2">Name, email address, demographic information</p>
+                  <p className="text-emerald-600 text-xs">Protected with standard encryption and access logging</p>
                 </div>
                 
-                <div className="border-l-4 border-green-500 bg-green-50 p-4">
-                  <h4 className="font-semibold text-green-800 mb-2">Technical Data</h4>
-                  <p className="text-green-700 text-sm mb-2">Usage analytics, performance metrics, error logs</p>
-                  <p className="text-green-600 text-xs">Anonymized where possible and protected with standard security measures</p>
+                <div className="border-l-4 border-sleek-500 bg-sleek-50 p-4">
+                  <h4 className="font-semibold text-sleek-800 mb-2">Technical Data</h4>
+                  <p className="text-sleek-700 text-sm mb-2">Usage analytics, performance metrics, error logs</p>
+                  <p className="text-sleek-600 text-xs">Anonymized where possible and protected with standard security measures</p>
                 </div>
               </div>
             </section>
@@ -145,8 +145,8 @@ const DataProtectionPage: React.FC = () => {
               
               <div className="space-y-4">
                 <div className="flex items-start">
-                  <div className="bg-emerald-100 p-2 rounded-full mr-3 mt-1">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="bg-sleek-100 p-2 rounded-full mr-3 mt-1">
+                    <svg className="h-4 w-4 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
@@ -157,8 +157,8 @@ const DataProtectionPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-emerald-100 p-2 rounded-full mr-3 mt-1">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="bg-sleek-100 p-2 rounded-full mr-3 mt-1">
+                    <svg className="h-4 w-4 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
                     </svg>
                   </div>
@@ -169,8 +169,8 @@ const DataProtectionPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-emerald-100 p-2 rounded-full mr-3 mt-1">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="bg-sleek-100 p-2 rounded-full mr-3 mt-1">
+                    <svg className="h-4 w-4 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7" />
                     </svg>
                   </div>
@@ -192,8 +192,8 @@ const DataProtectionPage: React.FC = () => {
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <svg className="h-8 w-8 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
@@ -202,8 +202,8 @@ const DataProtectionPage: React.FC = () => {
                   </div>
                   
                   <div className="text-center">
-                    <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-emerald-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
@@ -212,8 +212,8 @@ const DataProtectionPage: React.FC = () => {
                   </div>
                   
                   <div className="text-center">
-                    <div className="bg-purple-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <svg className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <svg className="h-8 w-8 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
@@ -233,8 +233,8 @@ const DataProtectionPage: React.FC = () => {
               
               <div className="space-y-4">
                 <div className="flex items-start">
-                  <div className="bg-red-100 p-2 rounded-full mr-3 mt-1">
-                    <span className="text-red-600 font-bold text-sm">1</span>
+                  <div className="bg-sleek-100 p-2 rounded-full mr-3 mt-1">
+                    <span className="text-sleek-600 font-bold text-sm">1</span>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Immediate Response (0-24 hours)</h4>
@@ -243,8 +243,8 @@ const DataProtectionPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-orange-100 p-2 rounded-full mr-3 mt-1">
-                    <span className="text-orange-600 font-bold text-sm">2</span>
+                  <div className="bg-emerald-100 p-2 rounded-full mr-3 mt-1">
+                    <span className="text-emerald-600 font-bold text-sm">2</span>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Investigation (1-3 days)</h4>
@@ -253,8 +253,8 @@ const DataProtectionPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-yellow-100 p-2 rounded-full mr-3 mt-1">
-                    <span className="text-yellow-600 font-bold text-sm">3</span>
+                  <div className="bg-sleek-100 p-2 rounded-full mr-3 mt-1">
+                    <span className="text-sleek-600 font-bold text-sm">3</span>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Notification (Within 72 hours)</h4>
@@ -263,8 +263,8 @@ const DataProtectionPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-green-100 p-2 rounded-full mr-3 mt-1">
-                    <span className="text-green-600 font-bold text-sm">4</span>
+                  <div className="bg-emerald-100 p-2 rounded-full mr-3 mt-1">
+                    <span className="text-emerald-600 font-bold text-sm">4</span>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Recovery and Learning</h4>

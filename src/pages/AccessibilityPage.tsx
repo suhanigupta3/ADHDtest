@@ -3,35 +3,35 @@ import { Link } from 'react-router-dom';
 
 const AccessibilityPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Accessibility Statement</h1>
             <p className="text-xl text-gray-600">
-              Our commitment to making ADHD assessment accessible to everyone.
+              Our commitment to making A(rDx)HD assessment accessible to everyone.
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Last updated: {new Date().toLocaleDateString()}
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-8 space-y-8 border border-[#C8D8C8]">
             
             {/* Our Commitment */}
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Commitment to Accessibility</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                At ADHD Assessment Platform, we believe that everyone deserves equal access to quality ADHD assessment tools. 
+                At A(rDx)HD Platform, we believe that everyone deserves equal access to quality A(rDx)HD assessment tools. 
                 We are committed to ensuring our digital platform is accessible to people with disabilities, including those with 
                 visual, auditory, motor, and cognitive impairments.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-sleek-50 border border-sleek-200 rounded-lg p-4">
                 <div className="flex items-start">
-                  <svg className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-sleek-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-blue-800 text-sm">
+                  <p className="text-sleek-800 text-sm">
                     We strive to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards 
                     and are continuously working to improve accessibility across our platform.
                   </p>
@@ -48,8 +48,8 @@ const AccessibilityPage: React.FC = () => {
                 {/* Visual Accessibility */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-purple-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
@@ -69,8 +69,8 @@ const AccessibilityPage: React.FC = () => {
                 {/* Motor Accessibility */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-green-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-emerald-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
                       </svg>
                     </div>
@@ -89,8 +89,8 @@ const AccessibilityPage: React.FC = () => {
                 {/* Cognitive Accessibility */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-orange-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
@@ -109,8 +109,8 @@ const AccessibilityPage: React.FC = () => {
                 {/* Auditory Accessibility */}
                 <div className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-2 rounded-full mr-3">
-                      <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="bg-sleek-100 p-2 rounded-full mr-3">
+                      <svg className="h-5 w-5 text-sleek-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                       </svg>
                     </div>
@@ -167,7 +167,7 @@ const AccessibilityPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Standards and Testing</h2>
               
               <div className="space-y-4">
-                <div className="border-l-4 border-emerald-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h4 className="font-semibold text-gray-900 mb-2">WCAG 2.1 Compliance</h4>
                   <p className="text-gray-600 text-sm">
                     We follow the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards, 
@@ -175,7 +175,7 @@ const AccessibilityPage: React.FC = () => {
                   </p>
                 </div>
                 
-                <div className="border-l-4 border-blue-500 pl-4">
+                <div className="border-l-4 border-emerald-500 pl-4">
                   <h4 className="font-semibold text-gray-900 mb-2">Regular Testing</h4>
                   <p className="text-gray-600 text-sm">
                     We conduct regular accessibility audits using both automated tools and manual testing 
@@ -183,7 +183,7 @@ const AccessibilityPage: React.FC = () => {
                   </p>
                 </div>
                 
-                <div className="border-l-4 border-purple-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h4 className="font-semibold text-gray-900 mb-2">User Testing</h4>
                   <p className="text-gray-600 text-sm">
                     We collaborate with users who have disabilities to test our platform and gather 
@@ -200,14 +200,14 @@ const AccessibilityPage: React.FC = () => {
                 We are committed to transparency about accessibility challenges and our efforts to address them:
               </p>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
                 <div className="flex items-start">
-                  <svg className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <svg className="h-5 w-5 text-emerald-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                   <div>
-                    <h4 className="font-semibold text-yellow-800 mb-1">Ongoing Improvements</h4>
-                    <p className="text-sm text-yellow-700">
+                    <h4 className="font-semibold text-emerald-800 mb-1">Ongoing Improvements</h4>
+                    <p className="text-sm text-emerald-700">
                       Some interactive assessment elements are being enhanced for better screen reader compatibility. 
                       We expect these improvements to be completed by the next major update.
                     </p>

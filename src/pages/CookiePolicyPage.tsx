@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const CookiePolicyPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="max-w-4xl mx-auto">
@@ -18,7 +18,7 @@ const CookiePolicyPage: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
+          <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm p-8 space-y-8 border border-[#C8D8C8]">
             
             {/* What are Cookies */}
             <section>
@@ -38,7 +38,7 @@ const CookiePolicyPage: React.FC = () => {
               
               <div className="space-y-6">
                 {/* Essential Cookies */}
-                <div className="border-l-4 border-emerald-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Essential Cookies</h3>
                   <p className="text-gray-600 mb-2">
                     These cookies are necessary for our website to function properly. They enable core functionality such as:
@@ -55,7 +55,7 @@ const CookiePolicyPage: React.FC = () => {
                 </div>
 
                 {/* Functional Cookies */}
-                <div className="border-l-4 border-blue-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Functional Cookies</h3>
                   <p className="text-gray-600 mb-2">
                     These cookies help us provide enhanced functionality and personalization:
@@ -72,7 +72,7 @@ const CookiePolicyPage: React.FC = () => {
                 </div>
 
                 {/* Analytics Cookies */}
-                <div className="border-l-4 border-purple-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics Cookies</h3>
                   <p className="text-gray-600 mb-2">
                     These cookies help us understand how visitors use our website:
@@ -90,7 +90,7 @@ const CookiePolicyPage: React.FC = () => {
                 </div>
 
                 {/* Performance Cookies */}
-                <div className="border-l-4 border-orange-500 pl-4">
+                <div className="border-l-4 border-sleek-500 pl-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Performance Cookies</h3>
                   <p className="text-gray-600 mb-2">
                     These cookies help us optimize website performance:
@@ -158,15 +158,15 @@ const CookiePolicyPage: React.FC = () => {
                   </ul>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                   <div className="flex items-start">
-                    <svg className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <svg className="h-5 w-5 text-emerald-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                     <div>
-                      <h4 className="font-semibold text-yellow-800 mb-1">Important Note</h4>
-                      <p className="text-sm text-yellow-700">
-                        Disabling essential cookies may prevent you from using certain features of our website, including the ADHD assessment.
+                      <h4 className="font-semibold text-emerald-800 mb-1">Important Note</h4>
+                      <p className="text-sm text-emerald-700">
+                        Disabling essential cookies may prevent you from using certain features of our website, including the A(rDx)HD assessment.
                       </p>
                     </div>
                   </div>

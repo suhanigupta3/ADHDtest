@@ -7,7 +7,7 @@ const Dashboard: React.FC = () => {
   const { hasConsent, loading } = useConsent();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100">
+    <div className="min-h-screen bg-gradient-dark">
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <motion.div
@@ -16,95 +16,126 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-white mb-4">
               Welcome to Your Dashboard
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
-              Continue your ADHD assessment journey. Track your progress and access personalized resources.
+            <p className="text-lg text-sage-100 max-w-2xl mx-auto mb-4">
+              Continue your A(rDx)HD journey. Track your progress and access personalized resources.
             </p>
             
             {/* Consent Status Indicator */}
             {!loading && (
               <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
                 hasConsent 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
+                  ? 'bg-emerald-900/50 text-emerald-100 border border-emerald-600' 
+                  : 'bg-amber-900/50 text-amber-100 border border-amber-600'
               }`}>
                 <div className={`w-2 h-2 rounded-full mr-2 ${
-                  hasConsent ? 'bg-green-400' : 'bg-yellow-400'
+                  hasConsent ? 'bg-emerald-400' : 'bg-amber-400'
                 }`}></div>
                 {hasConsent ? 'Consent Given' : 'Consent Required'}
               </div>
             )}
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          {/* Navigation Cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* Assessment Card */}
             <motion.div
-              className="card p-6 text-center hover:shadow-xl transition-shadow duration-300"
-              whileHover={{ y: -5 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="card-dark hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="w-12 h-12 bg-darkforest-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-darkforest-700" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 3a1 1 0 011-1h1a1 1 0 110 2H7a1 1 0 01-1-1zm5 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zm-5 4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                {loading ? 'Loading...' : hasConsent ? 'Continue Assessment' : 'Start Assessment'}
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                {loading 
-                  ? 'Checking consent status...' 
-                  : hasConsent 
-                    ? 'Continue your ADHD assessment where you left off'
-                    : 'Begin your interactive ADHD assessment with our Unity-based games'
-                }
-              </p>
-              {!loading && (
-                <Link 
-                  to={hasConsent ? "/assessment" : "/consent"} 
-                  className="btn-primary text-sm"
-                >
-                  {hasConsent ? 'Continue' : 'Start Now'}
+              <div className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Start Assessment</h3>
+                <p className="text-sage-100 mb-4">Begin your comprehensive A(rDx)HD assessment with interactive games and questionnaires.</p>
+                <Link to="/assessment" className="btn-primary-dark inline-flex items-center">
+                  Begin Assessment
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
-              )}
+              </div>
             </motion.div>
 
+            {/* Results Card */}
             <motion.div
-              className="card p-6 text-center hover:shadow-xl transition-shadow duration-300"
-              whileHover={{ y: -5 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="card-dark hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="w-12 h-12 bg-earth-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-earth-700" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                </svg>
+              <div className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-sleek-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">View Results</h3>
+                <p className="text-sage-100 mb-4">Review your assessment results and detailed analysis of your performance.</p>
+                <Link to="/results" className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-sleek-600 text-white rounded-lg hover:from-emerald-700 hover:to-sleek-700 transition-all duration-300 border border-emerald-500 focus-visible-ring">
+                  View Results
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">View Results</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Check your assessment progress and personalized insights
-              </p>
-              <Link to="/results" className="btn-secondary text-sm">
-                View Results
-              </Link>
             </motion.div>
 
+            {/* Resources Card */}
             <motion.div
-              className="card p-6 text-center hover:shadow-xl transition-shadow duration-300"
-              whileHover={{ y: -5 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="card-dark hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="w-12 h-12 bg-darkforest-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-darkforest-800" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
+              <div className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Learn About ADHD</h3>
+                <p className="text-sage-100 mb-4">Access educational resources and management strategies for ADHD.</p>
+                <Link to="/resources" className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300 border border-sleek-500 focus-visible-ring">
+                  Explore Resources
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Learn About ADHD</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Interactive spider web content map about ADHD types, causes, and diagnosis
-              </p>
-              <Link to="/about-adhd" className="btn-secondary text-sm">
-                Explore ADHD
-              </Link>
             </motion.div>
           </div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="bg-gradient-to-r from-sleek-900/50 to-emerald-900/50 rounded-xl p-6 border border-sleek-600"
+          >
+            <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/about-adhd" className="btn-secondary-dark inline-flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                About ADHD
+              </Link>
+              <Link to="/consent" className="btn-secondary-dark inline-flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Update Consent
+              </Link>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </div>

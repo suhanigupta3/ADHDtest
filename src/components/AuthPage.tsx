@@ -133,7 +133,7 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-light flex items-center justify-center p-4">
       <motion.div
         className="w-full max-w-md"
         variants={containerVariants}
@@ -142,7 +142,7 @@ const AuthPage: React.FC = () => {
       >
         {/* Header */}
         <motion.div className="text-center mb-8" variants={itemVariants}>
-          <Link to="/" className="inline-flex items-center text-darkforest-700 hover:text-darkforest-800 mb-10">
+          <Link to="/" className="inline-flex items-center text-sleek-700 hover:text-sleek-800 mb-10 focus-visible-ring">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -152,7 +152,7 @@ const AuthPage: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
             <img 
               src="/adhd-logo.png" 
-              alt="ADHD Assessment Logo" 
+              alt="A(rDx)HD Logo" 
               className="w-16 h-16 object-contain"
               onError={(e) => {
                 // Fallback to icon if logo fails to load
@@ -160,7 +160,7 @@ const AuthPage: React.FC = () => {
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center shadow-lg hidden">
+            <div className="w-16 h-16 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-full flex items-center justify-center shadow-lg hidden">
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
               </svg>
@@ -171,10 +171,10 @@ const AuthPage: React.FC = () => {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
           
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-center mb-6">
             {isLogin 
-              ? 'Sign in to continue your ADHD assessment journey' 
-              : 'Join us to start your personalized ADHD assessment'
+              ? 'Sign in to continue your A(rDx)HD journey' 
+              : 'Join us to start your personalized A(rDx)HD assessment'
             }
           </p>
         </motion.div>
@@ -243,7 +243,8 @@ const AuthPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus-visible-ring"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,7 +299,7 @@ const AuthPage: React.FC = () => {
           <motion.button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-darkforest-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-earth-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-darkforest-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 focus-visible-ring disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: loading ? 1 : 1.02 }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
           >
@@ -318,7 +319,7 @@ const AuthPage: React.FC = () => {
                 type="button"
                 onClick={handleForgotPassword}
                 disabled={loading}
-                className="text-sm text-darkforest-700 hover:text-darkforest-800 font-medium disabled:opacity-50"
+                className="text-sm text-sleek-700 hover:text-sleek-800 font-medium disabled:opacity-50 focus-visible-ring"
               >
                 Forgot your password?
               </button>
@@ -343,7 +344,7 @@ const AuthPage: React.FC = () => {
                   displayName: '',
                 });
               }}
-              className="text-sm text-darkforest-700 hover:text-darkforest-800 font-medium"
+              className="text-sm text-sleek-700 hover:text-sleek-800 font-medium focus-visible-ring"
             >
               {isLogin ? 'Sign up' : 'Sign in'}
             </button>

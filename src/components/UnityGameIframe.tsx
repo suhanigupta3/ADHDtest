@@ -59,7 +59,7 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
   const handleIframeLoad = () => {
     setIsLoading(false);
     console.log(`${gameName} iframe loaded`);
-    console.log("🎮 Invoking Unity game with userId:", userId || 'anonymous');
+    console.log("Invoking Unity game with userId:", userId || 'anonymous');
   };
 
   const handleIframeError = () => {
@@ -93,17 +93,16 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
   }
 
   return (
-    <div className="unity-game-iframe-container relative flex justify-center">
+    <div className="unity-game-iframe-container relative w-full h-full flex items-center justify-center bg-sage-900/20 rounded-lg">
       {/* Loading Screen */}
       {isLoading && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-gray-200 z-10"
-          style={{ width, height }}
+          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50 rounded-lg border border-sleek-200 z-10"
         >
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Loading {gameName}</h3>
-            <p className="text-sm text-gray-600">Initializing game...</p>
+            <div className="w-16 h-16 border-4 border-sleek-300 border-t-sleek-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-sleek-800 mb-2">Loading {gameName}</h3>
+            <p className="text-sm text-sleek-600">Initializing game...</p>
           </div>
         </div>
       )}
@@ -112,13 +111,21 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
       <iframe
         ref={iframeRef}
         src={`/unity-builds/${gameId}/index.html?userId=${encodeURIComponent(userId || 'anonymous')}&gameId=${gameId}`}
-        width={width}
-        height={height}
+        className="rounded-lg shadow-lg border border-sage-600"
+        style={{
+          width: '100%',
+          maxWidth: '900px',
+          height: '100%',
+          minHeight: '600px',
+          maxHeight: 'calc(100vh - 250px)',
+          aspectRatio: '16/9',
+          display: 'block',
+          objectFit: 'contain'
+        }}
         frameBorder="0"
         allowFullScreen
         onLoad={handleIframeLoad}
         onError={handleIframeError}
-        className="rounded-lg shadow-lg"
         title={`${gameName} Game`}
         sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-orientation-lock"
       />

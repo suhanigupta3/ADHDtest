@@ -2,8 +2,8 @@ export const adhdData = {
   centerNode: {
     id: "what-is-adhd",
     title: "What is ADHD?",
-    color: "orange",
-    colorClass: "from-orange-400 to-orange-600",
+    color: "sleek",
+    colorClass: "from-sleek-400 to-sleek-600",
     icon: "brain",
     definition: "ADHD (Attention Deficit Hyperactivity Disorder) is a neurodevelopmental condition characterized by persistent patterns of inattention, hyperactivity, and impulsivity that interfere with functioning and development. It affects how the brain regulates attention, behavior, and emotions, impacting daily life across multiple settings including home, school, work, and relationships.",
     keyFacts: [
@@ -89,9 +89,9 @@ export const adhdData = {
       id: "inattentive-type",
       title: "Inattentive Type",
       color: "purple",
-      colorClass: "from-purple-400 to-purple-600",
+      colorClass: "from-sleek-400 to-sleek-600",
       icon: "focus",
-      position: { angle: 0, distance: 280 },
+      position: { angle: 0, distance: 300 },
       overview: "Inattentive ADHD (formerly called ADD) is characterized by persistent difficulties with sustained attention, organization, and task completion. Individuals may appear dreamy, forgetful, or disorganized, but are not necessarily hyperactive or disruptive.",
       detailedDescription: "People with inattentive ADHD struggle with the brain's executive functioning systems that control attention, working memory, and cognitive flexibility. This isn't about intelligence or effort—the brain simply processes attention and focus differently.",
       symptoms: [
@@ -189,9 +189,9 @@ export const adhdData = {
       id: "hyperactive-impulsive-type",
       title: "Hyperactive-Impulsive Type",
       color: "blue",
-      colorClass: "from-blue-400 to-blue-600",
+      colorClass: "from-emerald-400 to-emerald-600",
       icon: "energy",
-      position: { angle: 72, distance: 280 },
+      position: { angle: 60, distance: 300 },
       overview: "Hyperactive-Impulsive ADHD is characterized by persistent patterns of hyperactivity and impulsivity that interfere with functioning. This presentation involves excessive energy, restlessness, and difficulty controlling impulses.",
       detailedDescription: "This type involves dysregulation of the brain's inhibitory control systems. The prefrontal cortex, responsible for self-control and impulse regulation, functions differently, leading to difficulties in controlling behavior and managing energy levels.",
       symptoms: [
@@ -295,9 +295,9 @@ export const adhdData = {
       id: "combined-type",
       title: "Combined Type",
       color: "green",
-      colorClass: "from-green-400 to-green-600",
+      colorClass: "from-sleek-400 to-sleek-600",
       icon: "combined",
-      position: { angle: 144, distance: 280 },
+      position: { angle: 120, distance: 300 },
       overview: "Combined ADHD is the most common presentation, featuring significant symptoms from both inattentive and hyperactive-impulsive categories. This comprehensive presentation often creates the most complex challenges across multiple life domains.",
       detailedDescription: "Combined type represents a complex interplay of attention, impulse control, and hyperactivity challenges. Individuals experience the full spectrum of ADHD symptoms, requiring comprehensive treatment approaches that address multiple symptom domains.",
       symptoms: [
@@ -402,9 +402,9 @@ export const adhdData = {
       id: "causes",
       title: "Causes & Origins",
       color: "yellow",
-      colorClass: "from-yellow-400 to-yellow-600",
+      colorClass: "from-emerald-400 to-emerald-600",
       icon: "dna",
-      position: { angle: 216, distance: 280 },
+      position: { angle: 180, distance: 300 },
       overview: "ADHD has complex, multifactorial origins involving genetics, brain development, and environmental factors. Research shows it's a legitimate neurobiological condition with strong hereditary components and measurable brain differences.",
       detailedDescription: "ADHD arises from differences in brain structure and function, particularly in areas controlling executive function, attention regulation, and impulse control. These differences are largely genetically determined but can be influenced by environmental factors during critical developmental periods.",
       geneticFactors: {
@@ -515,10 +515,10 @@ export const adhdData = {
       id: "diagnosis",
       title: "Diagnosis & Assessment",
       color: "red",
-      colorClass: "from-red-400 to-red-600",
+      colorClass: "from-sleek-400 to-sleek-600",
       icon: "diagnosis",
-      position: { angle: 288, distance: 280 },
-      overview: "ADHD diagnosis requires comprehensive evaluation by qualified professionals using standardized criteria, clinical interviews, rating scales, and collateral information. There's no single test for ADHD; diagnosis is based on pattern recognition and clinical judgment.",
+      position: { angle: 240, distance: 300 },
+      overview: "ADHD diagnosis requires comprehensive evaluation by qualified professionals using standardized criteria, clinical interviews, and rating scales. There's no single test - diagnosis is based on pattern recognition and clinical judgment across multiple settings.",
       detailedDescription: "ADHD diagnosis is a clinical process that relies on gathering detailed information about symptoms across multiple settings and time periods. Professionals use established criteria while considering developmental history, current functioning, and ruling out other possible explanations for symptoms.",
       diagnosticCriteria: {
         dsm5Requirements: [
@@ -656,6 +656,136 @@ export const adhdData = {
         "Brain scans or blood tests can diagnose ADHD",
         "If someone can focus on preferred activities, they don't have ADHD",
         "ADHD diagnosis is just an excuse for poor behavior or laziness"
+      ]
+    },
+    {
+      id: "treatment",
+      title: "Treatment & Management",
+      color: "green",
+      colorClass: "from-emerald-400 to-emerald-600",
+      icon: "treatment",
+      position: { angle: 300, distance: 300 },
+      overview: "ADHD treatment is multimodal, combining medication, behavioral therapy, lifestyle modifications, and support strategies. Effective management requires personalized approaches that address individual symptoms and life circumstances.",
+      detailedDescription: "Successful ADHD treatment involves a comprehensive approach that recognizes the condition's complexity and individual variability. Treatment plans should be tailored to specific symptoms, age, lifestyle, and personal preferences, with regular monitoring and adjustment.",
+      treatmentApproaches: {
+        medication: {
+          stimulants: [
+            "Methylphenidate (Ritalin, Concerta, Focalin)",
+            "Amphetamines (Adderall, Vyvanse, Dexedrine)",
+            "Most effective for 70-80% of people with ADHD",
+            "Work by increasing dopamine and norepinephrine in brain",
+            "Require careful monitoring and dosage adjustment"
+          ],
+          nonStimulants: [
+            "Atomoxetine (Strattera) - selective norepinephrine reuptake inhibitor",
+            "Guanfacine (Intuniv) - alpha-2 adrenergic agonist",
+            "Clonidine (Kapvay) - blood pressure medication with ADHD benefits",
+            "Useful when stimulants are ineffective or contraindicated",
+            "May take several weeks to show full effect"
+          ]
+        },
+        behavioralTherapy: [
+          "Cognitive Behavioral Therapy (CBT) for adults",
+          "Behavioral Parent Training for children",
+          "Social skills training for peer relationships",
+          "Organizational skills training",
+          "Time management and planning strategies",
+          "Mindfulness and meditation techniques"
+        ],
+        lifestyleModifications: [
+          "Regular exercise (especially aerobic activity)",
+          "Consistent sleep schedule and good sleep hygiene",
+          "Healthy diet with protein and omega-3 fatty acids",
+          "Stress management techniques",
+          "Environmental modifications to reduce distractions",
+          "Regular routines and structure"
+        ]
+      },
+      ageSpecificTreatment: {
+        preschoolers: "Behavioral therapy first-line; medication only for severe cases",
+        schoolAge: "Combination of medication and behavioral interventions",
+        adolescents: "Medication often effective; therapy for co-occurring conditions",
+        adults: "Medication and CBT; workplace accommodations",
+        elderly: "Careful medication management; focus on safety and function"
+      },
+      complementaryApproaches: [
+        "Neurofeedback training",
+        "Exercise programs specifically designed for ADHD",
+        "Dietary modifications and supplements",
+        "Mindfulness and meditation practices",
+        "Occupational therapy for executive function skills",
+        "Support groups and peer mentoring"
+      ],
+      treatmentChallenges: {
+        medication: [
+          "Finding the right medication and dosage",
+          "Managing side effects",
+          "Stigma and misconceptions about medication",
+          "Cost and insurance coverage",
+          "Long-term effects and monitoring"
+        ],
+        therapy: [
+          "Finding qualified therapists with ADHD expertise",
+          "Time and financial commitment required",
+          "Consistency in implementing strategies",
+          "Family involvement and support needed"
+        ],
+        lifestyle: [
+          "Difficulty maintaining new habits",
+          "Environmental factors beyond individual control",
+          "Co-occurring conditions complicating treatment",
+          "Social support and understanding"
+        ]
+      },
+      successFactors: [
+        "Early diagnosis and intervention",
+        "Comprehensive treatment approach",
+        "Consistent follow-up and monitoring",
+        "Family and social support",
+        "Realistic expectations and patience",
+        "Individualized treatment plans",
+        "Addressing co-occurring conditions"
+      ],
+      monitoringProgress: [
+        "Regular symptom assessment using rating scales",
+        "Academic or work performance tracking",
+        "Quality of life and relationship measures",
+        "Side effect monitoring for medication",
+        "Adjustment of treatment plan as needed",
+        "Long-term outcome evaluation"
+      ],
+      resources: [
+        {
+          title: "CHADD – ADHD Treatment",
+          url: "https://chadd.org/about-adhd/treatment/",
+          type: "external",
+          description: "Comprehensive treatment information from CHADD"
+        },
+        {
+          title: "NIMH – ADHD Treatment",
+          url: "https://www.nimh.nih.gov/health/topics/attention-deficit-hyperactivity-disorder-adhd/treatment",
+          type: "external",
+          description: "Government resource on ADHD treatment options"
+        },
+        {
+          title: "ADHD Medication Guide",
+          url: "https://www.additudemag.com/adhd-medication-guide/",
+          type: "external",
+          description: "Comprehensive guide to ADHD medications"
+        },
+        {
+          title: "Behavioral Therapy for ADHD",
+          url: "https://www.apa.org/topics/adhd/behavioral-therapy",
+          type: "external",
+          description: "American Psychological Association resource on behavioral therapy"
+        }
+      ],
+      statistics: [
+        "70-80% of people with ADHD respond well to stimulant medication",
+        "Combined treatment (medication + therapy) most effective",
+        "Early treatment associated with better long-term outcomes",
+        "Many adults continue medication into adulthood",
+        "Treatment reduces risk of accidents, substance use, and other complications"
       ]
     }
   ]

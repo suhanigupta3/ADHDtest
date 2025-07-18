@@ -32,6 +32,7 @@ interface UserResults {
   berryBlitz?: GameData;
   patternMatch?: GameData;
   kitchenQuest?: GameData;
+  flutterFocus?: GameData;
   [key: string]: GameData | undefined;
 }
 
@@ -44,6 +45,26 @@ const GameResultsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>('combined');
   const [showInterpretationGuide, setShowInterpretationGuide] = useState(false);
+
+  // IMPORTANT MEDICAL DISCLAIMER
+  const MedicalDisclaimer = () => (
+    <div className="bg-amber-900/30 border border-amber-600 rounded-lg p-6 mb-8">
+      <div className="flex items-start gap-3">
+        <svg className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        <div>
+          <h3 className="text-amber-300 font-bold text-lg mb-2 tracking-tight">Results Disclaimer</h3>
+          <div className="text-sage-200 text-professional space-y-2">
+            <p><strong>These results are for educational purposes only.</strong> They are not a medical diagnosis and should not be used to self-diagnose ADHD or any other condition.</p>
+            <p><strong>The scores and interpretations provided are based on game performance, not clinical assessments.</strong> They do not constitute medical advice, diagnosis, or treatment recommendations.</p>
+            <p><strong>If you have concerns about ADHD or other health conditions, please consult with qualified healthcare professionals.</strong> Only licensed medical professionals can provide proper diagnosis and treatment.</p>
+            <p><strong>Never make medical decisions based on these results alone.</strong> Always seek professional medical guidance for health concerns.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     const fetchUserResults = async () => {
@@ -97,7 +118,7 @@ const GameResultsPage: React.FC = () => {
             };
           }
         }
-        // Fetch Kitchen Quest data
+        // Fetch Bounce Back data
         const kitchenQuestDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'KitchenQuest'));
         if (kitchenQuestDoc.exists()) {
           const kitchenQuestData = kitchenQuestDoc.data();
@@ -114,6 +135,27 @@ const GameResultsPage: React.FC = () => {
             results.kitchenQuest = {
               scores: kitchenQuestData.scores,
               selfReport: kitchenQuestData.selfReport,
+              rounds: rounds
+            };
+          }
+        }
+        // Fetch Flutter Focus data
+        const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'FlutterFocus'));
+        if (flutterFocusDoc.exists()) {
+          const flutterFocusData = flutterFocusDoc.data();
+          if (flutterFocusData.scores && flutterFocusData.selfReport) {
+            let rounds: GameRound[] = [];
+            try {
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'FlutterFocus', 'rounds'));
+              rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
+            } catch (roundsError) {
+              if (flutterFocusData.rounds && Array.isArray(flutterFocusData.rounds)) {
+                rounds = flutterFocusData.rounds;
+              }
+            }
+            results.flutterFocus = {
+              scores: flutterFocusData.scores,
+              selfReport: flutterFocusData.selfReport,
               rounds: rounds
             };
           }
@@ -149,6 +191,7 @@ const GameResultsPage: React.FC = () => {
 
     games.forEach(game => {
       if (game && game.scores) {
+        console.log('Game scores:', game.scores);
         combinedScores.inattention += game.scores.inattention;
         combinedScores.hyperactivity += game.scores.hyperactivity;
         combinedScores.impulsivity += game.scores.impulsivity;
@@ -162,12 +205,13 @@ const GameResultsPage: React.FC = () => {
       combinedScores[key as keyof GameScores] /= numGames;
     });
 
+    console.log('Combined scores:', combinedScores);
     return combinedScores;
   };
 
   const getGameProgress = () => {
-    if (!userResults) return { completed: 0, total: 3, percentage: 0, nextGame: null };
-    const gameOrder = ['berryBlitz', 'patternMatch', 'kitchenQuest'];
+    if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
+    const gameOrder = ['berryBlitz', 'patternMatch', 'kitchenQuest', 'flutterFocus'];
     const completedGames = gameOrder.filter(game => userResults[game]?.scores);
     const completedCount = completedGames.length;
     const totalGames = gameOrder.length;
@@ -192,8 +236,9 @@ const GameResultsPage: React.FC = () => {
   const getGameDisplayName = (gameKey: string) => {
     const nameMap: { [key: string]: string } = {
       berryBlitz: 'Berry Blitz',
-      patternMatch: 'Pattern Match',
-      kitchenQuest: 'Kitchen Quest'
+      patternMatch: 'Signal Snap',
+      kitchenQuest: 'Bounce Back',
+      flutterFocus: 'Flutter Focus'
     };
     return nameMap[gameKey] || gameKey;
   };
@@ -202,37 +247,54 @@ const GameResultsPage: React.FC = () => {
     const descriptions: { [key: string]: string } = {
       berryBlitz: 'Navigate through obstacles to collect fruits while avoiding shurikens',
       patternMatch: 'Match patterns as quickly and accurately as possible',
-      kitchenQuest: 'Manage multiple cooking tasks while maintaining focus and organization'
+      kitchenQuest: 'Break bricks with a bouncing ball while managing different mental states and challenges',
+      flutterFocus: 'A fast-paced rhythm and timing challenge that tests your focus and coordination'
     };
     return descriptions[gameKey] || 'Complete this game to continue your assessment';
   };
 
   const getScoreInterpretation = (score: number): { level: string; color: string; description: string } => {
-    if (score >= 0.0 && score <= 1.9) {
+    // Handle edge cases and invalid scores
+    if (score === null || score === undefined || isNaN(score) || !isFinite(score)) {
+      console.warn('Invalid score detected:', score);
+      return { 
+        level: 'Invalid Score', 
+        color: 'text-gray-600', 
+        description: 'Score data unavailable' 
+      };
+    }
+
+    // Clamp score to valid range and log if out of bounds
+    const clampedScore = Math.max(0, Math.min(10, score));
+    if (score !== clampedScore) {
+      console.warn(`Score ${score} clamped to ${clampedScore} for Executive Function`);
+    }
+
+    if (clampedScore >= 0.0 && clampedScore <= 1.9) {
       return { 
         level: 'No Concern', 
         color: 'text-green-600', 
         description: 'No follow-up needed' 
       };
-    } else if (score >= 2.0 && score <= 3.9) {
+    } else if (clampedScore >= 2.0 && clampedScore <= 3.9) {
       return { 
         level: 'Low Concern', 
         color: 'text-green-600', 
         description: 'No immediate concern; track over time' 
       };
-    } else if (score >= 4.0 && score <= 6.4) {
+    } else if (clampedScore >= 4.0 && clampedScore <= 6.4) {
       return { 
         level: 'Monitor Symptoms', 
         color: 'text-yellow-600', 
         description: 'Suggest monitoring or lifestyle adjustments' 
       };
-    } else if (score >= 6.5 && score <= 8.4) {
+    } else if (clampedScore >= 6.5 && clampedScore <= 8.4) {
       return { 
         level: 'Moderate Concern', 
-        color: 'text-orange-600', 
+        color: 'text-amber-600', 
         description: 'Recommend structured follow-up or screening' 
       };
-    } else if (score >= 8.5 && score <= 10.0) {
+    } else if (clampedScore >= 8.5 && clampedScore <= 10.0) {
       return { 
         level: 'High Concern', 
         color: 'text-red-600', 
@@ -263,21 +325,26 @@ const GameResultsPage: React.FC = () => {
   const renderScoreCard = (title: string, score: number, description: string) => {
     const interpretation = getScoreInterpretation(score);
     
+    // Handle invalid scores gracefully
+    const displayScore = (score === null || score === undefined || isNaN(score) || !isFinite(score)) 
+      ? 'N/A' 
+      : Math.max(0, Math.min(10, score)).toFixed(1);
+    
     return (
       <motion.div
-        className="card p-6"
+        className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <div className="flex items-center justify-between mb-3">
           <span 
             className={`text-3xl font-bold ${interpretation.color} cursor-pointer hover:opacity-80 transition-opacity`}
             onClick={() => setShowInterpretationGuide(true)}
             title="Click to view score interpretation guide"
           >
-            {score.toFixed(1)}
+            {displayScore}
           </span>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
             interpretation.color.replace('text-', 'bg-').replace('-600', '-100')
@@ -285,8 +352,8 @@ const GameResultsPage: React.FC = () => {
             {interpretation.level}
           </span>
         </div>
-        <p className="text-gray-600 text-sm">{description}</p>
-        <p className={`text-sm mt-2 ${interpretation.color}`}>
+        <p className="text-gray-700 text-sm font-medium">{description}</p>
+        <p className={`text-sm mt-2 font-medium ${interpretation.color}`}>
           {interpretation.description}
         </p>
       </motion.div>
@@ -297,8 +364,9 @@ const GameResultsPage: React.FC = () => {
     console.log(`🔍 Rendering rounds table for ${gameName}:`, rounds);
     
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
-                           gameName === 'patternMatch' ? 'Pattern Match' : 
-                           gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
+                           gameName === 'patternMatch' ? 'Signal Snap' : 
+                           gameName === 'kitchenQuest' ? 'Bounce Back' : 
+                           gameName === 'flutterFocus' ? 'Flutter Focus' : gameName;
 
     // Determine which fields to show based on game type
     const isBerryBlitz = gameName === 'berryBlitz';
@@ -477,9 +545,9 @@ const GameResultsPage: React.FC = () => {
       5: 'Symptom is consistently present'
     };
 
-    const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' :
-                           gameName === 'patternMatch' ? 'Pattern Match' :
-                           gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
+        const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
+                           gameName === 'patternMatch' ? 'Signal Snap' : 
+                           gameName === 'kitchenQuest' ? 'Bounce Back' : gameName;
 
     return (
       <div className="card p-6">
@@ -499,7 +567,7 @@ const GameResultsPage: React.FC = () => {
                         key={scoreValue}
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                           score >= scoreValue
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-sleek-500 text-white'
                             : 'bg-gray-200 text-gray-500'
                         }`}
                         title={`${scoreValue}: ${scoreLabels[scoreValue]} - ${scoreInterpretations[scoreValue]}`}
@@ -525,8 +593,8 @@ const GameResultsPage: React.FC = () => {
 
   const renderGameInsights = (gameData: GameData, gameName: string) => {
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
-                           gameName === 'patternMatch' ? 'Pattern Match' : 
-                           gameName === 'kitchenQuest' ? 'Kitchen Quest' : gameName;
+                           gameName === 'patternMatch' ? 'Signal Snap' : 
+                           gameName === 'kitchenQuest' ? 'Bounce Back' : gameName;
 
     let insights = [];
 
@@ -538,25 +606,25 @@ const GameResultsPage: React.FC = () => {
       const avgRoundScore = gameData.rounds.reduce((sum, r) => sum + (r.roundScore || 0), 0) / gameData.rounds.length;
       
       insights.push(
-        <div key="time" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-          <span className="text-sm font-medium text-blue-700">Average Time to Target</span>
-          <span className="text-sm text-blue-600 font-semibold">{formatTimeToReadable(avgTime / 1000)}</span>
+        <div key="time" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Average Time to Target</span>
+          <span className="text-sm text-sleek-600 font-semibold">{formatTimeToReadable(avgTime / 1000)}</span>
         </div>,
-        <div key="totalDuration" className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-          <span className="text-sm font-medium text-purple-700">Average Total Round Duration</span>
-          <span className="text-sm text-purple-600 font-semibold">{formatTimeToReadable(avgTotalDuration / 1000)}</span>
+        <div key="totalDuration" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Average Total Round Duration</span>
+          <span className="text-sm text-emerald-600 font-semibold">{formatTimeToReadable(avgTotalDuration / 1000)}</span>
         </div>,
-        <div key="redundant" className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-          <span className="text-sm font-medium text-yellow-700">Total Redundant Moves</span>
-          <span className="text-sm text-yellow-600 font-semibold">{totalRedundant}</span>
+        <div key="redundant" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Total Redundant Moves</span>
+          <span className="text-sm text-sleek-600 font-semibold">{totalRedundant}</span>
         </div>,
-        <div key="collisions" className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-          <span className="text-sm font-medium text-red-700">Total Collisions</span>
-          <span className="text-sm text-red-600 font-semibold">{totalCollisions}</span>
+        <div key="collisions" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Total Collisions</span>
+          <span className="text-sm text-emerald-600 font-semibold">{totalCollisions}</span>
         </div>,
-        <div key="roundScore" className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-          <span className="text-sm font-medium text-green-700">Average Round Score</span>
-          <span className="text-sm text-green-600 font-semibold">{avgRoundScore.toFixed(1)}</span>
+        <div key="roundScore" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Average Round Score</span>
+          <span className="text-sm text-sleek-600 font-semibold">{avgRoundScore.toFixed(1)}</span>
         </div>
       );
     }
@@ -578,22 +646,22 @@ const GameResultsPage: React.FC = () => {
       <div className="space-y-8">
         {/* Progress Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Assessment Progress</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Complete all games to get your comprehensive ADHD assessment results
+          <h1 className="text-4xl font-bold text-sage-100 mb-4">Your Assessment Progress</h1>
+          <p className="text-lg text-sage-200 max-w-3xl mx-auto">
+            Complete all games to get your comprehensive A(rDx)HD assessment results
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="card p-8">
+        <div className="card-dark p-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <h2 className="text-2xl font-bold text-sage-100 mb-2">
               {progress.completed} of {progress.total} Games Completed
             </h2>
-            <div className="text-4xl font-bold text-darkforest-600 mb-2">
+            <div className="text-4xl font-bold text-sleek-300 mb-2">
               {progress.percentage.toFixed(0)}%
             </div>
-            <p className="text-gray-600">
+            <p className="text-sage-200">
               {progress.completed === progress.total 
                 ? 'All games completed! View your combined results below.'
                 : `${progress.total - progress.completed} game${progress.total - progress.completed > 1 ? 's' : ''} remaining`
@@ -602,15 +670,15 @@ const GameResultsPage: React.FC = () => {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-4 mb-6">
+          <div className="w-full bg-sage-700 rounded-full h-4 mb-6">
             <div 
-              className="bg-gradient-to-r from-darkforest-500 to-darkforest-700 h-4 rounded-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-sleek-400 to-emerald-500 h-4 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress.percentage}%` }}
             ></div>
           </div>
 
           {/* Game Status Cards */}
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {progress.gameOrder?.map((gameKey, index) => {
               const isCompleted = progress.completedGames?.includes(gameKey) || false;
               const isNext = progress.nextGame === gameKey;
@@ -619,12 +687,12 @@ const GameResultsPage: React.FC = () => {
               return (
                 <motion.div
                   key={gameKey}
-                  className={`card p-6 relative ${
+                  className={`card-dark p-6 relative ${
                     isCompleted 
-                      ? 'border-green-300 bg-green-50' 
+                      ? 'border-emerald-400 bg-emerald-900/30' 
                       : isNext 
-                        ? 'border-blue-300 bg-blue-50' 
-                        : 'border-gray-300 bg-gray-50'
+                        ? 'border-sleek-400 bg-sleek-900/30' 
+                        : 'border-sage-600 bg-sage-900/30'
                   }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -633,11 +701,11 @@ const GameResultsPage: React.FC = () => {
                   {/* Status Badge */}
                   <div className="absolute top-4 right-4">
                     {isCompleted ? (
-                      <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      <div className="bg-emerald-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                         ✓ Completed
                       </div>
                     ) : isNext ? (
-                      <div className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      <div className="bg-sleek-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                         Next
                       </div>
                     ) : (
@@ -650,9 +718,9 @@ const GameResultsPage: React.FC = () => {
                   {/* Game Icon */}
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
                     isCompleted 
-                      ? 'bg-green-100 text-green-600' 
+                      ? 'bg-emerald-100 text-emerald-600' 
                       : isNext 
-                        ? 'bg-blue-100 text-blue-600' 
+                        ? 'bg-sleek-100 text-sleek-600' 
                         : 'bg-gray-100 text-gray-400'
                   }`}>
                     {isCompleted ? (
@@ -666,28 +734,45 @@ const GameResultsPage: React.FC = () => {
                     )}
                   </div>
 
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
-                    {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
-                    {gameKey === 'patternMatch' && <span className="mr-2">🚀</span>}
-                    {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
+                  <h3 className="text-lg font-semibold text-sage-100 mb-2 text-center">
+                    {gameKey === 'berryBlitz' && (
+                      <svg className="w-6 h-6 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4z"/>
+                      </svg>
+                    )}
+                    {gameKey === 'patternMatch' && (
+                      <svg className="w-6 h-6 inline mr-2 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                      </svg>
+                    )}
+                    {gameKey === 'kitchenQuest' && (
+                      <svg className="w-6 h-6 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
+                      </svg>
+                    )}
+                    {gameKey === 'flutterFocus' && (
+                      <svg className="w-6 h-6 inline mr-2 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
+                      </svg>
+                    )}
                     {getGameDisplayName(gameKey)}
                   </h3>
                   
-                  <p className="text-gray-600 text-sm text-center mb-4">
+                  <p className="text-sage-200 text-sm text-center mb-4">
                     {getGameDescription(gameKey)}
                   </p>
 
                   {isCompleted && userResults && userResults[gameKey] && (
                     <div 
-                      className="text-center cursor-pointer hover:bg-green-100 transition-colors duration-200 rounded-lg p-2"
+                      className="text-center cursor-pointer hover:bg-emerald-800/50 transition-colors duration-200 rounded-lg p-2"
                       onClick={() => setSelectedGame(gameKey)}
                       title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
                     >
-                      <div className="text-2xl font-bold text-green-600 mb-1">
+                      <div className="text-2xl font-bold text-emerald-300 mb-1">
                         {userResults[gameKey]?.scores.adhd_composite.toFixed(1)}
                       </div>
-                      <p className="text-sm text-gray-600">Composite Score</p>
-                      <p className="text-xs text-green-500 mt-1">Click to view details →</p>
+                      <p className="text-sm text-sage-200">Composite Score</p>
+                      <p className="text-xs text-emerald-400 mt-1">Click to view details →</p>
                     </div>
                   )}
 
@@ -704,7 +789,7 @@ const GameResultsPage: React.FC = () => {
 
                   {isLocked && (
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-sage-300">
                         Complete previous games first
                       </p>
                     </div>
@@ -722,16 +807,21 @@ const GameResultsPage: React.FC = () => {
           
           return (
             <>
-              <div className="card p-8 text-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">🎉 All Games Completed!</h2>
-                <p className="text-lg text-gray-600 mb-6">
+              <div className="card-dark p-8 text-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-sage-100 mb-4 flex items-center gap-2 tracking-tight">
+                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  All Games Completed!
+                </h2>
+                <p className="text-lg text-sage-200 mb-6">
                   Congratulations! You've completed all assessment games. Here's your comprehensive ADHD profile:
                 </p>
                 
-                <div className="text-6xl font-bold text-darkforest-600 mb-4">
+                <div className="text-6xl font-bold text-sleek-300 mb-4">
                   {combinedScores.adhd_composite.toFixed(1)}
                 </div>
-                <p className="text-lg text-gray-600 mb-6">
+                <p className="text-lg text-sage-200 mb-6">
                   Overall ADHD Composite Score
                 </p>
                 
@@ -768,9 +858,9 @@ const GameResultsPage: React.FC = () => {
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Assessment Progress</h3>
               <p className="text-gray-600 mb-4">
-                Complete all {progress.total} games to receive your comprehensive ADHD assessment results and clinical recommendations.
+                Complete all {progress.total} games to receive your comprehensive A(rDx)HD assessment results and clinical recommendations.
               </p>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 {progress.completedGames?.map(gameKey => {
                   const gameData = userResults[gameKey];
                   if (!gameData) return null;
@@ -783,16 +873,33 @@ const GameResultsPage: React.FC = () => {
                       title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
                     >
                       <h4 className="font-medium text-gray-800 mb-2">
-                        {gameKey === 'berryBlitz' && <span className="mr-2">🍓</span>}
-                        {gameKey === 'patternMatch' && <span className="mr-2">🚀</span>}
-                        {gameKey === 'kitchenQuest' && <span className="mr-2">👨‍🍳</span>}
+                        {gameKey === 'berryBlitz' && (
+                          <svg className="w-5 h-5 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
+                          </svg>
+                        )}
+                        {gameKey === 'patternMatch' && (
+                          <svg className="w-5 h-5 inline mr-2 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                          </svg>
+                        )}
+                        {gameKey === 'kitchenQuest' && (
+                          <svg className="w-5 h-5 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
+                          </svg>
+                        )}
+                        {gameKey === 'flutterFocus' && (
+                          <svg className="w-5 h-5 inline mr-2 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
+                          </svg>
+                        )}
                         {getGameDisplayName(gameKey)}
                       </h4>
-                      <div className="text-2xl font-bold text-darkforest-600 mb-1">
+                      <div className="text-2xl font-bold text-sleek-300 mb-1">
                         {gameData.scores.adhd_composite.toFixed(1)}
                       </div>
-                      <p className="text-sm text-gray-600">Score</p>
-                      <p className="text-xs text-darkforest-500 mt-1">Click to view details →</p>
+                      <p className="text-sm text-sage-200">Score</p>
+                      <p className="text-xs text-sleek-400 mt-1">Click to view details →</p>
                     </div>
                   );
                 })}
@@ -806,10 +913,10 @@ const GameResultsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-darkforest-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your results...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sleek-400 mx-auto mb-4"></div>
+          <p className="text-sage-200">Loading your results...</p>
         </div>
       </div>
     );
@@ -817,14 +924,18 @@ const GameResultsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Results</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-red-500 text-6xl mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">Error Loading Results</h1>
+          <p className="text-sage-200 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="btn-primary"
+            className="px-6 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300"
           >
             Try Again
           </button>
@@ -835,13 +946,17 @@ const GameResultsPage: React.FC = () => {
 
   if (!userResults || Object.keys(userResults).length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-400 text-6xl mb-4">📊</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">No Results Available</h1>
-          <p className="text-gray-600 mb-4">Complete some assessments to see your results here.</p>
-          <a href="/assessment" className="btn-primary">
-            Start Assessment"
+          <div className="text-sage-400 text-6xl mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M3 3h18v2H3V3m1 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7m4 3v2h8v-2H7m0 4v2h8v-2H7z"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">No Results Available</h1>
+          <p className="text-sage-200 mb-4">Complete some assessments to see your results here.</p>
+          <a href="/assessment" className="px-6 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300">
+            Start Assessment
           </a>
         </div>
       </div>
@@ -849,7 +964,7 @@ const GameResultsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darkforest-50 via-earth-50 to-darkforest-100">
+    <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950">
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -858,9 +973,9 @@ const GameResultsPage: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Assessment Results</h1>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Comprehensive analysis of your ADHD assessment performance across all games
+            <h1 className="text-4xl font-bold text-white mb-4">Your Assessment Results</h1>
+            <p className="text-lg text-sage-200 max-w-3xl mx-auto">
+              Comprehensive analysis of your A(rDx)HD assessment performance across all games
             </p>
           </div>
 
@@ -870,8 +985,8 @@ const GameResultsPage: React.FC = () => {
               onClick={() => setSelectedGame('combined')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedGame === 'combined'
-                  ? 'bg-darkforest-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-sleek-600 text-white'
+                  : 'bg-sage-900/90 text-sage-200 hover:bg-sage-800/90 border border-sage-700'
               }`}
             >
               Progress & Results
@@ -882,13 +997,13 @@ const GameResultsPage: React.FC = () => {
                 onClick={() => setSelectedGame(game)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedGame === game
-                    ? 'bg-darkforest-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    ? 'bg-sleek-600 text-white'
+                    : 'bg-sage-900/90 text-sage-200 hover:bg-sage-800/90 border border-sage-700'
                 }`}
               >
                 {game === 'berryBlitz' ? 'Berry Blitz' : 
-                 game === 'patternMatch' ? 'Pattern Match' : 
-                 game === 'kitchenQuest' ? 'Kitchen Quest' : game}
+                 game === 'patternMatch' ? 'Signal Snap' : 
+                 game === 'kitchenQuest' ? 'Bounce Back' : game}
               </button>
             ))}
           </div>
@@ -906,10 +1021,10 @@ const GameResultsPage: React.FC = () => {
                 return (
                   <>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                      <h2 className="text-3xl font-bold text-white mb-2">
                         {selectedGame === 'berryBlitz' ? 'Berry Blitz' : 
-                         selectedGame === 'patternMatch' ? 'Pattern Match' : 
-                         selectedGame === 'kitchenQuest' ? 'Kitchen Quest' : selectedGame} Results
+                         selectedGame === 'patternMatch' ? 'Signal Snap' : 
+                         selectedGame === 'kitchenQuest' ? 'Bounce Back' : selectedGame} Results
                       </h2>
                     </div>
 
@@ -951,23 +1066,26 @@ const GameResultsPage: React.FC = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Medical Disclaimer */}
+        <MedicalDisclaimer />
       </div>
 
       {/* ADHD Score Interpretation Guide Modal */}
       {showInterpretationGuide && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <motion.div
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-sage-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-sage-700"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">ADHD Score Interpretation Guide</h2>
+                <h2 className="text-2xl font-bold text-white">ADHD Score Interpretation Guide</h2>
                 <button
                   onClick={() => setShowInterpretationGuide(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-sage-400 hover:text-white transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -975,56 +1093,35 @@ const GameResultsPage: React.FC = () => {
                 </button>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score Range</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interpretation</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggested Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">0.0–1.9</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">No concern</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">No follow-up needed</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">2.0–3.9</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Low concern</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">No immediate concern; track over time</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-yellow-600">4.0–6.4</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Monitor symptoms</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">Suggest monitoring or lifestyle adjustments</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-orange-600">6.5–8.4</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">Moderate concern</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">Recommend structured follow-up or screening</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-red-600">8.5–10.0</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">High concern</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">Strongly recommend professional evaluation</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              
-              <p className="text-xs text-gray-500 mt-4 italic">
-                Note: This assessment is for informational purposes only and should not replace professional medical evaluation.
-              </p>
-              
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setShowInterpretationGuide(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Close
-                </button>
+              <div className="space-y-6">
+                <div className="bg-sleek-900/50 rounded-lg p-4 border border-sleek-700">
+                  <h3 className="text-lg font-semibold text-sleek-400 mb-2">Score Ranges:</h3>
+                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-emerald-400 font-medium">0-30: Low</span>
+                      <p className="text-sage-200 mt-1">Typical performance, minimal ADHD symptoms</p>
+                    </div>
+                    <div>
+                      <span className="text-amber-400 font-medium">31-60: Moderate</span>
+                      <p className="text-sage-200 mt-1">Some difficulties, may benefit from strategies</p>
+                    </div>
+                    <div>
+                      <span className="text-red-400 font-medium">61-100: High</span>
+                      <p className="text-sage-200 mt-1">Significant difficulties, consider professional evaluation</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-sage-200 text-sm leading-relaxed">
+                  <p className="mb-4">
+                    <strong className="text-sleek-400">Important:</strong> These scores are for educational purposes only and should not replace professional medical advice. 
+                    Always consult with qualified healthcare providers for proper diagnosis and treatment.
+                  </p>
+                  <p>
+                    Your scores reflect performance on specific cognitive tasks and may vary based on factors such as fatigue, 
+                    stress, or environmental conditions. Consider these results as part of a broader assessment of your cognitive patterns.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
