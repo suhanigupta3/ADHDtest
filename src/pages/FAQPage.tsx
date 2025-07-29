@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 interface FAQItem {
   question: string;
@@ -25,7 +27,7 @@ const FAQPage: React.FC = () => {
     {
       category: 'assessment',
       question: 'How long does the assessment take?',
-      answer: 'The complete assessment typically takes approximately 20-30 minutes. You can pause and resume the assessment at any time. We recommend taking breaks if needed to ensure accurate results.'
+      answer: 'The complete assessment typically takes approximately 15-30 minutes in one sitting preferred. You can pause and resume the assessment at any time. We recommend taking breaks if needed to ensure accurate results.'
     },
     {
       category: 'assessment',
@@ -102,105 +104,87 @@ const FAQPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
-      <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions about our A(rDx)HD platform.
-          </p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search FAQ..."
-              className="w-full px-4 py-3 pl-12 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-            />
-            <svg className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-forest-800 mb-6 text-heading-large">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-xl text-forest-600 max-w-3xl mx-auto text-professional-large">
+              Find answers to common questions about our ADHD assessment and services.
+            </p>
           </div>
-        </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
-          {categories.map((category) => (
-            <button
-              key={category.key}
-              onClick={() => setSelectedCategory(category.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === category.key
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-600'
-              }`}
-            >
-              {category.label}
-            </button>
-          ))}
-        </div>
-
-        {/* FAQ Items */}
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-4">
-            {filteredFAQs.map((faq, index) => (
-              <div key={index} className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-sm border border-[#C8D8C8]">
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-lg font-medium text-gray-900 pr-4">
-                    {faq.question}
-                  </span>
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                      openFAQ === index ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {openFAQ === index && (
-                  <div className="px-6 pb-4">
-                    <div className="text-gray-600 leading-relaxed">
-                      {faq.answer}
-                    </div>
-                  </div>
-                )}
-              </div>
+          {/* Category Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            {categories.map((category) => (
+              <motion.button
+                key={category.key}
+                onClick={() => setSelectedCategory(category.key)}
+                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                  selectedCategory === category.key
+                    ? 'bg-forest-600 text-white shadow-lg'
+                    : 'bg-forest-100 text-forest-700 hover:bg-forest-200 border border-forest-300'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {category.label}
+              </motion.button>
             ))}
           </div>
-        </div>
 
-        {/* Contact Section */}
-        <div className="max-w-4xl mx-auto mt-16">
-          <div className="bg-emerald-50 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Still Have Questions?</h2>
-            <p className="text-gray-600 mb-6">
-              Can't find what you're looking for? Our support team is here to help.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/contact"
-                className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+          {/* FAQ Items */}
+          <div className="max-w-4xl mx-auto space-y-6">
+            {filteredFAQs.map((faq, index) => (
+              <motion.div
+                key={faq.question}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="bg-forest-50/90 backdrop-blur-sm rounded-xl border border-forest-300 shadow-lg overflow-hidden"
               >
-                Contact Support
-              </Link>
-              <Link
-                to="/help-center"
-                className="bg-white text-emerald-600 px-6 py-3 rounded-lg hover:bg-emerald-50 transition-colors font-medium border border-emerald-200"
-              >
-                Visit Help Center
-              </Link>
-            </div>
+                <button
+                  onClick={() => toggleFAQ(index)}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-forest-100 transition-colors duration-200"
+                >
+                  <h3 className="text-lg font-semibold text-forest-800 pr-4 text-heading">
+                    {faq.question}
+                  </h3>
+                  <motion.div
+                    animate={{ rotate: openFAQ === index ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex-shrink-0 text-forest-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {openFAQ === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="px-6 pb-4"
+                    >
+                      <p className="text-forest-700 leading-relaxed text-professional">
+                        {faq.answer}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -99,7 +99,7 @@ const PrivacyPage: React.FC = () => {
                   <li>Regular internal audits and vulnerability scans</li>
                 </ul>
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4">
-                  <p className="text-blue-800">
+                  <p className="text-forest-800">
                     <strong>Note:</strong> Despite best efforts, no digital system is completely immune to risk. By using the Platform, you acknowledge this inherent limitation and accept that no absolute guarantee can be provided.
                   </p>
                 </div>

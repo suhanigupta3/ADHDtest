@@ -48,14 +48,14 @@ const GameResultsPage: React.FC = () => {
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
-    <div className="bg-amber-900/30 border border-amber-600 rounded-lg p-6 mb-8">
+    <div className="bg-forest-300/80 border border-forest-700 rounded-lg p-6 mb-8">
       <div className="flex items-start gap-3">
-        <svg className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-forest-900 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
         <div>
-          <h3 className="text-amber-300 font-bold text-lg mb-2 tracking-tight">Results Disclaimer</h3>
-          <div className="text-sage-200 text-professional space-y-2">
+          <h3 className="text-forest-900 font-bold text-lg mb-2 tracking-tight">Results Disclaimer</h3>
+          <div className="text-forest-800 text-professional space-y-2">
             <p><strong>These results are for educational purposes only.</strong> They are not a medical diagnosis and should not be used to self-diagnose ADHD or any other condition.</p>
             <p><strong>The scores and interpretations provided are based on game performance, not clinical assessments.</strong> They do not constitute medical advice, diagnosis, or treatment recommendations.</p>
             <p><strong>If you have concerns about ADHD or other health conditions, please consult with qualified healthcare professionals.</strong> Only licensed medical professionals can provide proper diagnosis and treatment.</p>
@@ -629,6 +629,40 @@ const GameResultsPage: React.FC = () => {
       );
     }
 
+    // Signal Snap (patternMatch) insights
+    if (gameName === 'patternMatch' && gameData.rounds.length > 0) {
+      const totalRounds = gameData.rounds.length;
+      const totalTrials = gameData.rounds.reduce((sum, r) => sum + (r.totalTrials || 0), 0);
+      const totalCorrect = gameData.rounds.reduce((sum, r) => sum + (r.correctHits || 0), 0);
+      const totalFalseAlarms = gameData.rounds.reduce((sum, r) => sum + (r.falsePositives || 0), 0);
+      const totalMissed = gameData.rounds.reduce((sum, r) => sum + (r.missedTargets || 0), 0);
+      const avgAccuracy = totalTrials > 0 ? (totalCorrect / totalTrials) * 100 : 0;
+      const avgReactionTime = gameData.rounds.reduce((sum, r) => sum + (r.averageReactionTimeMs || 0), 0) / totalRounds;
+
+      insights.push(
+        <div key="accuracy" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Average Accuracy</span>
+          <span className="text-sm text-emerald-600 font-semibold">{Math.round(avgAccuracy)}%</span>
+        </div>,
+        <div key="reactionTime" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Average Reaction Time</span>
+          <span className="text-sm text-sleek-600 font-semibold">{isNaN(avgReactionTime) ? 'N/A' : Math.round(avgReactionTime) + ' ms'}</span>
+        </div>,
+        <div key="correctHits" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Total Correct Hits</span>
+          <span className="text-sm text-emerald-600 font-semibold">{totalCorrect}</span>
+        </div>,
+        <div key="falseAlarms" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Total False Alarms</span>
+          <span className="text-sm text-sleek-600 font-semibold">{totalFalseAlarms}</span>
+        </div>,
+        <div key="missedTargets" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Total Missed Targets</span>
+          <span className="text-sm text-emerald-600 font-semibold">{totalMissed}</span>
+        </div>
+      );
+    }
+
     return (
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Performance Insights</h3>
@@ -646,8 +680,8 @@ const GameResultsPage: React.FC = () => {
       <div className="space-y-8">
         {/* Progress Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-sage-100 mb-4">Your Assessment Progress</h1>
-          <p className="text-lg text-sage-200 max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-forest-900 mb-4">Your Assessment Progress</h1>
+          <p className="text-lg text-forest-700 max-w-3xl mx-auto">
             Complete all games to get your comprehensive A(rDx)HD assessment results
           </p>
         </div>
@@ -655,7 +689,7 @@ const GameResultsPage: React.FC = () => {
         {/* Progress Bar */}
         <div className="card-dark p-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-sage-100 mb-2">
+            <h2 className="text-2xl font-bold text-forest-900 mb-2">
               {progress.completed} of {progress.total} Games Completed
             </h2>
             <div className="text-4xl font-bold text-sleek-300 mb-2">
@@ -670,9 +704,9 @@ const GameResultsPage: React.FC = () => {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-sage-700 rounded-full h-4 mb-6">
+          <div className="w-full bg-sage-800 rounded-full h-4 mb-6">
             <div 
-              className="bg-gradient-to-r from-sleek-400 to-emerald-500 h-4 rounded-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-sleek-500 to-emerald-500 h-4 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progress.percentage}%` }}
             ></div>
           </div>
@@ -808,7 +842,7 @@ const GameResultsPage: React.FC = () => {
           return (
             <>
               <div className="card-dark p-8 text-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-sage-100 mb-4 flex items-center gap-2 tracking-tight">
+                <h2 className="text-2xl md:text-3xl font-bold text-forest-900 mb-4 flex items-center gap-2 tracking-tight">
                   <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -913,10 +947,10 @@ const GameResultsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sleek-400 mx-auto mb-4"></div>
-          <p className="text-sage-200">Loading your results...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
+          <p className="text-emerald-700">Loading your results...</p>
         </div>
       </div>
     );
@@ -924,18 +958,18 @@ const GameResultsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">
             <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">Error Loading Results</h1>
-          <p className="text-sage-200 mb-4">{error}</p>
+          <h1 className="text-2xl font-bold text-forest-900 mb-4">Error Loading Results</h1>
+          <p className="text-emerald-700 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-6 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300"
+            className="px-6 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 transition-all duration-300"
           >
             Try Again
           </button>
@@ -946,16 +980,16 @@ const GameResultsPage: React.FC = () => {
 
   if (!userResults || Object.keys(userResults).length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sage-400 text-6xl mb-4">
+          <div className="text-emerald-400 text-6xl mb-4">
             <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 3h18v2H3V3m1 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7m4 3v2h8v-2H7m0 4v2h8v-2H7z"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">No Results Available</h1>
-          <p className="text-sage-200 mb-4">Complete some assessments to see your results here.</p>
-          <a href="/assessment" className="px-6 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300">
+          <h1 className="text-2xl font-bold text-forest-900 mb-4">No Results Available</h1>
+          <p className="text-emerald-700 mb-4">Complete some assessments to see your results here.</p>
+          <a href="/assessment" className="px-6 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 transition-all duration-300">
             Start Assessment
           </a>
         </div>
@@ -964,7 +998,7 @@ const GameResultsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -973,8 +1007,8 @@ const GameResultsPage: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">Your Assessment Results</h1>
-            <p className="text-lg text-sage-200 max-w-3xl mx-auto">
+            <h1 className="text-4xl font-bold text-forest-900 mb-4">Your Assessment Results</h1>
+            <p className="text-lg text-forest-700 max-w-3xl mx-auto">
               Comprehensive analysis of your A(rDx)HD assessment performance across all games
             </p>
           </div>
@@ -985,8 +1019,8 @@ const GameResultsPage: React.FC = () => {
               onClick={() => setSelectedGame('combined')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedGame === 'combined'
-                  ? 'bg-sleek-600 text-white'
-                  : 'bg-sage-900/90 text-sage-200 hover:bg-sage-800/90 border border-sage-700'
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white'
+                  : 'bg-forest-100 text-forest-800 hover:bg-emerald-100 border border-emerald-300'
               }`}
             >
               Progress & Results
@@ -997,8 +1031,8 @@ const GameResultsPage: React.FC = () => {
                 onClick={() => setSelectedGame(game)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedGame === game
-                    ? 'bg-sleek-600 text-white'
-                    : 'bg-sage-900/90 text-sage-200 hover:bg-sage-800/90 border border-sage-700'
+                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white'
+                    : 'bg-forest-100 text-forest-800 hover:bg-emerald-100 border border-emerald-300'
                 }`}
               >
                 {game === 'berryBlitz' ? 'Berry Blitz' : 
@@ -1021,7 +1055,7 @@ const GameResultsPage: React.FC = () => {
                 return (
                   <>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-white mb-2">
+                      <h2 className="text-3xl font-bold text-forest-900 mb-2">
                         {selectedGame === 'berryBlitz' ? 'Berry Blitz' : 
                          selectedGame === 'patternMatch' ? 'Signal Snap' : 
                          selectedGame === 'kitchenQuest' ? 'Bounce Back' : selectedGame} Results

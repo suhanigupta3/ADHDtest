@@ -8,12 +8,12 @@ const DataProtectionPage: React.FC = () => {
         {/* Header */}
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Data Protection</h1>
-            <p className="text-xl text-gray-600">
-              Learn about how we protect your personal information and ensure data security.
+            <h1 className="text-4xl font-bold text-forest-800 mb-4 text-heading-large">Data Protection</h1>
+            <p className="text-xl text-forest-600 text-professional-large">
+              Your privacy and data security are our top priorities.
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Last updated: {new Date().toLocaleDateString()}
+            <p className="text-sm text-forest-500 mt-2 text-professional">
+              Last updated: December 2024
             </p>
           </div>
 
@@ -22,8 +22,8 @@ const DataProtectionPage: React.FC = () => {
             
             {/* Our Commitment */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Commitment to Data Protection</h2>
-              <p className="text-gray-600 leading-relaxed mb-4">
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Our Commitment to Data Protection</h2>
+              <p className="text-forest-700 leading-relaxed mb-4 text-professional">
                 At A(rDx)HD Platform, we take data protection seriously. We understand that your personal information, 
                 especially health-related data, requires the highest level of security and care.
               </p>
@@ -37,7 +37,7 @@ const DataProtectionPage: React.FC = () => {
 
             {/* Security Measures */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Security Measures</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Security Measures</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Technical Safeguards */}
@@ -110,7 +110,7 @@ const DataProtectionPage: React.FC = () => {
 
             {/* Data Categories */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Types of Data We Protect</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Types of Data We Protect</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
                 We implement appropriate security measures based on the sensitivity and type of data:
               </p>
@@ -138,7 +138,7 @@ const DataProtectionPage: React.FC = () => {
 
             {/* Your Rights */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Data Protection Rights</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Your Data Protection Rights</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
                 Under data protection regulations, you have several rights regarding your personal data:
               </p>

@@ -81,16 +81,99 @@ const games: Game[] = [
     color: 'from-sleek-500 to-emerald-600',
     gradientClass: 'bg-gradient-to-br from-sleek-500 to-emerald-600',
     icon: (
-      <div className="w-14 h-14 flex items-center justify-center">
-        <img 
-          src="/pattern-match.png" 
-                          alt="Signal Snap Icon" 
-          className="w-14 h-14 object-contain"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-      </div>
+      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 32 32">
+        <defs>
+          {/* Gradient definitions */}
+          <linearGradient id="signalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="50%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+          <linearGradient id="patternGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="50%" stopColor="#059669" />
+            <stop offset="100%" stopColor="#047857" />
+          </linearGradient>
+          <radialGradient id="signalGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FEF3C7" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        
+        {/* Background glow */}
+        <circle cx="16" cy="16" r="14" fill="url(#signalGlow)" opacity="0.4"/>
+        
+        {/* Main signal/pattern matching concept */}
+        {/* Left side - Target pattern */}
+        <g transform="translate(4, 8)">
+          {/* Target shape (star) */}
+          <path d="M8 2 L10 6 L14 6 L11 9 L12 13 L8 11 L4 13 L5 9 L2 6 L6 6 Z" 
+                fill="url(#signalGradient)" opacity="0.9"/>
+          {/* Target pattern (checkered) */}
+          <rect x="3" y="3" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="7" y="3" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="5" y="5" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="3" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="7" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+        </g>
+        
+        {/* Right side - Matching stimulus */}
+        <g transform="translate(20, 8)">
+          {/* Matching shape (star) */}
+          <path d="M8 2 L10 6 L14 6 L11 9 L12 13 L8 11 L4 13 L5 9 L2 6 L6 6 Z" 
+                fill="url(#patternGradient)" opacity="0.9"/>
+          {/* Matching pattern (checkered) */}
+          <rect x="3" y="3" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="7" y="3" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="5" y="5" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="3" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="7" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.8"/>
+        </g>
+        
+        {/* Connection line with signal effect */}
+        <path d="M16 12 Q16 10 16 8" stroke="#3B82F6" strokeWidth="2" fill="none" opacity="0.8"/>
+        <path d="M16 8 Q16 10 16 12" stroke="#8B5CF6" strokeWidth="1.5" fill="none" opacity="0.6"/>
+        
+        {/* Signal waves/pulses */}
+        <circle cx="16" cy="10" r="1" fill="#06B6D4" opacity="0.8">
+          <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="16" cy="10" r="2" fill="#06B6D4" opacity="0.4">
+          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        
+        {/* Snap effect - lightning bolt */}
+        <path d="M14 18 L16 16 L18 18 L16 20 Z" fill="#F59E0B" opacity="0.9"/>
+        <path d="M15 17 L17 17" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.8"/>
+        
+        {/* Additional pattern elements */}
+        <g transform="translate(8, 22)">
+          {/* Circle with dots pattern */}
+          <circle cx="4" cy="4" r="3" fill="none" stroke="#8B5CF6" strokeWidth="1" opacity="0.6"/>
+          <circle cx="3" cy="3" r="0.5" fill="#8B5CF6" opacity="0.8"/>
+          <circle cx="5" cy="3" r="0.5" fill="#8B5CF6" opacity="0.8"/>
+          <circle cx="4" cy="5" r="0.5" fill="#8B5CF6" opacity="0.8"/>
+        </g>
+        
+        <g transform="translate(20, 22)">
+          {/* Square with stripes pattern */}
+          <rect x="1" y="1" width="6" height="6" fill="none" stroke="#10B981" strokeWidth="1" opacity="0.6"/>
+          <rect x="1" y="2" width="6" height="1" fill="#10B981" opacity="0.8"/>
+          <rect x="1" y="4" width="6" height="1" fill="#10B981" opacity="0.8"/>
+          <rect x="1" y="6" width="6" height="1" fill="#10B981" opacity="0.8"/>
+        </g>
+        
+        {/* Energy lines radiating from center */}
+        <path d="M2 16 L6 16" stroke="#3B82F6" strokeWidth="1" opacity="0.6"/>
+        <path d="M26 16 L30 16" stroke="#8B5CF6" strokeWidth="1" opacity="0.6"/>
+        <path d="M16 2 L16 6" stroke="#06B6D4" strokeWidth="1" opacity="0.6"/>
+        <path d="M16 26 L16 30" stroke="#10B981" strokeWidth="1" opacity="0.6"/>
+        
+        {/* Focus indicator */}
+        <circle cx="16" cy="16" r="1" fill="#F59E0B" opacity="0.9">
+          <animate attributeName="r" values="1;1.5;1" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
     )
   },
       {
@@ -475,7 +558,7 @@ const AssessmentPage: React.FC = () => {
           >
             <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-6 breathe tracking-tight">A(rDx)HD Games</h1>
             <p className="text-lg md:text-xl text-gray-800 max-w-3xl mx-auto leading-relaxed text-professional-large">
-              Complete these interactive games to assess different aspects of ADHD. Each game targets specific cognitive functions.
+              Complete these interactive games to assess different aspects of ADHD. Each game targets specific cognitive functions. The complete assessment takes approximately <strong>15-30 minutes</strong> in one sitting preferred.
             </p>
             <div className="mt-6 flex justify-center space-x-4">
               <div className="flex items-center space-x-2 text-sleek-700">
@@ -531,7 +614,7 @@ const AssessmentPage: React.FC = () => {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="card-dark p-8 mb-12"
           >
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center tracking-tight">
+            <h3 className="text-2xl md:text-3xl font-bold text-forest-200 mb-6 flex items-center tracking-tight">
               <motion.div
                 className="w-8 h-8 bg-gradient-to-r from-sleek-500 to-emerald-500 rounded-full flex items-center justify-center mr-4"
                 animate={{ rotate: 360 }}
@@ -556,7 +639,7 @@ const AssessmentPage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-sage-100 mb-2 tracking-tight">Complete Each Game</h4>
-                    <p className="text-sage-200 text-professional leading-relaxed">Play through each interactive game at your own pace. You may take breaks when needed, but we highly recommend completing all the games in the correct order in one sitting!</p>
+                    <p className="text-sage-200 text-professional leading-relaxed">Play through each interactive game at your own pace. The complete assessment takes approximately <strong>15-30 minutes</strong> in one sitting preferred. You may take breaks when needed, but we highly recommend completing all the games in the correct order in one sitting!</p>
                   </div>
                 </motion.div>
                 <motion.div 
@@ -570,7 +653,7 @@ const AssessmentPage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-sage-100 mb-2 tracking-tight">Answer Questions</h4>
-                    <p className="text-sage-200 text-professional leading-relaxed">Share your experience through simple questions after each game.</p>
+                    <p className="text-sage-200 text-professional leading-relaxed">Share your experience through simple questions during and after each game. Be as honest and accurate as possible!</p>
                   </div>
                 </motion.div>
               </div>
@@ -586,7 +669,7 @@ const AssessmentPage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-sage-100 mb-2 tracking-tight">Get Your Results</h4>
-                    <p className="text-sage-200 text-professional leading-relaxed">Receive detailed insights about your cognitive patterns and strengths.</p>
+                    <p className="text-sage-200 text-professional leading-relaxed">Receive detailed insights about your cognitive patterns and strengths. Accuracy increases with each game played.</p>
                   </div>
                 </motion.div>
                 <motion.div 
@@ -744,7 +827,7 @@ const AssessmentPage: React.FC = () => {
                     </svg>
                   </div>
                 </motion.div>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-tight">Ready to See Your Results?</h3>
+                <h3 className="text-2xl md:text-3xl font-bold text-forest-200 mb-4 tracking-tight">Ready to See Your Results?</h3>
                 
                 {gameProgress.allGamesCompleted ? (
                   <div className="mb-6">
@@ -771,7 +854,7 @@ const AssessmentPage: React.FC = () => {
                       </div>
                       <p className="text-sage-200 text-professional mb-3">
                         You've completed {getCompletedGamesCount()} of 4 games. While you can view individual game results now, 
-                        <strong className="text-white"> all 4 games must be completed</strong> to receive your final ADHD assessment and recommendations.
+                        <strong className="text-forest-200"> all 4 games must be completed</strong> to receive your final ADHD assessment and recommendations.
                       </p>
                       <div className="bg-sage-800/50 rounded p-3">
                         <p className="text-sm text-sage-300">
@@ -837,7 +920,7 @@ const AssessmentPage: React.FC = () => {
                   >
                     {typeof selectedGame.icon === 'string' ? selectedGame.icon : selectedGame.icon}
                   </motion.div>
-                  <h2 className="text-2xl font-bold text-white">{selectedGame.title}</h2>
+                  <h2 className="text-2xl font-bold text-forest-200">{selectedGame.title}</h2>
                 </div>
               <button
                 onClick={closeGameModal}

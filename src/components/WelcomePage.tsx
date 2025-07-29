@@ -235,12 +235,12 @@ const WelcomePage: React.FC = () => {
   }, []); // Recalculate positions when viewport size changes
 
   return (
-    <div className="min-h-screen bg-gradient-dark relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 relative overflow-hidden">
       {/* Floating Background Elements */}
       {floatingElements.map((element, index) => (
         <motion.div
           key={index}
-          className="absolute text-sleek-300 opacity-30 pointer-events-none z-10"
+          className="absolute text-emerald-600 opacity-50 pointer-events-none z-10"
           style={element.position}
           animate={{
             y: [0, -20, 0],
@@ -261,7 +261,7 @@ const WelcomePage: React.FC = () => {
       {/* Decorative Background Shapes */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         <motion.div 
-          className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-sleek-800/20 to-emerald-800/20 rounded-full blur-xl"
+          className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-emerald-500/40 to-green-500/40 rounded-full blur-xl"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.6, 0.3]
@@ -273,7 +273,7 @@ const WelcomePage: React.FC = () => {
           }}
         />
         <motion.div 
-          className="absolute bottom-32 right-16 w-40 h-40 bg-gradient-to-r from-sage-800/20 to-sleek-800/20 rounded-full blur-xl"
+          className="absolute bottom-32 right-16 w-40 h-40 bg-gradient-to-r from-green-400/30 to-emerald-500/30 rounded-full blur-xl"
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.4, 0.7, 0.4]
@@ -286,7 +286,7 @@ const WelcomePage: React.FC = () => {
           }}
         />
         <motion.div 
-          className="absolute top-1/2 right-1/4 w-24 h-24 bg-gradient-to-r from-emerald-800/20 to-sleek-800/20 rounded-full blur-lg"
+          className="absolute top-1/2 right-1/4 w-24 h-24 bg-gradient-to-r from-emerald-400/45 to-green-400/45 rounded-full blur-lg"
           animate={{
             scale: [1, 1.3, 1],
             opacity: [0.2, 0.5, 0.2]
@@ -311,7 +311,7 @@ const WelcomePage: React.FC = () => {
           <div className="relative inline-flex items-center justify-center mb-8">
             {/* Animated rings around logo */}
             <motion.div 
-              className="absolute w-32 h-32 border-2 border-sleek-600 rounded-full"
+              className="absolute w-32 h-32 border-2 border-emerald-600 rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             />
@@ -331,7 +331,7 @@ const WelcomePage: React.FC = () => {
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-sleek-600 to-emerald-700 rounded-full shadow-lg hidden">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-emerald-600 to-green-600 rounded-full shadow-lg hidden">
                 <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
@@ -339,13 +339,13 @@ const WelcomePage: React.FC = () => {
             </div>
           </div>
           
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-sleek-300 to-emerald-300 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 leading-tight">
+            <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
               A(rDx)HD
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-sage-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
             Discover a comprehensive, science-based approach to understanding ADHD through interactive assessments and personalized insights.
           </p>
           
@@ -377,7 +377,7 @@ const WelcomePage: React.FC = () => {
           className="mb-12 max-w-6xl mx-auto"
           variants={itemVariants}
         >
-          <h2 className="text-3xl font-bold text-white mb-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
             What our Assessment Includes
           </h2>
           
@@ -403,7 +403,7 @@ const WelcomePage: React.FC = () => {
                   >
                     {feature.icon}
                   </motion.div>
-                  <h3 className="text-xl font-bold text-white mb-3">
+                  <h3 className="text-xl font-bold text-emerald-300 mb-3">
                     {feature.title}
                   </h3>
                 </div>
@@ -421,7 +421,7 @@ const WelcomePage: React.FC = () => {
           variants={itemVariants}
         >
           <div className="bg-gradient-to-r from-sleek-900/50 to-emerald-900/50 backdrop-blur-sm rounded-3xl p-8 border border-sleek-600">
-            <h3 className="text-2xl font-bold text-white mb-4">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
               Ready to Begin Your Journey?
             </h3>
             <p className="text-sage-100 mb-6 max-w-2xl mx-auto">

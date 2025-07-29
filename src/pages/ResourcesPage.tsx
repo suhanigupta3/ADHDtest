@@ -8,14 +8,14 @@ const ResourcesPage: React.FC = () => {
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
-    <div className="bg-amber-900/30 border border-amber-600 rounded-lg p-6 mb-8">
+    <div className="bg-amber-50 border border-amber-300 rounded-lg p-6 mb-8">
       <div className="flex items-start gap-3">
-        <svg className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
         <div>
-          <h3 className="text-amber-300 font-bold text-lg mb-2 tracking-tight">Medical Disclaimer</h3>
-          <div className="text-sage-200 text-professional space-y-2">
+          <h3 className="text-amber-800 font-bold text-lg mb-2 tracking-tight">Medical Disclaimer</h3>
+          <div className="text-gray-800 text-professional space-y-2">
             <p><strong>This website is for educational and informational purposes only.</strong> It is not intended to provide medical advice, diagnosis, or treatment.</p>
             <p><strong>Always consult with qualified healthcare professionals</strong> for proper diagnosis, treatment, and medical advice regarding ADHD or any other health condition.</p>
             <p><strong>The information provided here is not a substitute for professional medical care.</strong> Never disregard professional medical advice or delay seeking treatment because of information found on this website.</p>
@@ -261,63 +261,77 @@ const ResourcesPage: React.FC = () => {
     return mood ? mood.color : 'emerald';
   };
 
+  const getSectionGreenShade = (index: number) => {
+    const shades = [
+      'forest-50', 'forest-100', 'forest-150', 'forest-200', 
+      'forest-250', 'forest-300', 'forest-350', 'forest-400'
+    ];
+    return shades[index % shades.length];
+  };
+
+  const getSectionBorderShade = (index: number) => {
+    const shades = [
+      'forest-200', 'forest-300', 'forest-400', 'forest-500',
+      'forest-600', 'forest-700', 'forest-800', 'forest-900'
+    ];
+    return shades[index % shades.length];
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-6xl mx-auto"
         >
-          {/* Header */}
           <div className="text-center mb-12">
             <motion.h1 
-              className="text-4xl md:text-5xl font-bold text-white mb-6 breathe tracking-tight"
+              className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 breathe tracking-tight"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              ADHD Resources
+              ADHD Resources & Support
             </motion.h1>
             <motion.p 
-              className="text-xl text-sage-200 max-w-3xl mx-auto leading-relaxed text-professional-large"
+              className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-professional-large"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
             >
-              Your friendly guide to understanding and managing ADHD
+              Discover comprehensive resources, strategies, and support to help you understand and manage ADHD effectively.
             </motion.p>
           </div>
 
-          {/* How's Your Day Section */}
+          {/* Mood Check-in Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="bg-gradient-to-r from-sleek-800/50 to-emerald-800/50 rounded-2xl p-8 mb-8 border border-sleek-700 shadow-lg"
+            className="bg-forest-100/80 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-forest-300 shadow-lg"
           >
             <div className="text-center mb-6">
-              <motion.div
-                className="text-6xl mb-4 text-amber-300"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              <motion.div 
+                className="text-4xl mb-4 text-emerald-600"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
               >
                 {getIcon('star')}
               </motion.div>
-              <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">How's your day going?</h2>
-              <p className="text-sage-200 text-professional">Take a moment to check in with yourself</p>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2 tracking-tight">How's your day going?</h2>
+              <p className="text-gray-600 text-professional">Take a moment to check in with yourself</p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
               {moods.map((mood, index) => (
                 <motion.button
                   key={mood.name}
                   onClick={() => handleMoodSelect(mood)}
-                  className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                  className={`p-3 md:p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
                     currentMood === mood.name
-                      ? `border-${mood.color}-400 bg-${mood.color}-800/50`
-                      : 'border-sage-600 bg-sage-800/30 hover:border-sage-400'
+                      ? `border-emerald-400 bg-emerald-100`
+                      : 'border-forest-300 bg-forest-50 hover:border-forest-400 hover:bg-forest-100'
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -325,38 +339,37 @@ const ResourcesPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
                 >
-                  <div className="flex justify-center mb-3">
-                    <div className="text-3xl text-white">{getIcon(mood.icon)}</div>
+                  <div className="flex justify-center mb-2 md:mb-3">
+                    <div className="text-2xl md:text-3xl text-emerald-600">{getIcon(mood.icon)}</div>
                   </div>
-                  <div className="text-sm font-medium text-white tracking-tight text-center">{mood.name}</div>
+                  <div className="text-xs md:text-sm font-medium text-gray-800 tracking-tight text-center leading-tight">{mood.name}</div>
                 </motion.button>
               ))}
             </div>
 
-            <AnimatePresence>
-              {showMoodMessage && currentMood && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className={`text-center p-4 rounded-xl bg-${getMoodColor(currentMood)}-800/50 border border-${getMoodColor(currentMood)}-600`}
-                >
-                  <p className="text-white font-medium text-professional">
-                    {moods.find(m => m.name === currentMood)?.message}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Mood Response */}
+            {currentMood && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className={`text-center p-4 rounded-xl bg-emerald-100 border border-emerald-300`}
+              >
+                <p className="text-gray-800 font-medium text-professional">
+                  {moods.find(m => m.name === currentMood)?.message}
+                </p>
+              </motion.div>
+            )}
           </motion.div>
 
-          {/* Interactive Navigation */}
+          {/* Exploration Sections */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
             className="mb-8"
           >
-            <h3 className="text-2xl font-bold text-white mb-6 text-center tracking-tight">What would you like to explore?</h3>
+            <h3 className="text-2xl font-bold text-forest-900 mb-6 text-center tracking-tight">What would you like to explore?</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sections.map((section, index) => (
                 <motion.button
@@ -364,8 +377,8 @@ const ResourcesPage: React.FC = () => {
                   onClick={() => setSelectedSection(selectedSection === section.id ? null : section.id)}
                   className={`p-6 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
                     selectedSection === section.id
-                      ? `border-${section.color}-400 bg-${section.color}-800/50`
-                      : 'border-sage-600 bg-sage-800/30 hover:border-sage-400'
+                      ? `border-emerald-400 bg-emerald-100`
+                      : `border-${getSectionBorderShade(index)} bg-${getSectionGreenShade(index)} hover:border-emerald-400 hover:bg-emerald-50`
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -374,74 +387,96 @@ const ResourcesPage: React.FC = () => {
                   transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
                 >
                   <div className="flex justify-center mb-4">
-                    <div className="text-4xl text-white">{getIcon(section.icon)}</div>
+                    <div className="text-4xl text-emerald-600">{getIcon(section.icon)}</div>
                   </div>
-                  <h4 className="text-lg font-semibold text-white mb-3 tracking-tight text-center">{section.title}</h4>
-                  <p className="text-sm text-sage-200 text-professional text-center">{section.description}</p>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 tracking-tight text-center">{section.title}</h4>
+                  <p className="text-sm text-gray-600 text-professional text-center">{section.description}</p>
                 </motion.button>
               ))}
             </div>
           </motion.div>
 
-          {/* Dynamic Content Sections */}
+          {/* Content Sections */}
           <AnimatePresence mode="wait">
             {selectedSection && (
               <motion.div
                 key={selectedSection}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5 }}
-                className="bg-gradient-to-r from-sleek-800/50 to-emerald-800/50 rounded-2xl p-8 border border-sleek-700 shadow-lg"
+                className="bg-forest-100/80 backdrop-blur-sm rounded-2xl p-8 border border-forest-300 shadow-lg"
               >
                 {selectedSection === 'what-is-adhd' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-emerald-300 flex-shrink-0">{getIcon('brain')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">What is ADHD?</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('brain')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">What is ADHD?</h3>
                     </div>
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-700 mb-6 leading-relaxed text-professional">
                       ADHD (Attention-Deficit/Hyperactivity Disorder) is a neurodevelopmental condition that affects how your brain works. 
                       It's like having a super-powered brain that sometimes works a bit differently!
                     </p>
                     
                     <div className="grid md:grid-cols-3 gap-4 mb-6">
                       <motion.div 
-                        className="bg-emerald-800/50 rounded-lg p-4 border border-emerald-700"
+                        className="bg-forest-100 rounded-lg p-4 border border-forest-300"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <h4 className="font-semibold text-emerald-300 mb-2 flex items-center gap-2 tracking-tight">
-                          <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <h4 className="font-semibold text-forest-700 mb-2 flex items-center gap-2 tracking-tight">
+                          <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                           </svg>
                           Inattentive Type
                         </h4>
-                        <p className="text-sage-300 text-sm text-professional">Difficulty focusing, easily distracted, forgetful</p>
+                        <p className="text-gray-800 text-sm text-professional">Difficulty focusing, easily distracted, forgetful</p>
                       </motion.div>
                       <motion.div 
-                        className="bg-sleek-800/50 rounded-lg p-4 border border-sleek-700"
+                        className="bg-forest-150 rounded-lg p-4 border border-forest-400"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <h4 className="font-semibold text-sleek-300 mb-2 tracking-tight flex items-center gap-2">
-                          <svg className="w-4 h-4 text-sleek-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <h4 className="font-semibold text-forest-700 mb-2 tracking-tight flex items-center gap-2">
+                          <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                           Hyperactive Type
                         </h4>
-                        <p className="text-sage-300 text-sm text-professional">Always moving, talking a lot, impulsive</p>
+                        <p className="text-gray-800 text-sm text-professional">Always moving, talking a lot, impulsive</p>
                       </motion.div>
                       <motion.div 
-                        className="bg-sage-800/50 rounded-lg p-4 border border-sage-700"
+                        className="bg-forest-200 rounded-lg p-4 border border-forest-500"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <h4 className="font-semibold text-sage-300 mb-2 tracking-tight flex items-center gap-2">
-                          <svg className="w-4 h-4 text-sage-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <h4 className="font-semibold text-forest-700 mb-2 tracking-tight flex items-center gap-2">
+                          <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
                           Combined Type
                         </h4>
-                        <p className="text-sage-300 text-sm text-professional">Mix of both inattentive and hyperactive symptoms</p>
+                        <p className="text-gray-800 text-sm text-professional">Mix of both inattentive and hyperactive symptoms</p>
                       </motion.div>
+                    </div>
+                    
+                    <div className="bg-forest-50 border border-forest-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-forest-700 mb-3 tracking-tight">Key Facts About ADHD</h4>
+                      <div className="grid md:grid-cols-2 gap-4 text-gray-800">
+                        <div>
+                          <p className="font-semibold text-forest-700">Prevalence</p>
+                          <p className="text-professional">Affects about 5-7% of children and 2-5% of adults worldwide</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">Brain Differences</p>
+                          <p className="text-professional">ADHD brains show differences in structure, function, and neurotransmitter levels</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">Strengths</p>
+                          <p className="text-professional">Creativity, hyperfocus, energy, and unique problem-solving abilities</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">Treatment</p>
+                          <p className="text-professional">Highly treatable with medication, therapy, and lifestyle strategies</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -450,7 +485,7 @@ const ResourcesPage: React.FC = () => {
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-sleek-300 flex-shrink-0">{getIcon('clipboard-list')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Common ADHD Symptoms</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Common ADHD Symptoms</h3>
                     </div>
                     
                     <div className="grid lg:grid-cols-2 gap-6">
@@ -464,7 +499,7 @@ const ResourcesPage: React.FC = () => {
                           </svg>
                           Focus Challenges
                         </h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                   <li className="flex items-start">
                             <span className="text-sleek-400 mr-2">•</span>
                             <span className="text-professional">Getting easily distracted</span>
@@ -494,7 +529,7 @@ const ResourcesPage: React.FC = () => {
                           </svg>
                           Energy & Impulse
                         </h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                   <li className="flex items-start">
                             <span className="text-emerald-400 mr-2">•</span>
                             <span className="text-professional">Feeling restless or fidgety</span>
@@ -520,52 +555,60 @@ const ResourcesPage: React.FC = () => {
                 {selectedSection === 'management' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-sage-300 flex-shrink-0">{getIcon('tools')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Management Strategies</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('tools')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Management Strategies</h3>
                     </div>
                     
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {[
-                        {
-                          title: "Create Routines",
-                          icon: "calendar",
-                          content: "Set up daily schedules and stick to them. Routines help your brain know what to expect!",
-                          color: "emerald"
-                        },
-                        {
-                          title: "Break Tasks Down",
-                          icon: "target",
-                          content: "Big tasks can feel overwhelming. Break them into smaller, manageable pieces.",
-                          color: "sleek"
-                        },
-                        {
-                          title: "Organize Your Space",
-                          icon: "home",
-                          content: "A tidy environment helps reduce distractions and makes it easier to focus.",
-                          color: "sage"
-                        },
-                        {
-                          title: "Use Timers",
-                          icon: "clock",
-                          content: "Set timers for work periods and breaks. The Pomodoro technique works great!",
-                          color: "amber"
-                        }
-                      ].map((strategy, index) => (
-          <motion.div
-                          key={strategy.title}
-                          className={`bg-${strategy.color}-800/50 rounded-lg p-6 border border-${strategy.color}-700`}
-                          whileHover={{ scale: 1.02 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1, duration: 0.5 }}
-                        >
-                          <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-3 tracking-tight">
-                            <div className="flex-shrink-0">{getIcon(strategy.icon)}</div>
-                            <span>{strategy.title}</span>
-                          </h4>
-                          <p className="text-sage-200 text-professional">{strategy.content}</p>
-                        </motion.div>
-                      ))}
+                    <p className="text-gray-700 mb-6 leading-relaxed text-professional">
+                      Effective ADHD management involves a combination of strategies tailored to your unique needs. Here are evidence-based approaches that can help you thrive.
+                    </p>
+                    
+                    <div className="grid lg:grid-cols-2 gap-6 mb-6">
+                      <motion.div 
+                        className="bg-forest-100 rounded-lg p-6 border border-forest-300"
+                        whileHover={{ scale: 1.01 }}
+                      >
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Time Management</h4>
+                        <ul className="space-y-2 text-gray-800">
+                          <li className="text-professional">• Use timers and alarms for task transitions</li>
+                          <li className="text-professional">• Break large tasks into smaller, manageable chunks</li>
+                          <li className="text-professional">• Create visual schedules and checklists</li>
+                          <li className="text-professional">• Set realistic deadlines and buffer time</li>
+                          <li className="text-professional">• Use time-blocking techniques</li>
+                        </ul>
+                      </motion.div>
+                      
+                      <motion.div 
+                        className="bg-forest-150 rounded-lg p-6 border border-forest-400"
+                        whileHover={{ scale: 1.01 }}
+                      >
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Organization Systems</h4>
+                        <ul className="space-y-2 text-gray-800">
+                          <li className="text-professional">• Designate specific places for important items</li>
+                          <li className="text-professional">• Use color-coding and labeling systems</li>
+                          <li className="text-professional">• Implement digital organization tools</li>
+                          <li className="text-professional">• Create daily and weekly routines</li>
+                          <li className="text-professional">• Regular decluttering sessions</li>
+                        </ul>
+                      </motion.div>
+                    </div>
+
+                    <div className="bg-forest-50 border border-forest-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-forest-700 mb-3 tracking-tight">Professional Resources</h4>
+                      <div className="space-y-3 text-gray-800">
+                        <div>
+                          <p className="font-semibold text-forest-700">ADHD Coaches</p>
+                          <p className="text-professional">Professional coaching for skill development and accountability</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">Cognitive Behavioral Therapy</p>
+                          <p className="text-professional">Evidence-based therapy for managing ADHD symptoms</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">Support Groups</p>
+                          <p className="text-professional">Connect with others who understand your experiences</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -574,10 +617,10 @@ const ResourcesPage: React.FC = () => {
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-amber-300 flex-shrink-0">{getIcon('activity')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Exercise & Wellness</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Exercise & Wellness</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 text-professional">
+                    <p className="text-gray-800 mb-6 text-professional">
                       Movement is like medicine for your brain! Here are some activities that can help:
                     </p>
                     
@@ -592,7 +635,7 @@ const ResourcesPage: React.FC = () => {
                           </svg>
                           Mindfulness & Yoga
                         </h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Improves focus and attention</li>
                           <li className="text-professional">• Reduces stress and anxiety</li>
                           <li className="text-professional">• Helps with emotional regulation</li>
@@ -610,7 +653,7 @@ const ResourcesPage: React.FC = () => {
                           </svg>
                           Physical Exercise
                         </h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Boosts dopamine and serotonin</li>
                           <li className="text-professional">• Improves executive function</li>
                           <li className="text-professional">• Reduces hyperactivity</li>
@@ -624,21 +667,21 @@ const ResourcesPage: React.FC = () => {
                 {selectedSection === 'diagnosis' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-sage-300 flex-shrink-0">{getIcon('clipboard-check')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Diagnosis & Assessment</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('clipboard-check')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Diagnosis & Assessment</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-700 mb-6 leading-relaxed text-professional">
                       ADHD diagnosis requires a comprehensive evaluation by qualified healthcare professionals. The process involves multiple assessments and should follow established clinical guidelines.
                     </p>
                     
                     <div className="grid lg:grid-cols-2 gap-6 mb-6">
                       <motion.div 
-                        className="bg-sage-800/50 rounded-lg p-6 border border-sage-700"
+                        className="bg-forest-100 rounded-lg p-6 border border-forest-300"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-sage-300 mb-4 tracking-tight">Professional Evaluation Process</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Professional Evaluation Process</h4>
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Clinical interview and history taking</li>
                           <li className="text-professional">• Behavioral rating scales and questionnaires</li>
                           <li className="text-professional">• Cognitive and neuropsychological testing</li>
@@ -648,35 +691,35 @@ const ResourcesPage: React.FC = () => {
                       </motion.div>
                       
                       <motion.div 
-                        className="bg-emerald-800/50 rounded-lg p-6 border border-emerald-700"
+                        className="bg-forest-150 rounded-lg p-6 border border-forest-400"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">DSM-5 Criteria</h4>
-                        <p className="text-sage-200 text-professional mb-3">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">DSM-5 Criteria</h4>
+                        <p className="text-gray-800 text-professional mb-3">
                           ADHD diagnosis follows the Diagnostic and Statistical Manual of Mental Disorders (DSM-5) criteria:
                         </p>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Persistent pattern of inattention and/or hyperactivity-impulsivity</li>
                           <li className="text-professional">• Symptoms present before age 12</li>
                           <li className="text-professional">• Symptoms present in two or more settings</li>
                           <li className="text-professional">• Clear evidence of functional impairment</li>
                         </ul>
                       </motion.div>
-              </div>
-              
-                    <div className="bg-sleek-800/30 border border-sleek-600 rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-sleek-300 mb-3 tracking-tight">Trusted Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                    </div>
+                    
+                    <div className="bg-forest-50 border border-forest-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-forest-700 mb-3 tracking-tight">Trusted Resources</h4>
+                      <div className="space-y-3 text-gray-800">
                         <div>
-                          <p className="font-semibold text-sleek-300">American Academy of Pediatrics (AAP)</p>
+                          <p className="font-semibold text-forest-700">American Academy of Pediatrics (AAP)</p>
                           <p className="text-professional">Clinical practice guidelines for ADHD diagnosis and treatment</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-sleek-300">American Psychiatric Association</p>
+                          <p className="font-semibold text-forest-700">American Psychiatric Association</p>
                           <p className="text-professional">DSM-5 diagnostic criteria and clinical guidelines</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-sleek-300">CHADD (Children and Adults with ADHD)</p>
+                          <p className="font-semibold text-forest-700">CHADD (Children and Adults with ADHD)</p>
                           <p className="text-professional">Evidence-based information and support resources</p>
                         </div>
                       </div>
@@ -688,10 +731,10 @@ const ResourcesPage: React.FC = () => {
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-emerald-300 flex-shrink-0">{getIcon('medical-cross')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Treatment Options</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Treatment Options</h3>
               </div>
               
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-800 mb-6 leading-relaxed text-professional">
                       ADHD treatment typically involves a multimodal approach combining medication, behavioral therapy, and lifestyle modifications. Treatment plans should be individualized and monitored by healthcare professionals.
                     </p>
                     
@@ -701,7 +744,7 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">Medication Options</h4>
-                        <div className="space-y-3 text-sage-200">
+                        <div className="space-y-3 text-gray-800">
                           <div>
                             <p className="font-semibold text-emerald-300">Stimulant Medications</p>
                             <p className="text-professional">Methylphenidate (Ritalin, Concerta) and amphetamines (Adderall, Vyvanse) are first-line treatments with 70-80% effectiveness rates.</p>
@@ -709,28 +752,28 @@ const ResourcesPage: React.FC = () => {
                           <div>
                             <p className="font-semibold text-emerald-300">Non-Stimulant Medications</p>
                             <p className="text-professional">Atomoxetine (Strattera), guanfacine (Intuniv), and clonidine (Kapvay) for those who don't respond to or tolerate stimulants.</p>
-              </div>
-            </div>
-          </motion.div>
+                          </div>
+                        </div>
+                      </motion.div>
 
-          <motion.div
+                      <motion.div
                         className="bg-sleek-800/50 rounded-lg p-6 border border-sleek-700"
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-sleek-300 mb-4 tracking-tight">Behavioral Therapies</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Cognitive Behavioral Therapy (CBT)</li>
                           <li className="text-professional">• Parent training and family therapy</li>
                           <li className="text-professional">• Social skills training</li>
                           <li className="text-professional">• Organizational skills training</li>
                           <li className="text-professional">• Mindfulness-based interventions</li>
-                  </ul>
-                </motion.div>
+                        </ul>
+                      </motion.div>
                     </div>
 
                     <div className="bg-amber-800/30 border border-amber-600 rounded-lg p-6">
                       <h4 className="text-lg font-semibold text-amber-300 mb-3 tracking-tight">Evidence-Based Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                      <div className="space-y-3 text-gray-800">
                         <div>
                           <p className="font-semibold text-amber-300">National Institute of Mental Health (NIMH)</p>
                           <p className="text-professional">Research-based information on ADHD treatments and clinical trials</p>
@@ -751,77 +794,79 @@ const ResourcesPage: React.FC = () => {
                 {selectedSection === 'nutrition' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-sage-300 flex-shrink-0">{getIcon('food')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Nutrition & Diet</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('food')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Nutrition & Diet</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-700 mb-6 leading-relaxed text-professional">
                       While no specific diet cures ADHD, certain nutritional strategies may help manage symptoms. Research suggests that diet quality, meal timing, and specific nutrients can impact ADHD symptoms and overall brain function.
                     </p>
                     
                     <div className="grid lg:grid-cols-2 gap-6 mb-6">
                       <motion.div 
-                        className="bg-sage-800/50 rounded-lg p-6 border border-sage-700"
+                        className="bg-forest-100 rounded-lg p-6 border border-forest-300"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-sage-300 mb-4 tracking-tight">Evidence-Based Dietary Approaches</h4>
-                        <div className="space-y-3 text-sage-200">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Evidence-Based Dietary Approaches</h4>
+                        <div className="space-y-3 text-gray-800">
                           <div>
-                            <p className="font-semibold text-sage-300">Omega-3 Fatty Acids</p>
+                            <p className="font-semibold text-forest-700">Omega-3 Fatty Acids</p>
                             <p className="text-professional">Studies show modest benefits for attention and hyperactivity. Found in fatty fish, flaxseeds, and walnuts.</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-sage-300">Protein-Rich Breakfast</p>
+                            <p className="font-semibold text-forest-700">Protein-Rich Breakfast</p>
                             <p className="text-professional">High-protein meals may improve focus and reduce medication side effects.</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-sage-300">Complex Carbohydrates</p>
+                            <p className="font-semibold text-forest-700">Complex Carbohydrates</p>
                             <p className="text-professional">Whole grains provide steady energy and may help with mood stability.</p>
                           </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-                        className="bg-emerald-800/50 rounded-lg p-6 border border-emerald-700"
+                        </div>
+                      </motion.div>
+                      
+                      <motion.div 
+                        className="bg-forest-150 rounded-lg p-6 border border-forest-400"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">Foods to Limit</h4>
-                        <ul className="space-y-2 text-sage-200">
-                          <li className="text-professional">• High-sugar foods and beverages</li>
-                          <li className="text-professional">• Artificial food colorings and preservatives</li>
-                          <li className="text-professional">• Excessive caffeine</li>
-                          <li className="text-professional">• Processed foods high in additives</li>
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Meal Planning Strategies</h4>
+                        <ul className="space-y-2 text-gray-800">
+                          <li className="text-professional">• Plan meals and snacks in advance</li>
+                          <li className="text-professional">• Keep healthy snacks readily available</li>
+                          <li className="text-professional">• Stay hydrated throughout the day</li>
+                          <li className="text-professional">• Limit processed foods and added sugars</li>
+                          <li className="text-professional">• Consider working with a registered dietitian</li>
                         </ul>
-                        <p className="text-sage-200 text-professional mt-3">
-                          <strong>Note:</strong> Individual responses vary. Consult with healthcare providers before making significant dietary changes.
-                        </p>
                       </motion.div>
                     </div>
 
-                    <div className="bg-sleek-800/30 border border-sleek-600 rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-sleek-300 mb-3 tracking-tight">Scientific Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                    <div className="bg-forest-50 border border-forest-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-forest-700 mb-3 tracking-tight">Research-Based Resources</h4>
+                      <div className="space-y-3 text-gray-800">
                         <div>
-                          <p className="font-semibold text-sleek-300">Journal of Attention Disorders</p>
-                          <p className="text-professional">Peer-reviewed research on nutrition and ADHD</p>
+                          <p className="font-semibold text-forest-700">Academy of Nutrition and Dietetics</p>
+                          <p className="text-professional">Evidence-based nutrition information and professional guidance</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-sleek-300">Academy of Nutrition and Dietetics</p>
-                          <p className="text-professional">Evidence-based nutrition guidelines and resources</p>
+                          <p className="font-semibold text-forest-700">Journal of Attention Disorders</p>
+                          <p className="text-professional">Peer-reviewed research on ADHD and nutrition</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-forest-700">American Academy of Pediatrics</p>
+                          <p className="text-professional">Clinical guidelines for nutrition in children with ADHD</p>
                         </div>
                       </div>
                     </div>
-                </div>
+                  </div>
                 )}
 
                 {selectedSection === 'sleep' && (
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-emerald-300 flex-shrink-0">{getIcon('moon')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Sleep & ADHD</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Sleep & ADHD</h3>
             </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-800 mb-6 leading-relaxed text-professional">
                       Sleep problems are common in individuals with ADHD, with up to 70% experiencing sleep difficulties. Poor sleep can worsen ADHD symptoms, while good sleep hygiene can significantly improve attention, mood, and behavior.
                     </p>
                     
@@ -831,21 +876,21 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">Common Sleep Issues</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Difficulty falling asleep (insomnia)</li>
                           <li className="text-professional">• Restless sleep and frequent waking</li>
                           <li className="text-professional">• Sleep-disordered breathing</li>
                           <li className="text-professional">• Restless legs syndrome</li>
                           <li className="text-professional">• Delayed sleep phase syndrome</li>
                         </ul>
-          </motion.div>
+                      </motion.div>
 
-          <motion.div
+                      <motion.div
                         className="bg-sleek-800/50 rounded-lg p-6 border border-sleek-700"
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-sleek-300 mb-4 tracking-tight">Sleep Hygiene Strategies</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Consistent sleep schedule (even on weekends)</li>
                           <li className="text-professional">• Cool, dark, quiet bedroom environment</li>
                           <li className="text-professional">• Avoid screens 1-2 hours before bedtime</li>
@@ -857,7 +902,7 @@ const ResourcesPage: React.FC = () => {
 
                     <div className="bg-amber-800/30 border border-amber-600 rounded-lg p-6">
                       <h4 className="text-lg font-semibold text-amber-300 mb-3 tracking-tight">Professional Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                      <div className="space-y-3 text-gray-800">
                         <div>
                           <p className="font-semibold text-amber-300">American Academy of Sleep Medicine</p>
                           <p className="text-professional">Clinical guidelines for sleep disorders and ADHD</p>
@@ -875,10 +920,10 @@ const ResourcesPage: React.FC = () => {
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-amber-300 flex-shrink-0">{getIcon('academic-cap')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Academic Support</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Academic Support</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-800 mb-6 leading-relaxed text-professional">
                       Students with ADHD are entitled to educational accommodations under federal law. These supports can help level the playing field and enable academic success.
                     </p>
                     
@@ -888,7 +933,7 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-amber-300 mb-4 tracking-tight">Legal Rights & Accommodations</h4>
-                        <div className="space-y-3 text-sage-200">
+                        <div className="space-y-3 text-gray-800">
                           <div>
                             <p className="font-semibold text-amber-300">Section 504 (Rehabilitation Act)</p>
                             <p className="text-professional">Protects students with disabilities from discrimination and ensures equal access to education.</p>
@@ -909,7 +954,7 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-sleek-300 mb-4 tracking-tight">Common Accommodations</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Extended time on tests and assignments</li>
                           <li className="text-professional">• Preferential seating and reduced distractions</li>
                           <li className="text-professional">• Note-taking assistance or recorded lectures</li>
@@ -922,7 +967,7 @@ const ResourcesPage: React.FC = () => {
 
                     <div className="bg-emerald-800/30 border border-emerald-600 rounded-lg p-6">
                       <h4 className="text-lg font-semibold text-emerald-300 mb-3 tracking-tight">Educational Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                      <div className="space-y-3 text-gray-800">
                         <div>
                           <p className="font-semibold text-emerald-300">U.S. Department of Education</p>
                           <p className="text-professional">Information on disability rights and educational accommodations</p>
@@ -944,10 +989,10 @@ const ResourcesPage: React.FC = () => {
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-6 text-sleek-300 flex-shrink-0">{getIcon('briefcase')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Workplace Success</h3>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Workplace Success</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-800 mb-6 leading-relaxed text-professional">
                       ADHD can present unique challenges in the workplace, but with the right strategies and accommodations, individuals with ADHD can excel in their careers and contribute valuable skills like creativity, problem-solving, and hyperfocus.
                     </p>
                     
@@ -957,7 +1002,7 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-sleek-300 mb-4 tracking-tight">Workplace Accommodations</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Flexible work schedules and remote work options</li>
                           <li className="text-professional">• Quiet workspace or noise-canceling headphones</li>
                           <li className="text-professional">• Task management software and organizational tools</li>
@@ -971,7 +1016,7 @@ const ResourcesPage: React.FC = () => {
                         whileHover={{ scale: 1.01 }}
                       >
                         <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">Professional Strengths</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Creative problem-solving and innovative thinking</li>
                           <li className="text-professional">• Ability to hyperfocus on tasks of interest</li>
                           <li className="text-professional">• High energy and enthusiasm for projects</li>
@@ -983,7 +1028,7 @@ const ResourcesPage: React.FC = () => {
 
                     <div className="bg-amber-800/30 border border-amber-600 rounded-lg p-6">
                       <h4 className="text-lg font-semibold text-amber-300 mb-3 tracking-tight">Professional Development</h4>
-                      <div className="space-y-3 text-sage-200">
+                      <div className="space-y-3 text-gray-800">
                         <div>
                           <p className="font-semibold text-amber-300">Job Accommodation Network (JAN)</p>
                           <p className="text-professional">Free guidance on workplace accommodations and disability employment</p>
@@ -1004,21 +1049,21 @@ const ResourcesPage: React.FC = () => {
                 {selectedSection === 'relationships' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-sage-300 flex-shrink-0">{getIcon('heart')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Relationships & Social</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('heart')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Relationships & Social</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 leading-relaxed text-professional">
+                    <p className="text-gray-700 mb-6 leading-relaxed text-professional">
                       ADHD can impact relationships through communication challenges, emotional regulation difficulties, and executive function issues. However, with understanding and effective strategies, individuals with ADHD can build and maintain healthy, fulfilling relationships.
                     </p>
                     
                     <div className="grid lg:grid-cols-2 gap-6 mb-6">
                       <motion.div 
-                        className="bg-sage-800/50 rounded-lg p-6 border border-sage-700"
+                        className="bg-forest-100 rounded-lg p-6 border border-forest-300"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-sage-300 mb-4 tracking-tight">Communication Strategies</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Communication Strategies</h4>
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Active listening and eye contact</li>
                           <li className="text-professional">• Using "I" statements and clear expression</li>
                           <li className="text-professional">• Setting aside dedicated time for important conversations</li>
@@ -1028,11 +1073,11 @@ const ResourcesPage: React.FC = () => {
                       </motion.div>
                       
                       <motion.div 
-                        className="bg-emerald-800/50 rounded-lg p-6 border border-emerald-700"
+                        className="bg-forest-150 rounded-lg p-6 border border-forest-400"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <h4 className="text-xl font-semibold text-emerald-300 mb-4 tracking-tight">Building Healthy Relationships</h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 tracking-tight">Building Healthy Relationships</h4>
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Open communication about ADHD challenges</li>
                           <li className="text-professional">• Setting realistic expectations and boundaries</li>
                           <li className="text-professional">• Regular check-ins and quality time together</li>
@@ -1042,47 +1087,47 @@ const ResourcesPage: React.FC = () => {
                       </motion.div>
                     </div>
 
-                    <div className="bg-sleek-800/30 border border-sleek-600 rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-sleek-300 mb-3 tracking-tight">Support Resources</h4>
-                      <div className="space-y-3 text-sage-200">
+                    <div className="bg-forest-50 border border-forest-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-forest-700 mb-3 tracking-tight">Support Resources</h4>
+                      <div className="space-y-3 text-gray-800">
                         <div>
-                          <p className="font-semibold text-sleek-300">ADHD & Marriage</p>
+                          <p className="font-semibold text-forest-700">ADHD & Marriage</p>
                           <p className="text-professional">Resources and support for couples affected by ADHD</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-sleek-300">American Association for Marriage and Family Therapy</p>
+                          <p className="font-semibold text-forest-700">American Association for Marriage and Family Therapy</p>
                           <p className="text-professional">Directory of qualified family therapists</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-sleek-300">Psychology Today</p>
+                          <p className="font-semibold text-forest-700">Psychology Today</p>
                           <p className="text-professional">Articles and resources on relationships and ADHD</p>
                         </div>
                       </div>
-                </div>
-              </div>
+                    </div>
+                  </div>
                 )}
 
                 {selectedSection === 'support' && (
                   <div>
                     <div className="flex items-center mb-6">
-                      <div className="text-4xl mr-6 text-emerald-300 flex-shrink-0">{getIcon('users')}</div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Getting Support</h3>
+                      <div className="text-4xl mr-6 text-forest-600 flex-shrink-0">{getIcon('users')}</div>
+                      <h3 className="text-2xl font-bold text-forest-900 tracking-tight">Getting Support</h3>
                     </div>
                     
-                    <p className="text-sage-200 mb-6 text-professional">
+                    <p className="text-gray-700 mb-6 text-professional">
                       You don't have to navigate ADHD alone! There are many people and resources ready to help.
                     </p>
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       <motion.div 
-                        className="bg-emerald-800/50 rounded-lg p-6 border border-emerald-700"
+                        className="bg-forest-100 rounded-lg p-6 border border-forest-300"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <h4 className="text-xl font-semibold text-emerald-300 mb-4 flex items-center gap-3 tracking-tight">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 flex items-center gap-3 tracking-tight">
                           <div className="flex-shrink-0">{getIcon('user')}</div>
                           <span>Professional Help</span>
                         </h4>
-                        <ul className="space-y-2 text-sage-200">
+                        <ul className="space-y-2 text-gray-800">
                           <li className="text-professional">• Talk to your doctor</li>
                           <li className="text-professional">• Find a therapist or counselor</li>
                           <li className="text-professional">• Consider ADHD coaching</li>
@@ -1091,24 +1136,24 @@ const ResourcesPage: React.FC = () => {
                       </motion.div>
                       
                       <motion.div 
-                        className="bg-sleek-800/50 rounded-lg p-6 border border-sleek-700"
+                        className="bg-forest-150 rounded-lg p-6 border border-forest-400"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <h4 className="text-xl font-semibold text-sleek-300 mb-4 flex items-center gap-3 tracking-tight">
+                        <h4 className="text-xl font-semibold text-forest-700 mb-4 flex items-center gap-3 tracking-tight">
                           <div className="flex-shrink-0">{getIcon('phone')}</div>
                           <span>Crisis Resources</span>
                         </h4>
-                        <div className="space-y-3 text-sage-200">
+                        <div className="space-y-3 text-gray-800">
                           <div>
-                            <p className="font-semibold text-sleek-300 tracking-tight">National Suicide Prevention Lifeline</p>
+                            <p className="font-semibold text-forest-700 tracking-tight">National Suicide Prevention Lifeline</p>
                             <p className="text-professional">988 or 1-800-273-8255</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-sleek-300 tracking-tight">Crisis Text Line</p>
+                            <p className="font-semibold text-forest-700 tracking-tight">Crisis Text Line</p>
                             <p className="text-professional">Text HOME to 741741</p>
                           </div>
-            </div>
-          </motion.div>
+                        </div>
+                      </motion.div>
                     </div>
                   </div>
                 )}
@@ -1124,21 +1169,21 @@ const ResourcesPage: React.FC = () => {
             transition={{ delay: 0.7, duration: 0.6 }}
               className="text-center"
             >
-              <div className="bg-gradient-to-r from-sleek-800/50 to-emerald-800/50 rounded-2xl p-8 border border-sleek-700">
+              <div className="bg-gradient-to-r from-forest-100/80 to-forest-200/80 rounded-2xl p-8 border border-forest-300">
                 <motion.div
-                  className="text-6xl mb-4 text-amber-300"
+                  className="text-6xl mb-4 text-forest-600"
                   animate={{ y: [0, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
                 >
                   {getIcon('sparkles')}
                 </motion.div>
-                <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">You're doing great!</h3>
-                <p className="text-sage-200 mb-6 text-professional">
+                <h3 className="text-2xl font-bold text-forest-900 mb-4 tracking-tight">You're doing great!</h3>
+                <p className="text-gray-800 mb-6 text-professional">
                   Remember, ADHD is just one part of who you are. You have unique strengths and talents that make you special!
                 </p>
                 <motion.button
                   onClick={() => setSelectedSection('what-is-adhd')}
-                  className="bg-gradient-to-r from-emerald-600 to-sleek-600 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform"
+                  className="bg-gradient-to-r from-forest-600 to-forest-700 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

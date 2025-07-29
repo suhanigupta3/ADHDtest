@@ -121,33 +121,31 @@ const ConsentPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sleek-50 to-emerald-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-forest-50/90 backdrop-blur-sm rounded-2xl shadow-xl border border-forest-300 p-8"
         >
           {/* Header */}
           <motion.div className="text-center mb-8" variants={itemVariants}>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Informed Consent
+            <h1 className="text-4xl font-bold text-forest-800 mb-4 text-heading-large">
+              Informed Consent Form
             </h1>
-            
-            <p className="text-lg text-gray-700 max-w-3xl mx-auto">
-              Before we begin your A(rDx)HD assessment, we need your informed consent. 
-              Please review all information carefully before providing your consent.
+            <p className="text-lg text-forest-700 max-w-3xl mx-auto text-professional-large">
+              Please read this form carefully before participating in our ADHD assessment.
             </p>
           </motion.div>
 
           {/* Study Description */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Study Description</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Study Description</h3>
             <div className="space-y-4 text-gray-700">
               <p>
                 You are invited to participate in an ADHD assessment. Your participation 
-                in this assessment will take approximately 20-30 minutes, wherein you will play interactive games 
+                in this assessment will take approximately 15-30 minutes in one sitting preferred, wherein you will play interactive games 
                 and answer a series of questions that are meant to test whether you have ADHD. This will be 
                 done through our secure website and will require no video/audio taping.
               </p>
@@ -161,7 +159,7 @@ const ConsentPage: React.FC = () => {
 
           {/* Future Use of Information */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Future Use of Private Information</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Future Use of Private Information</h3>
             <div className="space-y-4 text-gray-700">
               <p>
                 Research using private information is an important way to try to understand human behavior/mind. 
@@ -178,15 +176,15 @@ const ConsentPage: React.FC = () => {
 
           {/* Risks and Benefits */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Risks and Benefits</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Risks and Benefits</h3>
             <div className="space-y-4 text-gray-700">
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                 <h4 className="font-semibold text-emerald-900 mb-2">Risks:</h4>
                 <p className="text-emerald-800">There are no risks associated with this assessment; all information about one's health will be protected and only used at scientific meetings (no personal reasons).</p>
               </div>
-              <div className="bg-sleek-50 border border-sleek-200 rounded-lg p-4">
-                <h4 className="font-semibold text-sleek-900 mb-2">Benefits:</h4>
-                <p className="text-sleek-800">There are no foreseeable benefits which may reasonably be expected to result from this assessment. We cannot and do not guarantee or promise that you will receive any benefits from this assessment.</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Benefits:</h4>
+                <p className="text-emerald-800">There are no foreseeable benefits which may reasonably be expected to result from this assessment. We cannot and do not guarantee or promise that you will receive any benefits from this assessment.</p>
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <h4 className="font-semibold text-amber-900 mb-2">Voluntary Participation:</h4>
@@ -201,15 +199,15 @@ const ConsentPage: React.FC = () => {
 
           {/* Time Involvement */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Time Involvement</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Time Involvement</h3>
             <p className="text-gray-700">
-              Your participation in this experiment will last for approximately 20-30 minutes.
+              Your participation in this experiment will last for approximately 15-30 minutes in one sitting preferred.
             </p>
           </motion.div>
 
           {/* Payments */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Payments/Reimbursements</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Payments/Reimbursements</h3>
             <p className="text-gray-700">
               You will receive no compensation for your participation.
             </p>
@@ -217,7 +215,7 @@ const ConsentPage: React.FC = () => {
 
           {/* Certificate of Confidentiality */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Certificate of Confidentiality</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Certificate of Confidentiality</h3>
             <div className="space-y-4 text-gray-700">
               <p>
                 The researchers with this Certificate may not disclose or use information or documents that may 
@@ -244,16 +242,16 @@ const ConsentPage: React.FC = () => {
 
           {/* Authorization for Health Information */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Authorization to Use Your Health Information for Assessment Purposes</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Authorization to Use Your Health Information for Assessment Purposes</h3>
             <div className="space-y-4 text-gray-700">
               <p>
                 Because information about you and your health is personal and private, it generally cannot be 
                 used in this assessment without your written authorization. Once you read and sign this consent, 
                 it will provide that authorization.
               </p>
-              <div className="bg-sleek-50 border border-sleek-200 rounded-lg p-4">
-                <h4 className="font-semibold text-sleek-900 mb-2">Purpose of Assessment:</h4>
-                <p className="text-sleek-800">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="font-semibold text-emerald-900 mb-2">Purpose of Assessment:</h4>
+                <p className="text-emerald-800">
                   The purpose of this assessment is to detect any symptoms of ADHD and provide a report on 
                   your results. You will first create an account on our website to store your reports and progress. 
                   Next, you will be given the opportunity to choose the gamified assessment you would like to take. 
@@ -282,7 +280,7 @@ const ConsentPage: React.FC = () => {
 
           {/* Participant Rights */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Participant Rights</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Participant Rights</h3>
             <div className="space-y-4 text-gray-700">
               <p>
                 If you have read this form and have decided to participate in this project, please understand 
@@ -313,7 +311,7 @@ const ConsentPage: React.FC = () => {
 
           {/* Withdrawal Information */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Withdrawal from Assessment</h3>
+            <h3 className="text-xl font-semibold text-forest-800 mb-4 text-heading">Withdrawal from Assessment</h3>
             <div className="space-y-4 text-gray-700">
               <p>The Protocol Director may withdraw you from the assessment without your consent for one or more of the following reasons:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -330,7 +328,7 @@ const ConsentPage: React.FC = () => {
 
           {/* Personal Information */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+            <h3 className="text-lg font-semibold text-forest-800 mb-4">Personal Information</h3>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -387,10 +385,10 @@ const ConsentPage: React.FC = () => {
 
           {/* Consent Checkboxes */}
           <motion.div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6" variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Consent Agreement</h3>
+            <h3 className="text-lg font-semibold text-forest-800 mb-4">Consent Agreement</h3>
             
             {error && (
-              <div className="bg-sleek-50 border border-sleek-200 text-sleek-700 px-4 py-3 rounded-lg mb-4">
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg mb-4">
                 {error}
               </div>
             )}
@@ -401,10 +399,10 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  I have read and agree to the <Link to="/terms" className="text-sleek-700 hover:text-sleek-800 underline">Terms of Service</Link>.
+                  I have read and agree to the <Link to="/terms" className="text-emerald-700 hover:text-emerald-800 underline">Terms of Service</Link>.
                 </span>
               </label>
 
@@ -413,10 +411,10 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedPrivacy}
                   onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  I have read and agree to the <Link to="/privacy" className="text-sleek-700 hover:text-sleek-800 underline">Privacy Policy</Link>.
+                  I have read and agree to the <Link to="/privacy" className="text-emerald-700 hover:text-emerald-800 underline">Privacy Policy</Link>.
                 </span>
               </label>
 
@@ -425,7 +423,7 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedAssessment}
                   onChange={(e) => setAcceptedAssessment(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
                   I understand this assessment is for educational purposes only and does not constitute medical advice or diagnosis.
@@ -437,7 +435,7 @@ const ConsentPage: React.FC = () => {
                   type="checkbox"
                   checked={acceptedResearch}
                   onChange={(e) => setAcceptedResearch(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
                   I have read and understood all the assessment information above and consent to participate in this assessment.
@@ -450,7 +448,7 @@ const ConsentPage: React.FC = () => {
                     type="checkbox"
                     checked={parentalConsent}
                     onChange={(e) => setParentalConsent(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-sleek-600 focus:ring-sleek-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                   />
                   <span className="text-sm text-gray-700">
                     I confirm that my parent or legal guardian has reviewed this information and consents to my participation in this assessment.

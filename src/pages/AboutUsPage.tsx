@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 const AboutUsPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8] relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
       {/* Floating Symbols Background */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Brain Symbol */}

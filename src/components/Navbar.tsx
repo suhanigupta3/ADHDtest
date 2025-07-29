@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="w-8 h-8 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-full flex items-center justify-center hidden">
+            <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-green-600 rounded-full flex items-center justify-center hidden">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
               </svg>
@@ -79,8 +79,8 @@ const Navbar: React.FC = () => {
                 to={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible-ring ${
                   isActivePath(item.path)
-                    ? 'text-sleek-700 bg-sleek-50 border border-sleek-200'
-                    : 'text-gray-700 hover:text-sleek-700 hover:bg-gray-50'
+                    ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                    : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
                 }`}
               >
                 {item.name}
@@ -98,7 +98,7 @@ const Navbar: React.FC = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-sleek-600 text-white rounded-md text-sm font-medium hover:bg-sleek-700 transition-colors focus-visible-ring"
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors focus-visible-ring"
                 >
                   Logout
                 </button>
@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link
                 to="/auth"
-                className="px-4 py-2 bg-sleek-600 text-white rounded-md text-sm font-medium hover:bg-sleek-700 transition-colors focus-visible-ring"
+                className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors focus-visible-ring"
               >
                 Login
               </Link>
@@ -117,7 +117,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden">
             <button
               onClick={toggleMobileMenu}
-              className="text-gray-700 hover:text-sleek-700 focus:outline-none focus:text-sleek-700 focus-visible-ring p-2"
+              className="text-gray-700 hover:text-emerald-700 focus:outline-none focus:text-emerald-700 focus-visible-ring p-2"
               aria-label="Toggle mobile menu"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,8 +149,8 @@ const Navbar: React.FC = () => {
                     onClick={closeMobileMenu}
                     className={`block px-3 py-2 rounded-md text-base font-medium transition-colors focus-visible-ring ${
                       isActivePath(item.path)
-                        ? 'text-sleek-700 bg-sleek-50 border border-sleek-200'
-                        : 'text-gray-700 hover:text-sleek-700 hover:bg-gray-50'
+                        ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                        : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
                     }`}
                   >
                     {item.name}
@@ -171,7 +171,7 @@ const Navbar: React.FC = () => {
                         handleLogout();
                         closeMobileMenu();
                       }}
-                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-sleek-600 hover:text-sleek-700 hover:bg-sleek-50 transition-colors focus-visible-ring"
+                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors focus-visible-ring"
                     >
                       Logout
                     </button>
@@ -181,7 +181,7 @@ const Navbar: React.FC = () => {
                     <Link
                       to="/auth"
                       onClick={closeMobileMenu}
-                      className="block px-3 py-2 bg-sleek-600 text-white rounded-md text-base font-medium hover:bg-sleek-700 transition-colors text-center focus-visible-ring"
+                      className="block px-3 py-2 bg-emerald-600 text-white rounded-md text-base font-medium hover:bg-emerald-700 transition-colors text-center focus-visible-ring"
                     >
                       Login
                     </Link>

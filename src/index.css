@@ -219,11 +219,11 @@
   }
   
   .bg-gradient-dark {
-    @apply bg-gradient-to-br from-sage-950 via-sleek-950 to-emerald-950;
+    @apply bg-gradient-to-br from-forest-900 via-emerald-900 to-sleek-900;
   }
 
   .bg-gradient-light {
-    @apply bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8];
+    @apply bg-gradient-to-br from-forest-100 to-forest-200;
   }
   
   /* Accessibility-focused utilities */

@@ -106,8 +106,8 @@ const GameUI: React.FC<GameUIProps> = ({
           <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
           <p className="text-lg text-gray-700 mb-4 text-center max-w-2xl">{instructions.text}</p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left mb-8 max-w-xl w-full">
-            <h3 className="font-bold text-blue-800 mb-2">Example:</h3>
-            <p className="text-blue-700 text-base">{instructions.example}</p>
+            <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
+            <p className="text-emerald-200 text-base">{instructions.example}</p>
           </div>
           <button
             onClick={onStartRound}
@@ -135,7 +135,7 @@ const GameUI: React.FC<GameUIProps> = ({
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Accuracy:</span>
-                    <span className="font-semibold text-blue-600">
+                    <span className="font-semibold text-emerald-400">
                       {metrics.totalTrials > 0 ? Math.round((metrics.correctTrials / metrics.totalTrials) * 100) : 0}%
                     </span>
                   </div>
@@ -321,8 +321,8 @@ const GameUI: React.FC<GameUIProps> = ({
                 {instructions.text}
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                <h3 className="font-bold text-blue-800 mb-2">Example:</h3>
-                <p className="text-blue-700 text-sm">{instructions.example}</p>
+                <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
+                <p className="text-emerald-200 text-sm">{instructions.example}</p>
               </div>
             </div>
           </div>

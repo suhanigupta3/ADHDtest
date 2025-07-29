@@ -7,12 +7,12 @@ const AccessibilityPage: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Accessibility Statement</h1>
-            <p className="text-xl text-gray-600">
-              Our commitment to making A(rDx)HD assessment accessible to everyone.
+            <h1 className="text-4xl font-bold text-forest-800 mb-4 text-heading-large">Accessibility Statement</h1>
+            <p className="text-xl text-forest-600 text-professional-large">
+              We are committed to making our ADHD assessment accessible to everyone.
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Last updated: {new Date().toLocaleDateString()}
+            <p className="text-sm text-forest-500 mt-2 text-professional">
+              Last updated: December 2024
             </p>
           </div>
 
@@ -20,8 +20,8 @@ const AccessibilityPage: React.FC = () => {
             
             {/* Our Commitment */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Commitment to Accessibility</h2>
-              <p className="text-gray-600 leading-relaxed mb-4">
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Our Commitment to Accessibility</h2>
+              <p className="text-forest-700 leading-relaxed mb-4 text-professional">
                 At A(rDx)HD Platform, we believe that everyone deserves equal access to quality A(rDx)HD assessment tools. 
                 We are committed to ensuring our digital platform is accessible to people with disabilities, including those with 
                 visual, auditory, motor, and cognitive impairments.
@@ -41,7 +41,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Accessibility Features */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Accessibility Features</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Accessibility Features</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
@@ -130,7 +130,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Assistive Technology */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Assistive Technology Support</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Assistive Technology Support</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
                 Our platform is designed to work with various assistive technologies:
               </p>
@@ -164,7 +164,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Testing and Standards */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Standards and Testing</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Standards and Testing</h2>
               
               <div className="space-y-4">
                 <div className="border-l-4 border-sleek-500 pl-4">
@@ -195,7 +195,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Known Issues */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Known Accessibility Issues</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Known Accessibility Issues</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
                 We are committed to transparency about accessibility challenges and our efforts to address them:
               </p>
@@ -222,7 +222,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Accessibility Settings */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Accessibility Settings</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Accessibility Settings</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
                 Users can customize their experience through various accessibility settings:
               </p>
@@ -252,7 +252,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Contact and Feedback */}
             <section className="border-t border-gray-200 pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Accessibility Support</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Accessibility Support</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
                 We welcome feedback about the accessibility of our platform. If you encounter accessibility barriers 
                 or have suggestions for improvement, please contact us:
@@ -289,7 +289,7 @@ const AccessibilityPage: React.FC = () => {
 
             {/* Related Information */}
             <section className="border-t border-gray-200 pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Related Information</h2>
+              <h2 className="text-2xl font-bold text-forest-800 mb-4 text-heading">Related Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link to="/privacy" className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <svg className="h-5 w-5 text-emerald-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

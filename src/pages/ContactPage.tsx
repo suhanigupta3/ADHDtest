@@ -40,32 +40,31 @@ const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DDEBDD] to-[#E8F5E8]">
-      <div className="container mx-auto px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
+      <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-6xl mx-auto"
         >
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-black mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-forest-800 mb-6 text-heading-large">
               Contact Us
             </h1>
-            <p className="text-xl text-black max-w-3xl mx-auto">
-              We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            <p className="text-xl text-forest-600 max-w-3xl mx-auto text-professional-large">
+              Have questions? We're here to help. Reach out to our support team.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-lg p-8 border border-[#C8D8C8]"
+              className="bg-forest-50/90 backdrop-blur-sm rounded-2xl p-8 border border-forest-300 shadow-lg"
             >
-              <h2 className="text-2xl font-semibold text-emerald-800 mb-6">Send us a Message</h2>
+              <h2 className="text-2xl font-semibold text-forest-800 mb-6 text-heading">Send us a Message</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
@@ -155,7 +154,7 @@ const ContactPage: React.FC = () => {
               className="space-y-8"
             >
               <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-lg p-8 border border-[#C8D8C8]">
-                <h2 className="text-2xl font-semibold text-emerald-800 mb-6">Get in Touch</h2>
+                <h2 className="text-2xl font-semibold text-forest-800 mb-6">Get in Touch</h2>
                 
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
@@ -178,12 +177,12 @@ const ContactPage: React.FC = () => {
 
               {/* FAQ Section */}
               <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-lg p-8 border border-[#C8D8C8]">
-                <h2 className="text-2xl font-semibold text-emerald-800 mb-6">Frequently Asked Questions</h2>
+                <h2 className="text-2xl font-semibold text-forest-800 mb-6">Frequently Asked Questions</h2>
                 
                 <div className="space-y-4">
                   <div>
                                     <h4 className="font-semibold text-black mb-2">How long does the assessment take?</h4>
-                <p className="text-black text-sm">Our comprehensive assessment typically takes approximately 20-30 minutes to complete.</p>
+                <p className="text-black text-sm">Our comprehensive assessment typically takes approximately 15-30 minutes in one sitting preferred to complete.</p>
                   </div>
                   
                   <div>

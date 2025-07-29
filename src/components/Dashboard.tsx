@@ -7,7 +7,7 @@ const Dashboard: React.FC = () => {
   const { hasConsent, loading } = useConsent();
 
   return (
-    <div className="min-h-screen bg-gradient-dark">
+    <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <motion.div
@@ -16,11 +16,11 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
               Welcome to Your Dashboard
             </h2>
-            <p className="text-lg text-sage-100 max-w-2xl mx-auto mb-4">
-              Continue your A(rDx)HD journey. Track your progress and access personalized resources.
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+              Continue your ADHD journey. Track your progress and access personalized resources.
             </p>
             
             {/* Consent Status Indicator */}
@@ -45,17 +45,17 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6 }}
-              className="card-dark hover:shadow-xl transition-shadow duration-300"
+              className="bg-forest-50/90 backdrop-blur-sm rounded-xl shadow-lg border border-forest-300 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-green-600 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Start Assessment</h3>
-                <p className="text-sage-100 mb-4">Begin your comprehensive A(rDx)HD assessment with interactive games and questionnaires.</p>
-                <Link to="/assessment" className="btn-primary-dark inline-flex items-center">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Start Assessment</h3>
+                <p className="text-gray-700 mb-4">Begin your comprehensive ADHD assessment with interactive games.</p>
+                <Link to="/assessment" className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 shadow-lg border border-emerald-500 hover:shadow-xl hover:scale-105 active:scale-95 inline-flex items-center">
                   Begin Assessment
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="card-dark hover:shadow-xl transition-shadow duration-300"
+              className="bg-forest-50/90 backdrop-blur-sm rounded-xl shadow-lg border border-forest-300 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="p-6">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-sleek-600 rounded-lg flex items-center justify-center mb-4">
@@ -77,9 +77,9 @@ const Dashboard: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">View Results</h3>
-                <p className="text-sage-100 mb-4">Review your assessment results and detailed analysis of your performance.</p>
-                <Link to="/results" className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-sleek-600 text-white rounded-lg hover:from-emerald-700 hover:to-sleek-700 transition-all duration-300 border border-emerald-500 focus-visible-ring">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">View Results</h3>
+                <p className="text-gray-700 mb-4">Review your assessment results and detailed analysis of your performance.</p>
+                <Link to="/results" className="bg-gradient-to-r from-emerald-600 to-sleek-600 hover:from-emerald-700 hover:to-sleek-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 shadow-lg border border-emerald-500 hover:shadow-xl hover:scale-105 active:scale-95 inline-flex items-center">
                   View Results
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="card-dark hover:shadow-xl transition-shadow duration-300"
+              className="bg-forest-50/90 backdrop-blur-sm rounded-xl shadow-lg border border-forest-300 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="p-6">
                 <div className="w-12 h-12 bg-gradient-to-r from-sleek-600 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
@@ -101,9 +101,9 @@ const Dashboard: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Learn About ADHD</h3>
-                <p className="text-sage-100 mb-4">Access educational resources and management strategies for ADHD.</p>
-                <Link to="/resources" className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white rounded-lg hover:from-sleek-700 hover:to-emerald-700 transition-all duration-300 border border-sleek-500 focus-visible-ring">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Learn About ADHD</h3>
+                <p className="text-gray-700 mb-4">Access educational resources and management strategies for ADHD.</p>
+                <Link to="/resources" className="bg-gradient-to-r from-sleek-600 to-emerald-600 hover:from-sleek-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 shadow-lg border border-sleek-500 hover:shadow-xl hover:scale-105 active:scale-95 inline-flex items-center">
                   Explore Resources
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -118,17 +118,17 @@ const Dashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="bg-gradient-to-r from-sleek-900/50 to-emerald-900/50 rounded-xl p-6 border border-sleek-600"
+            className="bg-gradient-to-r from-forest-100/90 to-forest-200/90 rounded-xl p-6 border border-forest-300"
           >
-            <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
             <div className="flex flex-wrap gap-3">
-              <Link to="/about-adhd" className="btn-secondary-dark inline-flex items-center">
+              <Link to="/about-adhd" className="bg-forest-200 hover:bg-forest-300 text-forest-800 font-semibold py-3 px-6 rounded-lg border border-forest-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2 hover:shadow-lg hover:scale-105 active:scale-95 inline-flex items-center">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 About ADHD
               </Link>
-              <Link to="/consent" className="btn-secondary-dark inline-flex items-center">
+              <Link to="/consent" className="bg-forest-200 hover:bg-forest-300 text-forest-800 font-semibold py-3 px-6 rounded-lg border border-forest-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2 hover:shadow-lg hover:scale-105 active:scale-95 inline-flex items-center">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
