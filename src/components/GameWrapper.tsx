@@ -29,7 +29,16 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
   const isBounceBack = gameId === 'kitchen-quest'; // Replace Kitchen Quest with Bounce Back
 
   if (isBounceBack) {
-    return <BounceBackGame />;
+    return (
+      <BounceBackGame 
+        onGameComplete={(gameData) => {
+          console.log('Bounce Back Game completed with data:', gameData);
+          if (onGameComplete) {
+            onGameComplete();
+          }
+        }}
+      />
+    );
   }
 
   if (isReactGame) {

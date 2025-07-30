@@ -984,21 +984,19 @@ const AssessmentPage: React.FC = () => {
                         Start Game
                       </button>
                     ) : (
-                <button
-                        onClick={() => setGameStarted(false)}
-                        className="btn-secondary-dark px-6 py-2"
-                >
-                        Back to Instructions
-                </button>
+                      // Removed "Back to Instructions" button to prevent exiting during gameplay
+                      <div className="text-sage-400 text-sm">
+                        Complete the game to continue
+                      </div>
                     )}
-                <button
-                  onClick={closeGameModal}
+                    <button
+                      onClick={closeGameModal}
                       className="btn-secondary-dark px-6 py-2"
-                >
+                    >
                       Cancel
-                </button>
-              </div>
-            </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
