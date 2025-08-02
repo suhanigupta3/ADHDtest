@@ -333,3 +333,65 @@ export const calculateAverageReactionTime = (reactionTimes: number[]): number =>
     ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length 
     : 0;
 }; 
+
+export const calculateAverageRecoveryTime = (timeBetweenMistakes: number[]): number => {
+  if (timeBetweenMistakes.length < 2) return 0;
+  
+  // Filter out very short times (less than 1 second) as they might be consecutive errors
+  const validTimes = timeBetweenMistakes.filter(time => time > 1000);
+  
+  return validTimes.length > 0 
+    ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length 
+    : 0;
+};
+
+export const calculatePaddlePositionAccuracy = (paddleHits: number, totalAttempts: number): number => {
+  return totalAttempts > 0 ? (paddleHits / totalAttempts) * 100 : 0;
+};
+
+export const calculateBallSpeedConsistency = (ballSpeeds: number[]): number => {
+  if (ballSpeeds.length < 2) return 100;
+  
+  const mean = ballSpeeds.reduce((a, b) => a + b, 0) / ballSpeeds.length;
+  const variance = ballSpeeds.reduce((sum, speed) => sum + Math.pow(speed - mean, 2), 0) / ballSpeeds.length;
+  const standardDeviation = Math.sqrt(variance);
+  
+  // Higher consistency = lower standard deviation
+  return Math.max(0, 100 - (standardDeviation / mean) * 100);
+};
+
+// Test function to validate ADHD score calculations
+export const testADHDScores = () => {
+  const testMetrics = {
+    accuracy: 75, // 75% accuracy
+    maxConsecutiveErrors: 2, // 2 consecutive errors max
+    totalMistakes: 3, // 3 total mistakes
+    totalPlayTime: 120000, // 2 minutes
+    movementPatterns: [1000, 2000, 3000, 4000, 5000], // 5 movements
+    errorPatterns: [15000, 45000, 90000], // 3 errors
+    paddleMovements: 50, // 50 paddle movements
+    successfulRecoveries: 2, // 2 successful recoveries
+    failedRecoveries: 1, // 1 failed recovery
+  };
+
+  // Test Inattention Score
+  const accuracyComponent = (testMetrics.accuracy / 100) * 4; // 3.0
+  const consistencyComponent = Math.max(0, (1 - testMetrics.maxConsecutiveErrors / 3)) * 3; // 1.0
+  const focusComponent = Math.max(0, (1 - testMetrics.totalMistakes / Math.max(1, testMetrics.totalPlayTime / 30000))) * 3; // 2.25
+  const inattentionScore = Math.max(0, Math.min(10, accuracyComponent + consistencyComponent + focusComponent)); // 6.25
+
+  // Test Hyperactivity Score
+  const movementFrequency = testMetrics.movementPatterns.length / Math.max(1, testMetrics.totalPlayTime / 1000); // 0.042
+  const movementComponent = Math.min(1, movementFrequency / 1) * 5; // 0.21
+  const erraticComponent = Math.min(1, testMetrics.errorPatterns.length / Math.max(1, testMetrics.totalPlayTime / 5000)) * 3; // 0.75
+  const paddleComponent = Math.min(1, testMetrics.paddleMovements / 100) * 2; // 1.0
+  const hyperactivityScore = Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent)); // 1.96
+
+  console.log('[BounceBack][TEST] Sample ADHD scores:', {
+    inattentionScore,
+    hyperactivityScore,
+    testMetrics
+  });
+
+  return { inattentionScore, hyperactivityScore };
+}; 

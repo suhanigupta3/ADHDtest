@@ -71,6 +71,21 @@ export interface GameData {
   levelLivesLost?: number[];
   levelTotalBricks?: number[];
   selfReportResponses: { [key: string]: number };
+  // New metrics for better ADHD assessment
+  consecutiveErrors: number;
+  maxConsecutiveErrors: number;
+  recoveryTimeAfterMistake: number;
+  averageRecoveryTime: number;
+  paddlePositionAccuracy: number;
+  ballSpeedConsistency: number;
+  movementPatterns: number[];
+  errorPatterns: number[];
+  timeBetweenMistakes: number[];
+  lastMistakeTime: number;
+  totalMistakes: number;
+  successfulRecoveries: number;
+  failedRecoveries: number;
+  ballSpeedHistory: number[];
 }
 
 export interface BounceBackGameProps {

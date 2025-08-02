@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ball, Brick, GameData } from '../types';
 import { LEVELS, CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, BALL_RADIUS } from '../constants';
-import { createInitialBricks, createInitialBall, updateBallPosition, calculateAccuracy, calculateAverageReactionTime } from '../utils';
+import { createInitialBricks, createInitialBall, updateBallPosition, calculateAccuracy, calculateAverageReactionTime, calculateAverageRecoveryTime, calculatePaddlePositionAccuracy, calculateBallSpeedConsistency, testADHDScores } from '../utils';
 import { db } from '../../../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -12,6 +12,10 @@ interface UseGameLogicProps {
 }
 
 export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicProps) => {
+  // Test the ADHD score calculations
+  useEffect(() => {
+    testADHDScores();
+  }, []);
   const animationFrameRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
   const outOfBoundsProcessedRef = useRef<boolean>(false);
@@ -68,6 +72,21 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     levelScores: [],
     levelCompletionTimes: [],
     selfReportResponses: {},
+    // New metrics for better ADHD assessment
+    consecutiveErrors: 0,
+    maxConsecutiveErrors: 0,
+    recoveryTimeAfterMistake: 0,
+    averageRecoveryTime: 0,
+    paddlePositionAccuracy: 0,
+    ballSpeedConsistency: 0,
+    movementPatterns: [],
+    errorPatterns: [],
+    timeBetweenMistakes: [],
+    lastMistakeTime: 0,
+    totalMistakes: 0,
+    successfulRecoveries: 0,
+    failedRecoveries: 0,
+    ballSpeedHistory: [],
   }));
 
   // Ball state
@@ -99,11 +118,19 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Right' || e.key === 'ArrowRight') {
         setRightPressed(true);
-        setGameData(prev => ({ ...prev, paddleMovements: prev.paddleMovements + 1 }));
+        setGameData(prev => ({ 
+          ...prev, 
+          paddleMovements: prev.paddleMovements + 1,
+          movementPatterns: [...prev.movementPatterns, Date.now() - prev.startTime]
+        }));
       }
       if (e.key === 'Left' || e.key === 'ArrowLeft') {
         setLeftPressed(true);
-        setGameData(prev => ({ ...prev, paddleMovements: prev.paddleMovements + 1 }));
+        setGameData(prev => ({ 
+          ...prev, 
+          paddleMovements: prev.paddleMovements + 1,
+          movementPatterns: [...prev.movementPatterns, Date.now() - prev.startTime]
+        }));
       }
       if (e.key === ' ' && !gameOver && !gameWon && !showQuestions) {
         e.preventDefault();
@@ -161,50 +188,125 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         totalPlayTime: finalGameData.totalPlayTime,
         finalScore: finalGameData.finalScore,
         levelScores: finalGameData.levelScores,
-        levelCompletionTimes: finalGameData.levelCompletionTimes
+        levelCompletionTimes: finalGameData.levelCompletionTimes,
+        // New metrics
+        consecutiveErrors: finalGameData.consecutiveErrors,
+        maxConsecutiveErrors: finalGameData.maxConsecutiveErrors,
+        totalMistakes: finalGameData.totalMistakes,
+        successfulRecoveries: finalGameData.successfulRecoveries,
+        failedRecoveries: finalGameData.failedRecoveries,
+        movementPatterns: finalGameData.movementPatterns,
+        errorPatterns: finalGameData.errorPatterns,
+        timeBetweenMistakes: finalGameData.timeBetweenMistakes,
       };
 
-      // Calculate composite scores
-      const attentionScore = Math.max(0, Math.min(10, 
-        (gameMetrics.accuracy * 0.4) + 
-        ((1 - gameMetrics.livesLost / 3) * 0.3) + 
-        ((1 - gameMetrics.averageReactionTime / 1000) * 0.3)
+      // Debug logging for score calculations
+      console.log('[BounceBack][SCORES] Game metrics for score calculation:', {
+        accuracy: gameMetrics.accuracy,
+        maxConsecutiveErrors: gameMetrics.maxConsecutiveErrors,
+        totalMistakes: gameMetrics.totalMistakes,
+        totalPlayTime: gameMetrics.totalPlayTime,
+        movementPatterns: gameMetrics.movementPatterns.length,
+        errorPatterns: gameMetrics.errorPatterns.length,
+        paddleMovements: gameMetrics.paddleMovements,
+        successfulRecoveries: gameMetrics.successfulRecoveries,
+        failedRecoveries: gameMetrics.failedRecoveries,
+        selfReport
+      });
+
+      // Additional debugging for extreme values
+      console.log('[BounceBack][SCORES] Raw values that might cause issues:', {
+        accuracyPercent: gameMetrics.accuracy,
+        maxConsecutiveErrorsRaw: gameMetrics.maxConsecutiveErrors,
+        totalMistakesRaw: gameMetrics.totalMistakes,
+        totalPlayTimeSeconds: gameMetrics.totalPlayTime / 1000,
+        movementPatternsCount: gameMetrics.movementPatterns.length,
+        errorPatternsCount: gameMetrics.errorPatterns.length,
+        paddleMovementsRaw: gameMetrics.paddleMovements
+      });
+
+      // Calculate Inattention Score (0-10) - LOWER score = MORE inattention
+      const accuracyComponent = (gameMetrics.accuracy / 100) * 4;
+      const consistencyComponent = Math.max(0, (1 - gameMetrics.maxConsecutiveErrors / 2)) * 3; // Further reduced threshold
+      const focusComponent = Math.max(0, (1 - gameMetrics.totalMistakes / Math.max(1, gameMetrics.totalPlayTime / 15000))) * 3; // Further reduced time threshold
+      
+      // Ensure inattention score is reasonable (not always 10)
+      const inattentionScore = Math.max(0, Math.min(10, 
+        accuracyComponent + consistencyComponent + focusComponent
       ));
 
+      console.log('[BounceBack][SCORES] Inattention calculation:', {
+        accuracyComponent,
+        consistencyComponent,
+        focusComponent,
+        inattentionScore
+      });
+
+      // Calculate Hyperactivity Score (0-10) - HIGHER score = MORE hyperactivity
+      const movementFrequency = gameMetrics.movementPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 1000);
+      const movementComponent = Math.min(1, movementFrequency / 0.5) * 5; // Further reduced threshold
+      const erraticComponent = Math.min(1, gameMetrics.errorPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 3000)) * 3; // Further reduced threshold
+      const paddleComponent = Math.min(1, gameMetrics.paddleMovements / 50) * 2; // Further reduced threshold
+      
+      // Fallback: if no movement patterns tracked, use paddle movements as proxy
+      const hyperactivityScore = gameMetrics.movementPatterns.length === 0 
+        ? Math.min(10, (gameMetrics.paddleMovements / 20) * 2) // Use paddle movements as hyperactivity indicator
+        : Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent));
+
+      console.log('[BounceBack][SCORES] Hyperactivity calculation:', {
+        movementFrequency,
+        movementComponent,
+        erraticComponent,
+        paddleComponent,
+        hyperactivityScore
+      });
+
+      // Calculate Impulsivity Score (0-10) - HIGHER score = MORE impulsivity
+      const errorComponent = Math.min(1, gameMetrics.totalMistakes / 5) * 4; // Reduced threshold
+      const recoveryComponent = Math.min(1, gameMetrics.failedRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 3;
+      const selfReportComponent = (selfReport.impulsivity_1 ? (selfReport.impulsivity_1 - 1) / 4 * 3 : 0);
+      
       const impulsivityScore = Math.max(0, Math.min(10,
-        (gameMetrics.paddleMovements / 100) * 0.4 +
-        (gameMetrics.wallHits / 50) * 0.3 +
-        (selfReport.impulsivity_1 ? (selfReport.impulsivity_1 - 1) / 4 * 0.3 : 0)
+        errorComponent + recoveryComponent + selfReportComponent
       ));
 
-      const frustrationScore = Math.max(0, Math.min(10,
-        (selfReport.frustration_1 ? (selfReport.frustration_1 - 1) / 4 * 0.6 : 0) +
-        (gameMetrics.livesLost / 3) * 0.4
+      console.log('[BounceBack][SCORES] Impulsivity calculation:', {
+        errorComponent,
+        recoveryComponent,
+        selfReportComponent,
+        impulsivityScore
+      });
+
+      // Calculate Executive Function Score (0-10) - HIGHER score = BETTER executive function
+      const planningComponent = Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 4;
+      const execAccuracyComponent = (gameMetrics.accuracy / 100) * 3;
+      const execSelfReportComponent = (selfReport.focus_1 ? (selfReport.focus_1 - 1) / 4 * 3 : 0);
+      
+      // Ensure executive function score is reasonable (not always 10)
+      const executiveFunctionScore = Math.max(0, Math.min(10,
+        planningComponent + execAccuracyComponent + execSelfReportComponent
       ));
 
-      const focusScore = Math.max(0, Math.min(10,
-        (gameMetrics.accuracy * 0.5) +
-        (selfReport.focus_1 ? (selfReport.focus_1 - 1) / 4 * 0.5 : 0)
-      ));
+      console.log('[BounceBack][SCORES] Executive Function calculation:', {
+        planningComponent,
+        execAccuracyComponent,
+        execSelfReportComponent,
+        executiveFunctionScore
+      });
 
-      const persistenceScore = Math.max(0, Math.min(10,
-        (selfReport.persistence_1 ? (selfReport.persistence_1 - 1) / 4 * 0.7 : 0) +
-        ((1 - gameMetrics.livesLost / 3) * 0.3)
-      ));
-
+      // Calculate composite ADHD score
       const adhd_composite = Math.max(0, Math.min(10,
-        attentionScore * 0.35 +
+        inattentionScore * 0.35 +
+        hyperactivityScore * 0.25 +
         impulsivityScore * 0.25 +
-        frustrationScore * 0.15 +
-        focusScore * 0.15 +
-        persistenceScore * 0.10
+        executiveFunctionScore * 0.15
       ));
 
       const scores = {
-        inattention: attentionScore,
-        hyperactivity: 0, // BounceBack doesn't measure hyperactivity
+        inattention: inattentionScore,
+        hyperactivity: hyperactivityScore,
         impulsivity: impulsivityScore,
-        executive_function: focusScore, // Map focus to executive_function
+        executive_function: executiveFunctionScore,
         adhd_composite
       };
 
@@ -484,6 +586,21 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       levelScores: [],
       levelCompletionTimes: [],
       selfReportResponses: {},
+      // New metrics for better ADHD assessment
+      consecutiveErrors: 0,
+      maxConsecutiveErrors: 0,
+      recoveryTimeAfterMistake: 0,
+      averageRecoveryTime: 0,
+      paddlePositionAccuracy: 0,
+      ballSpeedConsistency: 0,
+      movementPatterns: [],
+      errorPatterns: [],
+      timeBetweenMistakes: [],
+      lastMistakeTime: 0,
+      totalMistakes: 0,
+      successfulRecoveries: 0,
+      failedRecoveries: 0,
+      ballSpeedHistory: [],
     });
   }, []);
 
@@ -654,11 +771,29 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
 
           // Handle paddle hit
           if (result.paddleHit) {
-            setGameData(prev => ({ 
-              ...prev, 
-              paddleHits: prev.paddleHits + 1,
-              reactionTimes: [...prev.reactionTimes, Date.now() - prev.startTime]
-            }));
+            setGameData(prev => {
+              const currentTime = Date.now();
+              const timeSinceLastMistake = currentTime - prev.lastMistakeTime;
+              
+              // Track successful recovery if this hit happened after a mistake
+              let successfulRecoveries = prev.successfulRecoveries;
+              let failedRecoveries = prev.failedRecoveries;
+              let consecutiveErrors = prev.consecutiveErrors;
+              
+              if (prev.lastMistakeTime > 0 && timeSinceLastMistake < 5000) { // Recovery within 5 seconds
+                successfulRecoveries++;
+                consecutiveErrors = 0; // Reset consecutive errors on successful recovery
+              }
+              
+              return { 
+                ...prev, 
+                paddleHits: prev.paddleHits + 1,
+                reactionTimes: [...prev.reactionTimes, currentTime - prev.startTime],
+                successfulRecoveries,
+                consecutiveErrors,
+                movementPatterns: [...prev.movementPatterns, currentTime - prev.startTime]
+              };
+            });
           }
 
           // Handle wall hit
@@ -671,10 +806,25 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
             outOfBoundsProcessedRef.current = true;
             setLives(prev => {
               const newLives = Math.max(0, prev - 1);
-              setGameData(prevData => ({ 
-                ...prevData, 
-                livesLost: prevData.livesLost + 1 
-              }));
+              const currentTime = Date.now();
+              
+              setGameData(prevData => {
+                const timeSinceLastMistake = currentTime - prevData.lastMistakeTime;
+                const newConsecutiveErrors = prevData.consecutiveErrors + 1;
+                const newMaxConsecutiveErrors = Math.max(prevData.maxConsecutiveErrors, newConsecutiveErrors);
+                
+                return { 
+                  ...prevData, 
+                  livesLost: prevData.livesLost + 1,
+                  totalMistakes: prevData.totalMistakes + 1,
+                  consecutiveErrors: newConsecutiveErrors,
+                  maxConsecutiveErrors: newMaxConsecutiveErrors,
+                  lastMistakeTime: currentTime,
+                  timeBetweenMistakes: [...prevData.timeBetweenMistakes, timeSinceLastMistake],
+                  errorPatterns: [...prevData.errorPatterns, currentTime - prevData.startTime]
+                };
+              });
+              
               console.log('[BounceBack] Life lost - updating gameData.livesLost:', {
                 previousLivesLost: gameData.livesLost,
                 newLivesLost: gameData.livesLost + 1,
@@ -760,6 +910,18 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                   setLevelStartScore(score);
                 }
               } else {
+                // Track failed recovery if this happened after a mistake
+                setGameData(prevData => {
+                  const timeSinceLastMistake = currentTime - prevData.lastMistakeTime;
+                  if (prevData.lastMistakeTime > 0 && timeSinceLastMistake < 5000) {
+                    return {
+                      ...prevData,
+                      failedRecoveries: prevData.failedRecoveries + 1
+                    };
+                  }
+                  return prevData;
+                });
+                
                 // Reset ball to follow paddle
                 console.log('[BounceBack] Ball out of bounds - resetting ball and setting gameStarted to false');
                 setGameStarted(false);
@@ -788,8 +950,25 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           totalPlayTime: Date.now() - prev.startTime,
           accuracy: calculateAccuracy(prev.bricksDestroyed, prev.totalBricks),
           averageReactionTime: calculateAverageReactionTime(prev.reactionTimes),
-          ballSpeed: Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
+          ballSpeed: Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy),
+          averageRecoveryTime: calculateAverageRecoveryTime(prev.timeBetweenMistakes),
+          paddlePositionAccuracy: calculatePaddlePositionAccuracy(prev.paddleHits, prev.paddleHits + prev.livesLost),
+          ballSpeedHistory: [...prev.ballSpeedHistory, Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)],
+          ballSpeedConsistency: calculateBallSpeedConsistency([...prev.ballSpeedHistory, Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)])
         }));
+        
+        // Debug logging for metrics tracking
+        if (gameStarted && gameData.ballSpeedHistory.length % 100 === 0) { // Log every 100th update
+          console.log('[BounceBack][METRICS] Current metrics:', {
+            ballSpeed: Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy),
+            ballSpeedHistoryLength: gameData.ballSpeedHistory.length,
+            movementPatternsLength: gameData.movementPatterns.length,
+            errorPatternsLength: gameData.errorPatterns.length,
+            totalMistakes: gameData.totalMistakes,
+            successfulRecoveries: gameData.successfulRecoveries,
+            failedRecoveries: gameData.failedRecoveries
+          });
+        }
       }
 
       animationFrameRef.current = requestAnimationFrame(gameLoop);
