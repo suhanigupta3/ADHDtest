@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,7 +9,6 @@ const ConsentPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFullConsent, setShowFullConsent] = useState(false);
   
   // Form state
   const [age, setAge] = useState<number | null>(null);
@@ -93,16 +92,7 @@ const ConsentPage: React.FC = () => {
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
+
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },

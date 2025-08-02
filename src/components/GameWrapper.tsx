@@ -1,7 +1,8 @@
 import React from 'react';
 import UnityGameIframe from './UnityGameIframe';
 import PatternMatchGame from './PatternMatchGame';
-import BounceBackGame from './BounceBackGame';
+import { BounceBackGame } from './BounceBack';
+import { FlutterFocusGame } from './FlutterFocus';
 
 interface GameWrapperProps {
   gameId: string;
@@ -10,6 +11,7 @@ interface GameWrapperProps {
   userId?: string;
   onGameComplete?: () => void;
   onError?: (error: string) => void;
+  onCancel?: () => void;
   width?: string;
   height?: string;
 }
@@ -21,12 +23,27 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
   userId,
   onGameComplete,
   onError,
+  onCancel,
   width = "960px",
   height = "540px"
 }) => {
   // Check if this is a React-based game
   const isReactGame = gameId === 'pattern-match';
   const isBounceBack = gameId === 'kitchen-quest'; // Replace Kitchen Quest with Bounce Back
+  const isFlutterFocus = gameId === 'flutter-focus';
+
+  if (isFlutterFocus) {
+    return (
+      <FlutterFocusGame 
+        onGameComplete={(gameData) => {
+          console.log('Flutter Focus Game completed with data:', gameData);
+          if (onGameComplete) {
+            onGameComplete();
+          }
+        }}
+      />
+    );
+  }
 
   if (isBounceBack) {
     return (
@@ -37,6 +54,7 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
             onGameComplete();
           }
         }}
+        onCancel={onCancel}
       />
     );
   }

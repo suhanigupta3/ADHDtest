@@ -93,7 +93,7 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
   }
 
   return (
-    <div className="unity-game-iframe-container relative w-full h-full flex items-center justify-center bg-sage-900/20 rounded-lg">
+    <div className="unity-game-iframe-container relative w-full h-full flex items-center justify-center bg-sage-900/20 rounded-lg p-4">
       {/* Loading Screen */}
       {isLoading && (
         <div 
@@ -113,14 +113,12 @@ const UnityGameIframe: React.FC<UnityGameIframeProps> = ({
         src={`/unity-builds/${gameId}/index.html?userId=${encodeURIComponent(userId || 'anonymous')}&gameId=${gameId}`}
         className="rounded-lg shadow-lg border border-sage-600"
         style={{
-          width: '100%',
-          maxWidth: '900px',
-          height: '100%',
-          minHeight: '600px',
+          width: '960px',
+          height: '540px',
+          maxWidth: '100%',
           maxHeight: 'calc(100vh - 250px)',
-          aspectRatio: '16/9',
           display: 'block',
-          objectFit: 'contain'
+          margin: '0 auto'
         }}
         frameBorder="0"
         allowFullScreen

@@ -260,6 +260,18 @@
           console.error("Failed to send message to React:", err);
         }
       }
+
+      // Function for Unity to call when game is completed
+      function notifyGameComplete() {
+        console.log("🎮 Game completed - notifying React");
+        sendMessageToReact(JSON.stringify({
+          type: 'unity-message',
+          data: 'GameComplete'
+        }));
+      }
+
+      // Make it globally available for Unity to call
+      window.notifyGameComplete = notifyGameComplete;
     </script>
   </head>
   <body>

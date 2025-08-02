@@ -25,9 +25,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "NODE_NO_WARNINGS=1 react-scripts start",
+    "build": "NODE_NO_WARNINGS=1 react-scripts build",
+    "test": "NODE_NO_WARNINGS=1 react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -49,6 +49,8 @@
     ]
   },
   "devDependencies": {
+    "@stagewise-plugins/react": "^0.6.2",
+    "@stagewise/toolbar-react": "^0.6.2",
     "@types/react": "^18.3.23",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.4",

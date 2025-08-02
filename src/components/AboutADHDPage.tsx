@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adhdData } from '../data/adhdData';
+import { useDisclaimer } from '../hooks/useDisclaimer';
 
 interface NodeData {
   id: string;
@@ -20,19 +21,30 @@ interface ModalContent {
 }
 
 const AboutADHDPage: React.FC = () => {
+  const { isDisclaimerDismissed, dismissDisclaimer } = useDisclaimer();
   const [selectedNode, setSelectedNode] = useState<ModalContent>({ node: null, isCenter: false });
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [visibleNodes, setVisibleNodes] = useState<Set<string>>(new Set(['what-is-adhd']));
   const [webExpanded, setWebExpanded] = useState<boolean>(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFocusHelper, setShowFocusHelper] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
-    <div className="bg-white border-2 border-amber-500 rounded-xl p-6 mb-8 shadow-lg">
-      <div className="flex items-start gap-3">
+    <div className="bg-white border-2 border-amber-500 rounded-xl p-6 mb-8 shadow-lg relative">
+      {/* Dismiss button */}
+      <button
+        onClick={dismissDisclaimer}
+        className="absolute top-4 right-4 text-amber-500 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded-full p-1"
+        aria-label="Dismiss disclaimer"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <div className="flex items-start gap-3 pr-8">
         <svg className="w-6 h-6 text-amber-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
@@ -167,60 +179,7 @@ const AboutADHDPage: React.FC = () => {
     return icons[iconName as keyof typeof icons] || icons.brain;
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 1,
-        staggerChildren: 0.15
-      }
-    }
-  };
 
-  const nodeVariants = {
-    hidden: { 
-      scale: 0, 
-      opacity: 0,
-      x: 0,
-      y: 0,
-      rotate: -180
-    },
-    visible: (custom: { x: number; y: number; delay: number }) => ({
-      scale: 1,
-      opacity: 1,
-      x: custom.x,
-      y: custom.y,
-      rotate: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 20,
-        delay: custom.delay,
-        duration: 0.8
-      }
-    }),
-    hover: {
-      scale: 1.15,
-      rotate: 5,
-      transition: {
-        type: "spring",
-        stiffness: 500,
-        damping: 15,
-        duration: 0.3
-      }
-    },
-    exit: {
-      scale: 0,
-      opacity: 0,
-      rotate: 180,
-      transition: {
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
-  };
 
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.8, y: 50 },
@@ -984,14 +943,17 @@ const AboutADHDPage: React.FC = () => {
       </AnimatePresence>
 
       {/* Medical Disclaimer - Bottom of Page */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.6, duration: 0.6 }}
-        className="mt-16 px-4 md:px-6 lg:px-8"
-      >
-        <MedicalDisclaimer />
-      </motion.div>
+      {!isDisclaimerDismissed && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
+          className="mt-16 px-4 md:px-6 lg:px-8"
+        >
+          <MedicalDisclaimer />
+        </motion.div>
+      )}
     </div>
   );
 };

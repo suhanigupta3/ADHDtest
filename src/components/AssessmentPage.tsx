@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import UnityGameIframe from './UnityGameIframe';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import GameWrapper from './GameWrapper';
+import { useDisclaimer } from '../hooks/useDisclaimer';
 
 interface GameProgress {
   game1Completed: boolean;
@@ -313,6 +313,7 @@ const games: Game[] = [
 
 const AssessmentPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const { isDisclaimerDismissed, dismissDisclaimer } = useDisclaimer();
   const [gameProgress, setGameProgress] = useState<GameProgress>({
     game1Completed: false,
     game2Completed: false,
@@ -323,11 +324,23 @@ const AssessmentPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
-    <div className="bg-white border-2 border-amber-500 rounded-xl p-6 mb-8 shadow-lg">
-      <div className="flex items-start gap-3">
+    <div className="bg-white border-2 border-amber-500 rounded-xl p-6 mb-8 shadow-lg relative">
+      {/* Dismiss button */}
+      <button
+        onClick={dismissDisclaimer}
+        className="absolute top-4 right-4 text-amber-500 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded-full p-1"
+        aria-label="Dismiss disclaimer"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <div className="flex items-start gap-3 pr-8">
         <svg className="w-6 h-6 text-amber-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
@@ -396,39 +409,7 @@ const AssessmentPage: React.FC = () => {
     loadGameProgress();
   }, [loadGameProgress]);
 
-  const updateGameProgress = async (gameId: string) => {
-    if (!currentUser) return;
 
-    try {
-      console.log('Updating game progress for gameId:', gameId);
-      const docRef = doc(db, 'gameProgress', currentUser.uid);
-      const updates: any = {};
-
-      if (gameId === 'berry-blitz') {
-        updates.game1Completed = true;
-      } else if (gameId === 'pattern-match') {
-        updates.game2Completed = true;
-      } else if (gameId === 'kitchen-quest') {
-        updates.game3Completed = true;
-      } else if (gameId === 'flutter-focus') {
-        updates.game4Completed = true;
-      }
-
-      // Check if all games will be completed
-      const newProgress = { ...gameProgress, ...updates };
-      if (newProgress.game1Completed && newProgress.game2Completed && newProgress.game3Completed && newProgress.game4Completed) {
-        updates.allGamesCompleted = true;
-        updates.completedAt = new Date();
-      }
-
-      console.log('Updating Firebase with:', updates);
-      await updateDoc(docRef, updates);
-      setGameProgress(prev => ({ ...prev, ...updates }));
-      console.log('Game progress updated successfully');
-    } catch (error) {
-      console.error('Error updating game progress:', error);
-    }
-  };
 
   const isGameUnlocked = (gameIndex: number): boolean => {
     if (gameIndex === 0) return true; // First game always unlocked
@@ -442,6 +423,7 @@ const AssessmentPage: React.FC = () => {
     // For now, we'll show a modal. Later this can be replaced with iframe/WebGL
     console.log("Launching game:", game.title, "with userId:", currentUser?.uid || 'anonymous');
     setSelectedGame(game);
+    setGameCompleted(false);
     // In a real implementation, you might do:
     // window.open(`/games/${game.id}`, '_blank');
   };
@@ -450,12 +432,14 @@ const AssessmentPage: React.FC = () => {
     loadGameProgress();
     setSelectedGame(null);
     setGameStarted(false);
+    setGameCompleted(false);
   };
 
   const markGameCompleted = () => {
-    // Unity already updates Firebase, so we just need to reload progress and close modal
-    console.log(`Game completed - reloading progress from Firebase`);
+    // Mark game as completed and directly close modal
+    setGameCompleted(true);
     loadGameProgress();
+    // Directly close modal without showing intermediate screen
     closeGameModal();
   };
 
@@ -489,17 +473,7 @@ const AssessmentPage: React.FC = () => {
     }
   };
 
-  const itemVariants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
+
 
   const cardVariants = {
     hidden: { scale: 0.9, opacity: 0 },
@@ -967,6 +941,7 @@ const AssessmentPage: React.FC = () => {
                       userId={currentUser?.uid || 'anonymous'}
                       onGameComplete={markGameCompleted}
                       onError={(error) => console.error('Game error:', error)}
+                      onCancel={closeGameModal}
                       width="100%"
                       height="100%"
                     />
@@ -983,18 +958,27 @@ const AssessmentPage: React.FC = () => {
                       >
                         Start Game
                       </button>
+                    ) : gameCompleted ? (
+                      <button
+                        onClick={closeGameModal}
+                        className="btn-primary-dark px-8 py-3 text-lg"
+                      >
+                        Close
+                      </button>
                     ) : (
                       // Removed "Back to Instructions" button to prevent exiting during gameplay
                       <div className="text-sage-400 text-sm">
                         Complete the game to continue
                       </div>
                     )}
-                    <button
-                      onClick={closeGameModal}
-                      className="btn-secondary-dark px-6 py-2"
-                    >
-                      Cancel
-                    </button>
+                    {!gameCompleted && (
+                      <button
+                        onClick={closeGameModal}
+                        className="btn-secondary-dark px-6 py-2"
+                      >
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1004,14 +988,17 @@ const AssessmentPage: React.FC = () => {
       </AnimatePresence>
 
       {/* Medical Disclaimer - Bottom of Page */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.6, duration: 0.6 }}
-        className="mt-16 px-4 md:px-6 lg:px-8"
-      >
-        <MedicalDisclaimer />
-      </motion.div>
+      {!isDisclaimerDismissed && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
+          className="mt-16 px-4 md:px-6 lg:px-8"
+        >
+          <MedicalDisclaimer />
+        </motion.div>
+      )}
     </div>
   );
 };

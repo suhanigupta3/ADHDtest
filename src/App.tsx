@@ -22,6 +22,8 @@ import TechnicalSupportPage from './pages/TechnicalSupportPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
 import DataProtectionPage from './pages/DataProtectionPage';
 import AccessibilityPage from './pages/AccessibilityPage';
+import { StagewiseToolbar } from '@stagewise/toolbar-react';
+import ReactPlugin from '@stagewise-plugins/react';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -176,6 +178,11 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <StagewiseToolbar 
+            config={{
+              plugins: [ReactPlugin]
+            }}
+          />
         </div>
       </Router>
     </AuthProvider>
