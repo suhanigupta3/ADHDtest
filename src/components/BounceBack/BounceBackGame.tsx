@@ -487,6 +487,29 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
     saveGameDataToFirebase,
   } = useGameLogic({ userId, onGameComplete, onError });
 
+  // Handle cursor visibility based on game state
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Hide cursor when game is active (started but not showing questions/transitions)
+    if (gameStarted && !showQuestions && !showLevelTransition && !showInstructions) {
+      canvas.style.cursor = 'none';
+      // Also hide cursor on the game container
+      const gameContainer = canvas.closest('.bg-\\[\\#e8f0e9\\]');
+      if (gameContainer) {
+        (gameContainer as HTMLElement).style.cursor = 'none';
+      }
+    } else {
+      // Show cursor when game is not active
+      canvas.style.cursor = 'default';
+      const gameContainer = canvas.closest('.bg-\\[\\#e8f0e9\\]');
+      if (gameContainer) {
+        (gameContainer as HTMLElement).style.cursor = 'default';
+      }
+    }
+  }, [gameStarted, showQuestions, showLevelTransition, showInstructions]);
+
   // Handle question responses
   const handleQuestionResponse = useCallback((response: number) => {
     const currentQuestion = QUESTIONS[currentQuestionIndex];
@@ -791,12 +814,24 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
                     margin: '0 auto',
                     outline: 'none',
                     border: 'none',
+                    cursor: gameStarted && !showQuestions && !showLevelTransition && !showInstructions ? 'none' : 'default',
                   }}
-                  tabIndex={-1}
+                  tabIndex={0}
+                  onFocus={() => {
+                    // Ensure canvas can receive keyboard events
+                    canvasRef.current?.focus();
+                  }}
                 />
                 
                 {/* Water Animation Overlay */}
                 <WaterAnimation paddleX={paddleX} paddleWidth={currentPaddleWidth} ballY={ball.y} ballX={ball.x} />
+                
+                {/* Keyboard Controls Hint */}
+                {gameStarted && !showQuestions && !showLevelTransition && !showInstructions && (
+                  <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded opacity-75">
+                    Use ← → keys to move paddle
+                  </div>
+                )}
               </div>
               
               {/* Start Screen Overlay */}

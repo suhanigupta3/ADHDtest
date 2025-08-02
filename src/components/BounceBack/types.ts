@@ -58,6 +58,7 @@ export interface GameData {
   averageReactionTime: number;
   paddleHits: number;
   wallHits: number;
+  totalHits: number; // Total hits on bricks (including multi-hit bricks)
   livesLost: number;
   finalScore: number;
   gameCompleted: boolean;
@@ -70,6 +71,7 @@ export interface GameData {
   levelBricksDestroyed?: number[];
   levelLivesLost?: number[];
   levelTotalBricks?: number[];
+  levelTotalHits?: number[]; // Total hits per level
   selfReportResponses: { [key: string]: number };
   // New metrics for better ADHD assessment
   consecutiveErrors: number;

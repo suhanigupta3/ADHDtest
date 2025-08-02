@@ -62,6 +62,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     averageReactionTime: 0,
     paddleHits: 0,
     wallHits: 0,
+    totalHits: 0,
     livesLost: 0,
     finalScore: 0,
     gameCompleted: false,
@@ -71,6 +72,10 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     currentLevel: 1,
     levelScores: [],
     levelCompletionTimes: [],
+    levelBricksDestroyed: [],
+    levelLivesLost: [],
+    levelTotalBricks: [],
+    levelTotalHits: [],
     selfReportResponses: {},
     // New metrics for better ADHD assessment
     consecutiveErrors: 0,
@@ -146,6 +151,20 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           }));
           // Set game as started when ball is launched
           setGameStarted(true);
+          
+          // Save initial game state to Firebase
+          if (userId) {
+            setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), {
+              gameStarted: true,
+              startTime: new Date().toISOString(),
+              currentLevel: currentLevel,
+              timestamp: new Date().toISOString()
+            }, { merge: true }).then(() => {
+              console.log('[BounceBack][FIREBASE] Saved game start data to Firebase');
+            }).catch(err => {
+              console.error('[BounceBack][FIREBASE] Failed to save game start data:', err);
+            });
+          }
         } else {
           console.log('[BounceBack] Ball launch blocked - ball has velocity:', { dx: ball.dx, dy: ball.dy });
         }
@@ -225,46 +244,76 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         paddleMovementsRaw: gameMetrics.paddleMovements
       });
 
-      // Calculate Inattention Score (0-10) - LOWER score = MORE inattention
-      const accuracyComponent = (gameMetrics.accuracy / 100) * 4;
-      const consistencyComponent = Math.max(0, (1 - gameMetrics.maxConsecutiveErrors / 2)) * 3; // Further reduced threshold
-      const focusComponent = Math.max(0, (1 - gameMetrics.totalMistakes / Math.max(1, gameMetrics.totalPlayTime / 15000))) * 3; // Further reduced time threshold
+      // Calculate Inattention Score (0-10) - HIGHER score = MORE inattention
+      // Convert from "good attention = high score" to "poor attention = high score"
+      const accuracyComponent = (1 - gameMetrics.accuracy / 100) * 2; // Reduced from 3 to 2 to make room for self-report
+      const consistencyComponent = Math.min(1, gameMetrics.maxConsecutiveErrors / 2) * 3; // Reduced from 4 to 3
+      const focusComponent = Math.min(1, gameMetrics.totalMistakes / Math.max(1, gameMetrics.totalPlayTime / 3000)) * 2; // Reduced from 3 to 2
       
-      // Ensure inattention score is reasonable (not always 10)
-      const inattentionScore = Math.max(0, Math.min(10, 
-        accuracyComponent + consistencyComponent + focusComponent
+      // Add self-report component for inattention (30% weight)
+      const inattentionSelfReportComponent = selfReport.q1_focus_difficulty ? 
+        (selfReport.q1_focus_difficulty - 1) / 4 * 3 : 0; // 30% weight (3 points)
+      
+      // Add bonus for high accuracy but poor consistency (indicates inattention)
+      const inattentionBonus = gameMetrics.maxConsecutiveErrors > 1 ? 2 : 0;
+      
+      // Calculate inattention score: higher = more inattention
+      let inattentionScore = Math.max(0, Math.min(10, 
+        accuracyComponent + consistencyComponent + focusComponent + inattentionSelfReportComponent + inattentionBonus
       ));
+      
+      // If accuracy is very high but there are mistakes, this indicates inattention
+      if (gameMetrics.accuracy > 80 && gameMetrics.totalMistakes > 0) {
+        inattentionScore = Math.min(10, inattentionScore + 2);
+      }
+      
+      // If consecutive errors are high, this definitely indicates inattention
+      if (gameMetrics.maxConsecutiveErrors >= 2) {
+        inattentionScore = Math.min(10, inattentionScore + 3);
+      }
+      
+      // Final check: ensure minimum score if there are significant issues
+      if (gameMetrics.totalMistakes > 0 && inattentionScore < 2) {
+        inattentionScore = Math.max(2, inattentionScore);
+      }
 
       console.log('[BounceBack][SCORES] Inattention calculation:', {
         accuracyComponent,
         consistencyComponent,
         focusComponent,
+        inattentionSelfReportComponent,
+        inattentionBonus,
         inattentionScore
       });
 
       // Calculate Hyperactivity Score (0-10) - HIGHER score = MORE hyperactivity
       const movementFrequency = gameMetrics.movementPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 1000);
-      const movementComponent = Math.min(1, movementFrequency / 0.5) * 5; // Further reduced threshold
-      const erraticComponent = Math.min(1, gameMetrics.errorPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 3000)) * 3; // Further reduced threshold
-      const paddleComponent = Math.min(1, gameMetrics.paddleMovements / 50) * 2; // Further reduced threshold
+      const movementComponent = Math.min(1, movementFrequency / 0.5) * 4; // Reduced from 5 to 4 to make room for self-report
+      const erraticComponent = Math.min(1, gameMetrics.errorPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 3000)) * 2; // Reduced from 3 to 2
+      const paddleComponent = Math.min(1, gameMetrics.paddleMovements / 50) * 1; // Reduced from 2 to 1
+      
+      // Add self-report component for hyperactivity (30% weight)
+      const hyperactivitySelfReportComponent = selfReport.q3_frustration_level ? 
+        (selfReport.q3_frustration_level - 1) / 4 * 3 : 0; // 30% weight (3 points)
       
       // Fallback: if no movement patterns tracked, use paddle movements as proxy
       const hyperactivityScore = gameMetrics.movementPatterns.length === 0 
-        ? Math.min(10, (gameMetrics.paddleMovements / 20) * 2) // Use paddle movements as hyperactivity indicator
-        : Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent));
+        ? Math.min(10, (gameMetrics.paddleMovements / 20) * 2 + hyperactivitySelfReportComponent) // Include self-report in fallback
+        : Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent + hyperactivitySelfReportComponent));
 
       console.log('[BounceBack][SCORES] Hyperactivity calculation:', {
         movementFrequency,
         movementComponent,
         erraticComponent,
         paddleComponent,
+        hyperactivitySelfReportComponent,
         hyperactivityScore
       });
 
       // Calculate Impulsivity Score (0-10) - HIGHER score = MORE impulsivity
       const errorComponent = Math.min(1, gameMetrics.totalMistakes / 5) * 4; // Reduced threshold
       const recoveryComponent = Math.min(1, gameMetrics.failedRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 3;
-      const selfReportComponent = (selfReport.impulsivity_1 ? (selfReport.impulsivity_1 - 1) / 4 * 3 : 0);
+      const selfReportComponent = (selfReport.q2_impulsive_movements ? (selfReport.q2_impulsive_movements - 1) / 4 * 3 : 0);
       
       const impulsivityScore = Math.max(0, Math.min(10,
         errorComponent + recoveryComponent + selfReportComponent
@@ -277,20 +326,40 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         impulsivityScore
       });
 
-      // Calculate Executive Function Score (0-10) - HIGHER score = BETTER executive function
-      const planningComponent = Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 4;
-      const execAccuracyComponent = (gameMetrics.accuracy / 100) * 3;
-      const execSelfReportComponent = (selfReport.focus_1 ? (selfReport.focus_1 - 1) / 4 * 3 : 0);
+      // Calculate Executive Function Score (0-10) - HIGHER score = WORSE executive function
+      // Convert from "good executive function = high score" to "poor executive function = high score"
+      const planningComponent = (1 - Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes))) * 4; // Higher score for poor planning
+      const execAccuracyComponent = (1 - gameMetrics.accuracy / 100) * 3; // Higher score for lower accuracy
+      const execSelfReportComponent = selfReport.q4_planning_ability ? (5 - selfReport.q4_planning_ability) / 4 * 3 : 0; // Higher score for lower self-report
       
-      // Ensure executive function score is reasonable (not always 10)
-      const executiveFunctionScore = Math.max(0, Math.min(10,
-        planningComponent + execAccuracyComponent + execSelfReportComponent
+      // Add bonus for poor planning (failed recoveries)
+      const planningBonus = gameMetrics.failedRecoveries > 0 ? 2 : 0;
+      
+      // Calculate executive function score: higher = worse executive function
+      let executiveFunctionScore = Math.max(0, Math.min(10,
+        planningComponent + execAccuracyComponent + execSelfReportComponent + planningBonus
       ));
+      
+      // If there are failed recoveries, this indicates poor executive function
+      if (gameMetrics.failedRecoveries > 0) {
+        executiveFunctionScore = Math.min(10, executiveFunctionScore + 2);
+      }
+      
+      // If accuracy is high but recovery rate is low, this indicates poor planning
+      if (gameMetrics.accuracy > 70 && gameMetrics.successfulRecoveries < gameMetrics.totalMistakes * 0.5) {
+        executiveFunctionScore = Math.min(10, executiveFunctionScore + 1);
+      }
+      
+      // Final check: ensure minimum score if there are significant issues
+      if (gameMetrics.failedRecoveries > 0 && executiveFunctionScore < 2) {
+        executiveFunctionScore = Math.max(2, executiveFunctionScore);
+      }
 
       console.log('[BounceBack][SCORES] Executive Function calculation:', {
         planningComponent,
         execAccuracyComponent,
         execSelfReportComponent,
+        planningBonus,
         executiveFunctionScore
       });
 
@@ -388,7 +457,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         setGameData(prev => ({
           ...prev,
           currentLevel: nextLevel,
-          totalBricks: nextLevelData.brickRows * 8,
+          totalBricks: prev.totalBricks + (nextLevelData.brickRows * 8), // Accumulate total bricks across levels
           ballSpeed: nextLevelData.ballSpeed,
         }));
         
@@ -423,6 +492,19 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       const levelTotalBricks = gameData.totalBricks;
       const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
       
+      // Calculate total hits for this level (we need to track this from level start)
+      const currentLevelHits = (() => {
+        try {
+          const previousHits = gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0;
+          const result = Math.max(0, gameData.totalHits - previousHits);
+          console.log('[BounceBack] currentLevelHits calculation (scope 1):', { gameDataTotalHits: gameData.totalHits, previousHits, result });
+          return result;
+        } catch (error) {
+          console.error('[BounceBack] Error calculating currentLevelHits (scope 1):', error);
+          return 0;
+        }
+      })();
+      
       // Calculate lives lost for this level
       const levelLivesLost = Math.max(0, levelStartLives - lives);
       
@@ -441,15 +523,39 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
         const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
         const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+        const newLevelTotalHits = [...(prev.levelTotalHits || []), typeof currentLevelHits === 'number' ? currentLevelHits : 0];
         
-        return {
+        const updatedGameData = {
           ...prev,
           levelScores: newLevelScores,
           levelCompletionTimes: newLevelTimes,
           levelBricksDestroyed: newLevelBricksDestroyed,
           levelLivesLost: newLevelLivesLost,
           levelTotalBricks: newLevelTotalBricks,
+          levelTotalHits: newLevelTotalHits,
         };
+
+        // Save level data to Firebase immediately
+        if (userId) {
+          setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), {
+            levelData: {
+              level: currentLevel,
+              score: levelScore,
+              time: levelTime,
+              bricksDestroyed: levelBricksDestroyed,
+              livesLost: levelLivesLost,
+              totalHits: typeof currentLevelHits === 'number' ? currentLevelHits : 0,
+              timestamp: new Date().toISOString()
+            },
+            gameData: updatedGameData
+          }, { merge: true }).then(() => {
+            console.log('[BounceBack][FIREBASE] Saved level', currentLevel, 'data to Firebase');
+          }).catch(err => {
+            console.error('[BounceBack][FIREBASE] Failed to save level data:', err);
+          });
+        }
+
+        return updatedGameData;
       });
       
       // Show level transition screen for level 3 completion
@@ -481,6 +587,19 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     const levelTotalBricks = gameData.totalBricks; // This is the correct total for this level
     const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
     
+    // Calculate total hits for this level (we need to track this from level start)
+    const currentLevelHits = (() => {
+      try {
+        const previousHits = gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0;
+        const result = Math.max(0, gameData.totalHits - previousHits);
+        console.log('[BounceBack] currentLevelHits calculation (scope 2):', { gameDataTotalHits: gameData.totalHits, previousHits, result });
+        return result;
+      } catch (error) {
+        console.error('[BounceBack] Error calculating currentLevelHits (scope 2):', error);
+        return 0;
+      }
+    })();
+    
     // Calculate lives lost for this level (started with levelStartLives lives, current lives = levelStartLives - lives lost)
     const levelLivesLost = Math.max(0, levelStartLives - lives);
     console.log('[BounceBack] Lives lost calculation:', {
@@ -508,6 +627,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
       const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
       const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+      const newLevelTotalHits = [...(prev.levelTotalHits || []), typeof currentLevelHits === 'number' ? currentLevelHits : 0];
       
       console.log('[BounceBack] Updated level data:', {
         levelScores: newLevelScores,
@@ -518,14 +638,37 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         levelTimesValues: newLevelTimes.map(time => `${(time/1000).toFixed(1)}s`)
       });
       
-      return {
+      const updatedGameData = {
         ...prev,
         levelScores: newLevelScores,
         levelCompletionTimes: newLevelTimes,
         levelBricksDestroyed: newLevelBricksDestroyed,
         levelLivesLost: newLevelLivesLost,
         levelTotalBricks: newLevelTotalBricks,
+        levelTotalHits: newLevelTotalHits,
       };
+
+      // Save level data to Firebase immediately
+      if (userId) {
+        setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), {
+          levelData: {
+            level: currentLevel,
+            score: levelScore,
+            time: levelTime,
+            bricksDestroyed: levelBricksDestroyed,
+            livesLost: levelLivesLost,
+            totalHits: typeof currentLevelHits === 'number' ? currentLevelHits : 0,
+            timestamp: new Date().toISOString()
+          },
+          gameData: updatedGameData
+        }, { merge: true }).then(() => {
+          console.log('[BounceBack][FIREBASE] Saved level', currentLevel, 'data to Firebase');
+        }).catch(err => {
+          console.error('[BounceBack][FIREBASE] Failed to save level data:', err);
+        });
+      }
+
+      return updatedGameData;
     });
     
     // Show level transition screen
@@ -576,6 +719,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       averageReactionTime: 0,
       paddleHits: 0,
       wallHits: 0,
+      totalHits: 0,
       livesLost: 0,
       finalScore: 0,
       gameCompleted: false,
@@ -585,6 +729,10 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       currentLevel: 1,
       levelScores: [],
       levelCompletionTimes: [],
+      levelBricksDestroyed: [],
+      levelLivesLost: [],
+      levelTotalBricks: [],
+      levelTotalHits: [],
       selfReportResponses: {},
       // New metrics for better ADHD assessment
       consecutiveErrors: 0,
@@ -730,7 +878,8 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                  setScore(prev => prev + totalScore);
                  setGameData(prev => ({ 
                    ...prev, 
-                   bricksDestroyed: prev.bricksDestroyed + 1
+                   bricksDestroyed: prev.bricksDestroyed + 1,
+                   totalHits: prev.totalHits + 1
                  }));
                  
                  // Handle power-up activation
@@ -761,7 +910,8 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                  setScore(prev => prev + 5); // Give some points for hitting tough bricks
                  setGameData(prev => ({ 
                    ...prev, 
-                   bricksDestroyed: prev.bricksDestroyed 
+                   bricksDestroyed: prev.bricksDestroyed,
+                   totalHits: prev.totalHits + 1
                  }));
                }
               
@@ -840,6 +990,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                 const levelTime = Date.now() - levelStartTime;
                 const levelBricksDestroyed = gameData.totalBricks - bricks.filter(brick => brick.status === 1).length;
                 const levelLivesLost = Math.max(0, levelStartLives - newLives);
+                const levelTotalHits = gameData.totalHits - (gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0);
                 console.log('[BounceBack] Lives lost calculation (incomplete level):', {
                   levelStartLives,
                   currentLives: newLives,
@@ -861,15 +1012,40 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                   const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
                   const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
                   const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+                  const newLevelTotalHits = [...(prev.levelTotalHits || []), levelTotalHits];
                   
-                  return {
+                  const updatedGameData = {
                     ...prev,
                     levelScores: newLevelScores,
                     levelCompletionTimes: newLevelTimes,
                     levelBricksDestroyed: newLevelBricksDestroyed,
                     levelLivesLost: newLevelLivesLost,
                     levelTotalBricks: newLevelTotalBricks,
+                    levelTotalHits: newLevelTotalHits,
                   };
+
+                  // Save incomplete level data to Firebase immediately
+                  if (userId) {
+                    setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), {
+                      levelData: {
+                        level: currentLevel,
+                        score: levelScore,
+                        time: levelTime,
+                        bricksDestroyed: levelBricksDestroyed,
+                        livesLost: levelLivesLost,
+                        totalHits: levelTotalHits,
+                        completed: false,
+                        timestamp: new Date().toISOString()
+                      },
+                      gameData: updatedGameData
+                    }, { merge: true }).then(() => {
+                      console.log('[BounceBack][FIREBASE] Saved incomplete level', currentLevel, 'data to Firebase');
+                    }).catch(err => {
+                      console.error('[BounceBack][FIREBASE] Failed to save incomplete level data:', err);
+                    });
+                  }
+
+                  return updatedGameData;
                 });
                 
                 // Check if this is the final level (Level 3)
@@ -901,7 +1077,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                   setGameData(prev => ({
                     ...prev,
                     currentLevel: nextLevel,
-                    totalBricks: nextLevelData.brickRows * 8,
+                    totalBricks: prev.totalBricks + (nextLevelData.brickRows * 8), // Accumulate total bricks across levels
                     ballSpeed: nextLevelData.ballSpeed,
                   }));
                   

@@ -375,10 +375,18 @@ export const testADHDScores = () => {
   };
 
   // Test Inattention Score
-  const accuracyComponent = (testMetrics.accuracy / 100) * 4; // 3.0
-  const consistencyComponent = Math.max(0, (1 - testMetrics.maxConsecutiveErrors / 3)) * 3; // 1.0
-  const focusComponent = Math.max(0, (1 - testMetrics.totalMistakes / Math.max(1, testMetrics.totalPlayTime / 30000))) * 3; // 2.25
-  const inattentionScore = Math.max(0, Math.min(10, accuracyComponent + consistencyComponent + focusComponent)); // 6.25
+  const accuracyComponent = (testMetrics.accuracy / 100) * 2; // 1.5
+  const consistencyComponent = Math.max(0, (1 - testMetrics.maxConsecutiveErrors / 1)) * 3; // 0.0
+  const focusComponent = Math.max(0, (1 - testMetrics.totalMistakes / Math.max(1, testMetrics.totalPlayTime / 5000))) * 3; // 0.0
+  const inattentionPenalty = testMetrics.maxConsecutiveErrors > 1 ? 2 : 0; // 2
+  let inattentionScore = Math.max(0, Math.min(10, accuracyComponent + consistencyComponent + focusComponent - inattentionPenalty)); // -0.5
+  if (testMetrics.accuracy > 80 && testMetrics.totalMistakes > 0) {
+    inattentionScore = Math.max(0, inattentionScore - 2); // -2.5
+  }
+  if (testMetrics.maxConsecutiveErrors >= 2) {
+    inattentionScore = Math.max(0, inattentionScore - 3); // -5.5
+  }
+  inattentionScore = Math.max(0, inattentionScore); // 0
 
   // Test Hyperactivity Score
   const movementFrequency = testMetrics.movementPatterns.length / Math.max(1, testMetrics.totalPlayTime / 1000); // 0.042

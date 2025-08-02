@@ -3,15 +3,27 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { mockUserResults } from '../utils/mockResults';
+
 import type { GameRound } from './PatternMatch/types';
 
 interface SelfReport {
+  // BerryBlitz fields
   q1_focusDifficulty?: number;
   q2_forgetfulness?: number;
   q3_restlessness?: number;
   q4_impulsivity?: number;
   q5_followThrough?: number;
+  // PatternMatch fields
+  q1_focus_difficulty?: number;
+  q2_careless_mistakes?: number;
+  q3_act_without_thinking?: number;
+  q4_rule_following_difficulty?: number;
+  q5_mind_shifting?: number;
+  // BounceBack fields (standardized)
+  q2_impulsive_movements?: number;
+  q3_frustration_level?: number;
+  q4_planning_ability?: number;
+  q5_persistence_motivation?: number;
 }
 
 interface GameScores {
@@ -199,12 +211,16 @@ const GameResultsPage: React.FC = () => {
         
         if (Object.keys(results).length > 0) {
           setUserResults(results);
+          console.log('[GameResultsPage] ✅ Loaded real user data');
         } else {
-          setUserResults(mockUserResults);
+          console.log('[GameResultsPage] ⚠️ No real data found for current user');
+          setUserResults({});
+          setError('No game data found for your account. Please play some games first.');
         }
       } catch (err) {
-        setUserResults(mockUserResults);
-        setError('Failed to load real data. Showing demonstration data.');
+        console.log('[GameResultsPage] ❌ Error loading data:', err);
+        setUserResults({});
+        setError('Failed to load data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -445,15 +461,15 @@ const GameResultsPage: React.FC = () => {
         if (levelScores.length > 0 || levelCompletionTimes.length > 0) {
           console.log('[GameResultsPage] ✅ Level data found, creating table');
           
-          // Create mock rounds data from level data for BounceBack
+          // Create level rounds data from real level data for BounceBack
           const maxLevels = Math.max(levelScores.length, levelCompletionTimes.length);
-          const mockRounds = Array.from({ length: maxLevels }, (_, index) => ({
+          const levelRounds = Array.from({ length: maxLevels }, (_, index) => ({
             level: index + 1,
             score: levelScores[index] || 0,
             completionTime: levelCompletionTimes[index] || 0
           }));
           
-          console.log('[GameResultsPage] Created mock rounds:', mockRounds);
+          console.log('[GameResultsPage] Created level rounds from real data:', levelRounds);
           
           return (
             <div className="card p-6">
@@ -466,17 +482,19 @@ const GameResultsPage: React.FC = () => {
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Time</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bricks Destroyed</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hits</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accuracy</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Lost</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {mockRounds.map((level, index) => {
+                    {levelRounds.map((level, index) => {
                       // Get additional data from gameData if available
                       const gameData = (userResults?.[gameName] as any)?.gameData;
                       const levelBricksDestroyed = gameData?.levelBricksDestroyed?.[index] || 0;
                       const levelLivesLost = gameData?.levelLivesLost?.[index] || 0;
                       const levelTotalBricks = gameData?.levelTotalBricks?.[index] || gameData?.totalBricks || 0;
+                      const levelTotalHits = gameData?.levelTotalHits?.[index] || 0;
                       
                       return (
                         <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -489,6 +507,9 @@ const GameResultsPage: React.FC = () => {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                             {levelBricksDestroyed} / {levelTotalBricks}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {levelTotalHits}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                             {levelTotalBricks > 0 ? Math.round((levelBricksDestroyed / levelTotalBricks) * 100) : 0}%
@@ -680,18 +701,18 @@ const GameResultsPage: React.FC = () => {
       ];
     } else if (gameName === 'bounceBack') {
       questionLabels = {
-        attention_1: 'Attention Difficulty',
-        impulsivity_1: 'Impulsivity',
-        frustration_1: 'Frustration',
-        focus_1: 'Focus and Planning',
-        persistence_1: 'Persistence',
+        q1_focus_difficulty: 'Focus Difficulty',
+        q2_impulsive_movements: 'Impulsive Movements',
+        q3_frustration_level: 'Frustration Level',
+        q4_planning_ability: 'Planning Ability',
+        q5_persistence_motivation: 'Persistence & Motivation',
       };
       questionOrder = [
-        'attention_1',
-        'impulsivity_1',
-        'frustration_1',
-        'focus_1',
-        'persistence_1',
+        'q1_focus_difficulty',
+        'q2_impulsive_movements',
+        'q3_frustration_level',
+        'q4_planning_ability',
+        'q5_persistence_motivation',
       ];
     } else {
       questionLabels = {
@@ -1276,6 +1297,21 @@ const GameResultsPage: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* No Data Notice */}
+          {error && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h3 className="text-blue-800 font-semibold">No Data Available</h3>
+                  <p className="text-blue-700 text-sm">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Combined Results View */}
           {selectedGame === 'combined' && renderProgressSection()}

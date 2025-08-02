@@ -66,27 +66,27 @@ export const LEVELS: Level[] = [
 // Assessment questions
 export const QUESTIONS: Question[] = [
   {
-    id: 'attention_1',
+    id: 'q1_focus_difficulty',
     text: 'How difficult was it to maintain focus on the ball throughout the game?',
     category: 'attention'
   },
   {
-    id: 'impulsivity_1',
+    id: 'q2_impulsive_movements',
     text: 'How often did you find yourself moving the paddle without thinking?',
     category: 'impulsivity'
   },
   {
-    id: 'frustration_1',
+    id: 'q3_frustration_level',
     text: 'How frustrated did you feel when you lost a life?',
     category: 'frustration'
   },
   {
-    id: 'focus_1',
+    id: 'q4_planning_ability',
     text: 'How well were you able to plan your paddle movements in advance?',
     category: 'focus'
   },
   {
-    id: 'persistence_1',
+    id: 'q5_persistence_motivation',
     text: 'How motivated were you to continue playing after losing a life?',
     category: 'persistence'
   }
