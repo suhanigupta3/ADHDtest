@@ -31,7 +31,7 @@ export const LEVELS: Level[] = [
   {
     id: 1,
     name: "Getting Started",
-    ballSpeed: 4.5,
+    ballSpeed: 4,
     paddleSpeed: 6,
     brickRows: 2,
     description: "Take your time and get familiar with the controls"
@@ -39,7 +39,7 @@ export const LEVELS: Level[] = [
   {
     id: 2,
     name: "Building Skills",
-    ballSpeed: 5.0,
+    ballSpeed: 4.5,
     paddleSpeed: 6,
     brickRows: 3,
     description: "Faster ball, smaller paddle, more bricks"
@@ -47,7 +47,7 @@ export const LEVELS: Level[] = [
   {
     id: 3,
     name: "Full Challenge",
-    ballSpeed: 6.0,
+    ballSpeed: 5.0,
     paddleSpeed: 7,
     brickRows: 4,
     description: "Maximum challenge with fastest ball and smallest paddle"

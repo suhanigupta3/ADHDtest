@@ -254,7 +254,7 @@ const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
   );
 };
 
-const BounceBackGame: React.FC<BounceBackGameProps> = ({ onGameComplete, onCancel, width = "960px", height = "540px" }) => {
+const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete, onCancel, onError, width = "960px", height = "540px" }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showInstructions, setShowInstructions] = useState(true);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -291,7 +291,8 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ onGameComplete, onCance
     // Actions
     resetGame,
     getPaddleWidth,
-  } = useGameLogic();
+    saveGameDataToFirebase,
+  } = useGameLogic({ userId, onGameComplete, onError });
 
   // Handle question responses
   const handleQuestionResponse = useCallback((response: number) => {
@@ -309,7 +310,7 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ onGameComplete, onCance
   }, [currentQuestionIndex, setQuestionResponses]);
 
   // Handle questions completion
-  const handleQuestionsComplete = useCallback(() => {
+  const handleQuestionsComplete = useCallback(async () => {
     
     if (allLevelsCompleted) {
       // All levels completed - finish the game
@@ -320,6 +321,17 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ onGameComplete, onCance
         finalScore: score + (lives * 50),
         gameCompleted: true
       };
+      
+      // Save to Firebase
+      try {
+        await saveGameDataToFirebase(finalGameData);
+        console.log('[BounceBack] Game data saved to Firebase successfully');
+      } catch (error) {
+        console.error('[BounceBack] Failed to save game data to Firebase:', error);
+        if (onError) {
+          onError(`Failed to save game data: ${error}`);
+        }
+      }
       
       // Close questions modal
       setShowQuestions(false);
@@ -342,7 +354,7 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ onGameComplete, onCance
       setQuestionResponses({});
       setQuestionsCompleted(false);
     }
-  }, [allLevelsCompleted, gameData, questionResponses, score, lives, onGameComplete, setShowQuestions, setCurrentQuestionIndex, setQuestionResponses, setQuestionsCompleted]);
+  }, [allLevelsCompleted, gameData, questionResponses, score, lives, onGameComplete, onError, saveGameDataToFirebase, setShowQuestions, setCurrentQuestionIndex, setQuestionResponses, setQuestionsCompleted]);
 
   // Get current paddle width
   const currentPaddleWidth = getPaddleWidth(currentLevel);

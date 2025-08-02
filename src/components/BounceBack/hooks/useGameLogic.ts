@@ -2,8 +2,16 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ball, Brick, GameData } from '../types';
 import { LEVELS, CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, BALL_RADIUS } from '../constants';
 import { createInitialBricks, createInitialBall, updateBallPosition, calculateAccuracy, calculateAverageReactionTime } from '../utils';
+import { db } from '../../../firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 
-export const useGameLogic = () => {
+interface UseGameLogicProps {
+  userId?: string;
+  onGameComplete?: (gameData: GameData) => void;
+  onError?: (error: string) => void;
+}
+
+export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicProps) => {
   const animationFrameRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
   const outOfBoundsProcessedRef = useRef<boolean>(false);
@@ -96,6 +104,115 @@ export const useGameLogic = () => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [gameStarted, gameOver, gameWon, showQuestions]);
+
+  // Save game data to Firebase
+  const saveGameDataToFirebase = useCallback(async (finalGameData: GameData) => {
+    if (!userId) {
+      console.warn('[BounceBack][FIREBASE] No userId provided, skipping Firebase save');
+      return;
+    }
+
+    try {
+      console.log('[BounceBack][FIREBASE] Saving game data to Firebase:', finalGameData);
+      
+      // Calculate ADHD scores based on game performance and self-report
+      const selfReport = finalGameData.selfReportResponses;
+      const gameMetrics = {
+        accuracy: finalGameData.accuracy,
+        averageReactionTime: finalGameData.averageReactionTime,
+        paddleHits: finalGameData.paddleHits,
+        wallHits: finalGameData.wallHits,
+        livesLost: finalGameData.livesLost,
+        paddleMovements: finalGameData.paddleMovements,
+        totalPlayTime: finalGameData.totalPlayTime,
+        finalScore: finalGameData.finalScore,
+        levelScores: finalGameData.levelScores,
+        levelCompletionTimes: finalGameData.levelCompletionTimes
+      };
+
+      // Calculate composite scores
+      const attentionScore = Math.max(0, Math.min(10, 
+        (gameMetrics.accuracy * 0.4) + 
+        ((1 - gameMetrics.livesLost / 3) * 0.3) + 
+        ((1 - gameMetrics.averageReactionTime / 1000) * 0.3)
+      ));
+
+      const impulsivityScore = Math.max(0, Math.min(10,
+        (gameMetrics.paddleMovements / 100) * 0.4 +
+        (gameMetrics.wallHits / 50) * 0.3 +
+        (selfReport.impulsivity_1 ? (selfReport.impulsivity_1 - 1) / 4 * 0.3 : 0)
+      ));
+
+      const frustrationScore = Math.max(0, Math.min(10,
+        (selfReport.frustration_1 ? (selfReport.frustration_1 - 1) / 4 * 0.6 : 0) +
+        (gameMetrics.livesLost / 3) * 0.4
+      ));
+
+      const focusScore = Math.max(0, Math.min(10,
+        (gameMetrics.accuracy * 0.5) +
+        (selfReport.focus_1 ? (selfReport.focus_1 - 1) / 4 * 0.5 : 0)
+      ));
+
+      const persistenceScore = Math.max(0, Math.min(10,
+        (selfReport.persistence_1 ? (selfReport.persistence_1 - 1) / 4 * 0.7 : 0) +
+        ((1 - gameMetrics.livesLost / 3) * 0.3)
+      ));
+
+      const adhd_composite = Math.max(0, Math.min(10,
+        attentionScore * 0.35 +
+        impulsivityScore * 0.25 +
+        frustrationScore * 0.15 +
+        focusScore * 0.15 +
+        persistenceScore * 0.10
+      ));
+
+      const scores = {
+        attention: attentionScore,
+        impulsivity: impulsivityScore,
+        frustration: frustrationScore,
+        focus: focusScore,
+        persistence: persistenceScore,
+        adhd_composite
+      };
+
+      console.log('[BounceBack][FIREBASE] Calculated scores:', scores);
+
+      // Save scores to Firebase
+      await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), { 
+        scores,
+        gameData: finalGameData,
+        timestamp: new Date().toISOString()
+      }, { merge: true });
+
+      console.log('[BounceBack][FIREBASE] Successfully saved scores to Firebase');
+
+      // Mark game as completed in gameProgress
+      try {
+        await setDoc(doc(db, 'gameProgress', userId), { game3Completed: true }, { merge: true });
+        console.log('[BounceBack][FIREBASE] Set game3Completed: true in gameProgress for user', userId);
+      } catch (err) {
+        console.error('[BounceBack][FIREBASE] Failed to set game3Completed in gameProgress:', err);
+      }
+
+      // Save self-report responses
+      if (Object.keys(selfReport).length > 0) {
+        try {
+          await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), { 
+            selfReport 
+          }, { merge: true });
+          console.log('[BounceBack][FIREBASE] Saved self-report responses to Firebase');
+        } catch (err) {
+          console.error('[BounceBack][FIREBASE] Failed to save self-report responses:', err);
+        }
+      }
+
+    } catch (error) {
+      console.error('[BounceBack][FIREBASE] Error saving game data:', error);
+      if (onError) {
+        onError(`Failed to save game data: ${error}`);
+      }
+    }
+  }, [userId, onError]);
 
   // Advance to next level
   const advanceLevel = useCallback(() => {
@@ -347,5 +464,6 @@ export const useGameLogic = () => {
     resetGame,
     advanceLevel,
     getPaddleWidth,
+    saveGameDataToFirebase,
   };
 }; 

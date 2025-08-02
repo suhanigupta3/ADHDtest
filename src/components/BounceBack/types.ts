@@ -52,8 +52,10 @@ export interface GameData {
 }
 
 export interface BounceBackGameProps {
+  userId?: string;
   onGameComplete?: (gameData: GameData) => void;
   onCancel?: () => void;
+  onError?: (error: string) => void;
   width?: string;
   height?: string;
 } 

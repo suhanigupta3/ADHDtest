@@ -31,7 +31,7 @@ interface GameData {
 interface UserResults {
   berryBlitz?: GameData;
   patternMatch?: GameData;
-  kitchenQuest?: GameData;
+  bounceBack?: GameData;
   flutterFocus?: GameData;
   [key: string]: GameData | undefined;
 }
@@ -119,22 +119,22 @@ const GameResultsPage: React.FC = () => {
           }
         }
         // Fetch Bounce Back data
-        const kitchenQuestDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'KitchenQuest'));
-        if (kitchenQuestDoc.exists()) {
-          const kitchenQuestData = kitchenQuestDoc.data();
-          if (kitchenQuestData.scores && kitchenQuestData.selfReport) {
+        const bounceBackDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BounceBack'));
+        if (bounceBackDoc.exists()) {
+          const bounceBackData = bounceBackDoc.data();
+          if (bounceBackData.scores && bounceBackData.selfReport) {
             let rounds: GameRound[] = [];
             try {
-              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'KitchenQuest', 'rounds'));
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'BounceBack', 'rounds'));
               rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
             } catch (roundsError) {
-              if (kitchenQuestData.rounds && Array.isArray(kitchenQuestData.rounds)) {
-                rounds = kitchenQuestData.rounds;
+              if (bounceBackData.rounds && Array.isArray(bounceBackData.rounds)) {
+                rounds = bounceBackData.rounds;
               }
             }
-            results.kitchenQuest = {
-              scores: kitchenQuestData.scores,
-              selfReport: kitchenQuestData.selfReport,
+            results.bounceBack = {
+              scores: bounceBackData.scores,
+              selfReport: bounceBackData.selfReport,
               rounds: rounds
             };
           }
@@ -211,7 +211,7 @@ const GameResultsPage: React.FC = () => {
 
   const getGameProgress = () => {
     if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
-    const gameOrder = ['berryBlitz', 'patternMatch', 'kitchenQuest', 'flutterFocus'];
+    const gameOrder = ['berryBlitz', 'patternMatch', 'bounceBack', 'flutterFocus'];
     const completedGames = gameOrder.filter(game => userResults[game]?.scores);
     const completedCount = completedGames.length;
     const totalGames = gameOrder.length;
@@ -237,7 +237,7 @@ const GameResultsPage: React.FC = () => {
     const nameMap: { [key: string]: string } = {
       berryBlitz: 'Berry Blitz',
       patternMatch: 'Signal Snap',
-      kitchenQuest: 'Bounce Back',
+      bounceBack: 'Bounce Back',
       flutterFocus: 'Flutter Focus'
     };
     return nameMap[gameKey] || gameKey;
@@ -247,7 +247,7 @@ const GameResultsPage: React.FC = () => {
     const descriptions: { [key: string]: string } = {
       berryBlitz: 'Navigate through obstacles to collect fruits while avoiding shurikens',
       patternMatch: 'Match patterns as quickly and accurately as possible',
-      kitchenQuest: 'Break bricks with a bouncing ball while managing different mental states and challenges',
+      bounceBack: 'Break bricks with a bouncing ball while managing different mental states and challenges',
       flutterFocus: 'A fast-paced rhythm and timing challenge that tests your focus and coordination'
     };
     return descriptions[gameKey] || 'Complete this game to continue your assessment';
@@ -365,7 +365,7 @@ const GameResultsPage: React.FC = () => {
     
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
-                           gameName === 'kitchenQuest' ? 'Bounce Back' : 
+                           gameName === 'bounceBack' ? 'Bounce Back' : 
                            gameName === 'flutterFocus' ? 'Flutter Focus' : gameName;
 
     // Determine which fields to show based on game type
@@ -493,7 +493,7 @@ const GameResultsPage: React.FC = () => {
     const questions = Object.keys(selfReport).filter(key => selfReport[key as keyof SelfReport] !== undefined);
     if (questions.length === 0) return null;
 
-    // Use different question keys/labels for PatternMatch
+    // Use different question keys/labels for different games
     let questionLabels: { [key: string]: string };
     let questionOrder: string[];
     if (gameName === 'patternMatch') {
@@ -510,6 +510,21 @@ const GameResultsPage: React.FC = () => {
         'q3_act_without_thinking',
         'q4_rule_following_difficulty',
         'q5_mind_shifting',
+      ];
+    } else if (gameName === 'bounceBack') {
+      questionLabels = {
+        attention_1: 'Attention Difficulty',
+        impulsivity_1: 'Impulsivity',
+        frustration_1: 'Frustration',
+        focus_1: 'Focus and Planning',
+        persistence_1: 'Persistence',
+      };
+      questionOrder = [
+        'attention_1',
+        'impulsivity_1',
+        'frustration_1',
+        'focus_1',
+        'persistence_1',
       ];
     } else {
       questionLabels = {
@@ -547,7 +562,7 @@ const GameResultsPage: React.FC = () => {
 
         const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
-                           gameName === 'kitchenQuest' ? 'Bounce Back' : gameName;
+                           gameName === 'bounceBack' ? 'Bounce Back' : gameName;
 
     return (
       <div className="card p-6">
@@ -594,7 +609,7 @@ const GameResultsPage: React.FC = () => {
   const renderGameInsights = (gameData: GameData, gameName: string) => {
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
-                           gameName === 'kitchenQuest' ? 'Bounce Back' : gameName;
+                           gameName === 'bounceBack' ? 'Bounce Back' : gameName;
 
     let insights = [];
 
@@ -661,6 +676,69 @@ const GameResultsPage: React.FC = () => {
           <span className="text-sm text-emerald-600 font-semibold">{totalMissed}</span>
         </div>
       );
+    }
+
+    // Bounce Back insights
+    if (gameName === 'bounceBack' && (gameData as any).gameData) {
+      const bounceBackData = (gameData as any).gameData;
+      const totalPlayTime = bounceBackData.totalPlayTime || 0;
+      const bricksDestroyed = bounceBackData.bricksDestroyed || 0;
+      const totalBricks = bounceBackData.totalBricks || 0;
+      const accuracy = bounceBackData.accuracy || 0;
+      const averageReactionTime = bounceBackData.averageReactionTime || 0;
+      const paddleHits = bounceBackData.paddleHits || 0;
+      const wallHits = bounceBackData.wallHits || 0;
+      const livesLost = bounceBackData.livesLost || 0;
+      const finalScore = bounceBackData.finalScore || 0;
+      const paddleMovements = bounceBackData.paddleMovements || 0;
+      const levelScores = bounceBackData.levelScores || [];
+
+      insights.push(
+        <div key="playTime" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Total Play Time</span>
+          <span className="text-sm text-emerald-600 font-semibold">{formatTimeToReadable(totalPlayTime / 1000)}</span>
+        </div>,
+        <div key="accuracy" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Brick Breaking Accuracy</span>
+          <span className="text-sm text-sleek-600 font-semibold">{Math.round(accuracy * 100)}%</span>
+        </div>,
+        <div key="reactionTime" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Average Reaction Time</span>
+          <span className="text-sm text-emerald-600 font-semibold">{Math.round(averageReactionTime)}ms</span>
+        </div>,
+        <div key="paddleHits" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Successful Paddle Hits</span>
+          <span className="text-sm text-sleek-600 font-semibold">{paddleHits}</span>
+        </div>,
+        <div key="wallHits" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Wall Hits</span>
+          <span className="text-sm text-emerald-600 font-semibold">{wallHits}</span>
+        </div>,
+        <div key="livesLost" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Lives Lost</span>
+          <span className="text-sm text-sleek-600 font-semibold">{livesLost}</span>
+        </div>,
+        <div key="finalScore" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Final Score</span>
+          <span className="text-sm text-emerald-600 font-semibold">{finalScore}</span>
+        </div>,
+        <div key="paddleMovements" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Paddle Movements</span>
+          <span className="text-sm text-sleek-600 font-semibold">{paddleMovements}</span>
+        </div>
+      );
+
+      // Add level-specific insights if available
+      if (levelScores.length > 0) {
+        insights.push(
+          <div key="levelScores" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+            <span className="text-sm font-medium text-emerald-700">Level Scores</span>
+            <span className="text-sm text-emerald-600 font-semibold">
+              {levelScores.map((score: number, index: number) => `L${index + 1}: ${score}`).join(', ')}
+            </span>
+          </div>
+        );
+      }
     }
 
     return (
@@ -779,7 +857,7 @@ const GameResultsPage: React.FC = () => {
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                       </svg>
                     )}
-                    {gameKey === 'kitchenQuest' && (
+                    {gameKey === 'bounceBack' && (
                       <svg className="w-6 h-6 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
                       </svg>
@@ -917,7 +995,7 @@ const GameResultsPage: React.FC = () => {
                             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                           </svg>
                         )}
-                        {gameKey === 'kitchenQuest' && (
+                        {gameKey === 'bounceBack' && (
                           <svg className="w-5 h-5 inline mr-2 text-sleek-400" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C13.1 2 14 2.9 14 4s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 4c2.2 0 4 1.8 4 4v2h-2V10c0-1.1-.9-2-2-2s-2 .9-2 2v2H8V10c0-2.2 1.8-4 4-4zm-2 8v6h8v-6h-8z"/>
                           </svg>
@@ -1037,7 +1115,7 @@ const GameResultsPage: React.FC = () => {
               >
                 {game === 'berryBlitz' ? 'Berry Blitz' : 
                  game === 'patternMatch' ? 'Signal Snap' : 
-                 game === 'kitchenQuest' ? 'Bounce Back' : game}
+                 game === 'bounceBack' ? 'Bounce Back' : game}
               </button>
             ))}
           </div>
@@ -1058,7 +1136,7 @@ const GameResultsPage: React.FC = () => {
                       <h2 className="text-3xl font-bold text-forest-900 mb-2">
                         {selectedGame === 'berryBlitz' ? 'Berry Blitz' : 
                          selectedGame === 'patternMatch' ? 'Signal Snap' : 
-                         selectedGame === 'kitchenQuest' ? 'Bounce Back' : selectedGame} Results
+                         selectedGame === 'bounceBack' ? 'Bounce Back' : selectedGame} Results
                       </h2>
                     </div>
 

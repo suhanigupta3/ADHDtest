@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
@@ -177,7 +177,7 @@ const games: Game[] = [
     )
   },
       {
-      id: 'kitchen-quest',
+      id: 'bounce-back',
     title: 'Bounce Back',
     description: 'Break bricks with a bouncing ball while managing different mental states and challenges.',
     instructions: [
@@ -313,6 +313,7 @@ const games: Game[] = [
 
 const AssessmentPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const { isDisclaimerDismissed, dismissDisclaimer } = useDisclaimer();
   const [gameProgress, setGameProgress] = useState<GameProgress>({
     game1Completed: false,
@@ -446,7 +447,7 @@ const AssessmentPage: React.FC = () => {
   const getGameProgress = (gameId: string) => {
     if (gameId === 'berry-blitz') return gameProgress.game1Completed;
     if (gameId === 'pattern-match') return gameProgress.game2Completed;
-    if (gameId === 'kitchen-quest') return gameProgress.game3Completed;
+    if (gameId === 'bounce-back') return gameProgress.game3Completed;
     if (gameId === 'flutter-focus') return gameProgress.game4Completed;
     return false;
   };
@@ -782,14 +783,14 @@ const AssessmentPage: React.FC = () => {
           </motion.div>
 
           {/* View Results Button */}
-          {!loading && (gameProgress.game1Completed || gameProgress.game2Completed || gameProgress.game3Completed) && (
+          {!loading && (gameProgress.game1Completed || gameProgress.game2Completed || gameProgress.game3Completed || gameProgress.game4Completed) && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
               className="mb-12"
             >
-              <div className="card-dark p-8 text-center focus-helper">
+              <div className="card-dark p-8 text-center">
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -841,27 +842,33 @@ const AssessmentPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-              <Link 
-                to="/results" 
-                  className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4"
+              <button
+                onClick={() => navigate('/results')}
+                className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4 cursor-pointer"
+                style={{ 
+                  pointerEvents: 'auto',
+                  position: 'relative',
+                  zIndex: 10,
+                  userSelect: 'none'
+                }}
+              >
+                <span>
+                  {gameProgress.allGamesCompleted 
+                    ? 'View Complete Assessment & Recommendations' 
+                    : `View ${getCompletedGamesCount()} Game Results`
+                  }
+                </span>
+                <motion.svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <span>
-                    {gameProgress.allGamesCompleted 
-                      ? 'View Complete Assessment & Recommendations' 
-                      : `View ${getCompletedGamesCount()} Game Results`
-                    }
-                  </span>
-                  <motion.svg 
-                    className="w-5 h-5" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </motion.svg>
-              </Link>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </motion.svg>
+              </button>
               </div>
             </motion.div>
           )}

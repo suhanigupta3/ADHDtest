@@ -29,7 +29,7 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
 }) => {
   // Check if this is a React-based game
   const isReactGame = gameId === 'pattern-match';
-  const isBounceBack = gameId === 'kitchen-quest'; // Replace Kitchen Quest with Bounce Back
+  const isBounceBack = gameId === 'bounce-back';
   const isFlutterFocus = gameId === 'flutter-focus';
 
   if (isFlutterFocus) {
@@ -48,6 +48,7 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
   if (isBounceBack) {
     return (
       <BounceBackGame 
+        userId={userId}
         onGameComplete={(gameData) => {
           console.log('Bounce Back Game completed with data:', gameData);
           if (onGameComplete) {
@@ -55,6 +56,7 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
           }
         }}
         onCancel={onCancel}
+        onError={onError}
       />
     );
   }
