@@ -26,6 +26,7 @@ interface GameData {
   rounds: GameRound[];
   selfReport: SelfReport;
   scores: GameScores;
+  gameData?: any; // For BounceBack's additional game data
 }
 
 interface UserResults {
@@ -122,7 +123,22 @@ const GameResultsPage: React.FC = () => {
         const bounceBackDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BounceBack'));
         if (bounceBackDoc.exists()) {
           const bounceBackData = bounceBackDoc.data();
-          if (bounceBackData.scores && bounceBackData.selfReport) {
+          console.log('[GameResultsPage] BounceBack data from Firebase:', bounceBackData);
+          console.log('[GameResultsPage] BounceBack data keys:', Object.keys(bounceBackData));
+          
+          // Check for both old and new data structures
+          const hasScores = bounceBackData.scores;
+          const hasSelfReport = bounceBackData.selfReport;
+          
+          console.log('[GameResultsPage] BounceBack data structure check:', {
+            hasScores: !!hasScores,
+            hasSelfReport: !!hasSelfReport,
+            scores: bounceBackData.scores,
+            selfReport: bounceBackData.selfReport,
+            gameData: bounceBackData.gameData
+          });
+          
+          if (hasScores && hasSelfReport) {
             let rounds: GameRound[] = [];
             try {
               const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'BounceBack', 'rounds'));
@@ -132,12 +148,30 @@ const GameResultsPage: React.FC = () => {
                 rounds = bounceBackData.rounds;
               }
             }
+            
+            // Handle both data structures
+            const scores = bounceBackData.scores || bounceBackData.gameData?.scores;
+            const selfReport = bounceBackData.selfReport || bounceBackData.gameData?.selfReportResponses;
+            const gameData = bounceBackData.gameData || bounceBackData;
+            
             results.bounceBack = {
+              scores: scores,
+              selfReport: selfReport,
+              rounds: rounds,
+              gameData: gameData
+            };
+            console.log('[GameResultsPage] Processed BounceBack results:', results.bounceBack);
+          } else {
+            console.log('[GameResultsPage] BounceBack data missing scores or selfReport:', {
+              hasScores: !!hasScores,
+              hasSelfReport: !!hasSelfReport,
               scores: bounceBackData.scores,
               selfReport: bounceBackData.selfReport,
-              rounds: rounds
-            };
+              gameData: bounceBackData.gameData
+            });
           }
+        } else {
+          console.log('[GameResultsPage] No BounceBack document found in Firebase');
         }
         // Fetch Flutter Focus data
         const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'FlutterFocus'));
@@ -160,6 +194,9 @@ const GameResultsPage: React.FC = () => {
             };
           }
         }
+        console.log('[GameResultsPage] Final results object:', results);
+        console.log('[GameResultsPage] Results keys:', Object.keys(results));
+        
         if (Object.keys(results).length > 0) {
           setUserResults(results);
         } else {
@@ -212,6 +249,19 @@ const GameResultsPage: React.FC = () => {
   const getGameProgress = () => {
     if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
     const gameOrder = ['berryBlitz', 'patternMatch', 'bounceBack', 'flutterFocus'];
+    
+    console.log('[GameResultsPage] getGameProgress - userResults:', userResults);
+    console.log('[GameResultsPage] getGameProgress - checking each game:');
+    
+    gameOrder.forEach(game => {
+      const gameData = userResults[game];
+      console.log(`[GameResultsPage] ${game}:`, {
+        exists: !!gameData,
+        hasScores: !!gameData?.scores,
+        scores: gameData?.scores
+      });
+    });
+    
     const completedGames = gameOrder.filter(game => userResults[game]?.scores);
     const completedCount = completedGames.length;
     const totalGames = gameOrder.length;
@@ -362,6 +412,8 @@ const GameResultsPage: React.FC = () => {
 
   const renderGameRoundsTable = (rounds: GameRound[], gameName: string) => {
     console.log(`🔍 Rendering rounds table for ${gameName}:`, rounds);
+    console.log(`🔍 User results for ${gameName}:`, userResults?.[gameName]);
+    console.log(`🔍 Game data for ${gameName}:`, (userResults?.[gameName] as any)?.gameData);
     
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
@@ -371,9 +423,93 @@ const GameResultsPage: React.FC = () => {
     // Determine which fields to show based on game type
     const isBerryBlitz = gameName === 'berryBlitz';
     const isPatternMatch = gameName === 'patternMatch';
+    const isBounceBack = gameName === 'bounceBack';
 
     // If no rounds data, show a message instead of hiding the entire section
     if (!rounds || rounds.length === 0) {
+      // For BounceBack, check if we have level data instead
+      if (isBounceBack && userResults && userResults[gameName]) {
+        const bounceBackData = (userResults[gameName] as any)?.gameData;
+        const levelScores = bounceBackData?.levelScores || [];
+        const levelCompletionTimes = bounceBackData?.levelCompletionTimes || [];
+        
+        console.log('[GameResultsPage] BounceBack level data check:', {
+          hasUserResults: !!userResults,
+          hasGameData: !!bounceBackData,
+          levelScores,
+          levelCompletionTimes,
+          levelScoresLength: levelScores.length,
+          levelTimesLength: levelCompletionTimes.length
+        });
+        
+        if (levelScores.length > 0 || levelCompletionTimes.length > 0) {
+          console.log('[GameResultsPage] ✅ Level data found, creating table');
+          
+          // Create mock rounds data from level data for BounceBack
+          const maxLevels = Math.max(levelScores.length, levelCompletionTimes.length);
+          const mockRounds = Array.from({ length: maxLevels }, (_, index) => ({
+            level: index + 1,
+            score: levelScores[index] || 0,
+            completionTime: levelCompletionTimes[index] || 0
+          }));
+          
+          console.log('[GameResultsPage] Created mock rounds:', mockRounds);
+          
+          return (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Level Performance</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Level</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Time</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bricks Destroyed</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accuracy</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Lost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {mockRounds.map((level, index) => {
+                      // Get additional data from gameData if available
+                      const gameData = (userResults?.[gameName] as any)?.gameData;
+                      const levelBricksDestroyed = gameData?.levelBricksDestroyed?.[index] || 0;
+                      const levelLivesLost = gameData?.levelLivesLost?.[index] || 0;
+                      const levelTotalBricks = gameData?.levelTotalBricks?.[index] || gameData?.totalBricks || 0;
+                      
+                      return (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                            Level {level.level}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{level.score}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {level.completionTime ? formatTimeToReadable(level.completionTime / 1000) : '-'}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {levelBricksDestroyed} / {levelTotalBricks}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {levelTotalBricks > 0 ? Math.round((levelBricksDestroyed / levelTotalBricks) * 100) : 0}%
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {levelLivesLost}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        } else {
+          console.log('[GameResultsPage] ❌ No level data found, showing no data message');
+        }
+      }
+      
+      console.log('[GameResultsPage] Falling through to no data message');
       return (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">{gameNameDisplay} Performance Details</h3>
@@ -428,6 +564,16 @@ const GameResultsPage: React.FC = () => {
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
                   </>
                 )}
+
+                {/* BounceBack specific columns */}
+                {isBounceBack && (
+                  <>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Time</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bricks Destroyed</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Lost</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -480,6 +626,27 @@ const GameResultsPage: React.FC = () => {
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{calculatePatternMatchRoundScore(round)}</td>
                     </>
                   )}
+
+                  {/* BounceBack specific data */}
+                  {isBounceBack && userResults && (() => {
+                    const bounceBackData = (userResults[gameName] as any)?.gameData;
+                    const levelScores = bounceBackData?.levelScores || [];
+                    const levelCompletionTimes = bounceBackData?.levelCompletionTimes || [];
+                    const levelIndex = index;
+                    
+                    return (
+                      <>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{levelScores[levelIndex] || '-'}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                          {levelCompletionTimes[levelIndex] ? formatTimeToReadable(levelCompletionTimes[levelIndex] / 1000) : '-'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                          {bounceBackData?.bricksDestroyed || '-'} / {bounceBackData?.totalBricks || '-'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{bounceBackData?.livesLost || '-'}</td>
+                      </>
+                    );
+                  })()}
                 </tr>
               ))}
             </tbody>
@@ -692,53 +859,43 @@ const GameResultsPage: React.FC = () => {
       const finalScore = bounceBackData.finalScore || 0;
       const paddleMovements = bounceBackData.paddleMovements || 0;
       const levelScores = bounceBackData.levelScores || [];
+      const levelCompletionTimes = bounceBackData.levelCompletionTimes || [];
+      
+      // Calculate total bricks across all levels for accurate display
+      const levelTotalBricks = bounceBackData.levelTotalBricks || [];
+      const totalBricksAcrossLevels = levelTotalBricks.reduce((sum: number, bricks: number) => sum + bricks, 0);
+      const displayTotalBricks = totalBricksAcrossLevels > 0 ? totalBricksAcrossLevels : totalBricks;
 
       insights.push(
-        <div key="playTime" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
-          <span className="text-sm font-medium text-emerald-700">Total Play Time</span>
-          <span className="text-sm text-emerald-600 font-semibold">{formatTimeToReadable(totalPlayTime / 1000)}</span>
+
+        <div key="bricksDestroyed" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Bricks Destroyed</span>
+          <span className="text-sm text-sleek-600 font-semibold">{bricksDestroyed} / {displayTotalBricks}</span>
         </div>,
-        <div key="accuracy" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
-          <span className="text-sm font-medium text-sleek-700">Brick Breaking Accuracy</span>
-          <span className="text-sm text-sleek-600 font-semibold">{Math.round(accuracy * 100)}%</span>
+        <div key="reactionTime" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Average Reaction Time</span>
+          <span className="text-sm text-sleek-600 font-semibold">{Math.round(averageReactionTime)}ms</span>
         </div>,
-        <div key="reactionTime" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
-          <span className="text-sm font-medium text-emerald-700">Average Reaction Time</span>
-          <span className="text-sm text-emerald-600 font-semibold">{Math.round(averageReactionTime)}ms</span>
+        <div key="paddleHits" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Successful Paddle Hits</span>
+          <span className="text-sm text-emerald-600 font-semibold">{paddleHits}</span>
         </div>,
-        <div key="paddleHits" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
-          <span className="text-sm font-medium text-sleek-700">Successful Paddle Hits</span>
-          <span className="text-sm text-sleek-600 font-semibold">{paddleHits}</span>
-        </div>,
-        <div key="wallHits" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+        <div key="wallHits" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
           <span className="text-sm font-medium text-emerald-700">Wall Hits</span>
           <span className="text-sm text-emerald-600 font-semibold">{wallHits}</span>
         </div>,
         <div key="livesLost" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
           <span className="text-sm font-medium text-sleek-700">Lives Lost</span>
-          <span className="text-sm text-sleek-600 font-semibold">{livesLost}</span>
+          <span className="text-sm text-emerald-600 font-semibold">{livesLost}</span>
         </div>,
         <div key="finalScore" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
           <span className="text-sm font-medium text-emerald-700">Final Score</span>
           <span className="text-sm text-emerald-600 font-semibold">{finalScore}</span>
         </div>,
-        <div key="paddleMovements" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
-          <span className="text-sm font-medium text-sleek-700">Paddle Movements</span>
-          <span className="text-sm text-sleek-600 font-semibold">{paddleMovements}</span>
-        </div>
+
       );
 
-      // Add level-specific insights if available
-      if (levelScores.length > 0) {
-        insights.push(
-          <div key="levelScores" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
-            <span className="text-sm font-medium text-emerald-700">Level Scores</span>
-            <span className="text-sm text-emerald-600 font-semibold">
-              {levelScores.map((score: number, index: number) => `L${index + 1}: ${score}`).join(', ')}
-            </span>
-          </div>
-        );
-      }
+
     }
 
     return (

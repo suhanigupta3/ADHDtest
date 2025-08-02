@@ -31,26 +31,35 @@ export const LEVELS: Level[] = [
   {
     id: 1,
     name: "Getting Started",
-    ballSpeed: 4,
-    paddleSpeed: 6,
+    ballSpeed: 3.5,
+    paddleSpeed: 5,
     brickRows: 2,
-    description: "Take your time and get familiar with the controls"
+    description: "Take your time and get familiar with the controls",
+    toughBrickChance: 0.1, // 10% chance of tough bricks
+    powerUpChance: 0.05, // 5% chance of power-up bricks
+    multiHitBricks: false // No multi-hit bricks in level 1
   },
   {
     id: 2,
     name: "Building Skills",
-    ballSpeed: 4.5,
-    paddleSpeed: 6,
+    ballSpeed: 4,
+    paddleSpeed: 5.5,
     brickRows: 3,
-    description: "Faster ball, smaller paddle, more bricks"
+    description: "Faster ball, smaller paddle, more bricks with some tough ones",
+    toughBrickChance: 0.3, // 30% chance of tough bricks
+    powerUpChance: 0.1, // 10% chance of power-up bricks
+    multiHitBricks: true // Multi-hit bricks introduced
   },
   {
     id: 3,
     name: "Full Challenge",
-    ballSpeed: 5.0,
-    paddleSpeed: 7,
+    ballSpeed: 4.5,
+    paddleSpeed: 6.5,
     brickRows: 4,
-    description: "Maximum challenge with fastest ball and smallest paddle"
+    description: "Maximum challenge with toughest bricks and power-ups",
+    toughBrickChance: 0.5, // 50% chance of tough bricks
+    powerUpChance: 0.15, // 15% chance of power-up bricks
+    multiHitBricks: true // Multi-hit bricks throughout
   }
 ];
 

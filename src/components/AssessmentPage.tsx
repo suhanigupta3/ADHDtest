@@ -842,33 +842,83 @@ const AssessmentPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-              <button
-                onClick={() => navigate('/results')}
-                className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4 cursor-pointer"
-                style={{ 
-                  pointerEvents: 'auto',
-                  position: 'relative',
-                  zIndex: 10,
-                  userSelect: 'none'
-                }}
-              >
-                <span>
-                  {gameProgress.allGamesCompleted 
-                    ? 'View Complete Assessment & Recommendations' 
-                    : `View ${getCompletedGamesCount()} Game Results`
-                  }
-                </span>
-                <motion.svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              <div className="space-y-4">
+                <button
+                  onClick={() => navigate('/results')}
+                  className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4 cursor-pointer"
+                  style={{ 
+                    pointerEvents: 'auto',
+                    position: 'relative',
+                    zIndex: 10,
+                    userSelect: 'none'
+                  }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </motion.svg>
-              </button>
+                  <span>
+                    {gameProgress.allGamesCompleted 
+                      ? 'View Complete Assessment & Recommendations' 
+                      : `View ${getCompletedGamesCount()} Game Results`
+                    }
+                  </span>
+                  <motion.svg 
+                    className="w-5 h-5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </motion.svg>
+                </button>
+                
+                {/* Debug button to test data structure */}
+                <button
+                  onClick={() => {
+                    console.log('[DEBUG] Testing BounceBack data structure...');
+                    const testData = {
+                      scores: {
+                        inattention: 7.5,
+                        hyperactivity: 0,
+                        impulsivity: 6.2,
+                        executive_function: 8.1,
+                        adhd_composite: 7.2
+                      },
+                      gameData: {
+                        totalPlayTime: 120000,
+                        bricksDestroyed: 45,
+                        totalBricks: 48,
+                        accuracy: 0.94,
+                        averageReactionTime: 250,
+                        paddleHits: 120,
+                        wallHits: 15,
+                        livesLost: 1,
+                        finalScore: 850,
+                        paddleMovements: 200,
+                        levelScores: [150, 200, 250],
+                        levelCompletionTimes: [45000, 35000, 40000],
+                        selfReportResponses: {
+                          attention_1: 3,
+                          impulsivity_1: 2,
+                          frustration_1: 4,
+                          focus_1: 3,
+                          persistence_1: 4
+                        }
+                      },
+                      selfReport: {
+                        attention_1: 3,
+                        impulsivity_1: 2,
+                        frustration_1: 4,
+                        focus_1: 3,
+                        persistence_1: 4
+                      }
+                    };
+                    console.log('[DEBUG] Expected BounceBack data structure:', testData);
+                  }}
+                  className="btn-secondary-dark inline-flex items-center space-x-2 text-sm px-4 py-2"
+                >
+                  Debug: Test Data Structure
+                </button>
+              </div>
               </div>
             </motion.div>
           )}

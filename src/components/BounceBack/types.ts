@@ -5,6 +5,11 @@ export interface Brick {
   color: string;
   width: number;
   height: number;
+  health: number; // New: number of hits required to destroy
+  maxHealth: number; // New: maximum health for visual scaling
+  crackLevel: number; // New: 0-3 for visual crack states
+  brickType: 'normal' | 'tough' | 'indestructible' | 'powerup'; // New: different brick types
+  powerUpType?: 'wider_paddle' | 'slower_ball'; // New: power-up type
 }
 
 export interface Ball {
@@ -12,6 +17,17 @@ export interface Ball {
   y: number;
   dx: number;
   dy: number;
+  powerUpActive?: boolean; // New: if ball has power-up effect
+  powerUpType?: string; // New: type of power-up
+  powerUpEndTime?: number; // New: when power-up expires
+}
+
+export interface PowerUp {
+  x: number;
+  y: number;
+  type: 'wider_paddle' | 'slower_ball';
+  active: boolean;
+  endTime?: number;
 }
 
 export interface Level {
@@ -21,6 +37,9 @@ export interface Level {
   paddleSpeed: number;
   brickRows: number;
   description: string;
+  toughBrickChance: number; // New: probability of tough bricks
+  powerUpChance: number; // New: probability of power-up bricks
+  multiHitBricks: boolean; // New: whether level has multi-hit bricks
 }
 
 export interface Question {
@@ -48,6 +67,9 @@ export interface GameData {
   currentLevel: number;
   levelScores: number[];
   levelCompletionTimes: number[];
+  levelBricksDestroyed?: number[];
+  levelLivesLost?: number[];
+  levelTotalBricks?: number[];
   selfReportResponses: { [key: string]: number };
 }
 

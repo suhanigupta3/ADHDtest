@@ -1,12 +1,24 @@
-import { Brick, Ball } from './types';
+import { Brick, Ball, Level } from './types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, PADDLE_HEIGHT, BALL_RADIUS, BRICK_WIDTH, BRICK_HEIGHT, BRICK_PADDING, BRICK_OFFSET_TOP, BRICK_OFFSET_LEFT, BRICK_COLORS } from './constants';
 
 // Collision detection utilities
 export const checkCollision = (ballX: number, ballY: number, brick: Brick): boolean => {
-  return ballX + BALL_RADIUS > brick.x &&
-         ballX - BALL_RADIUS < brick.x + brick.width &&
-         ballY + BALL_RADIUS > brick.y &&
-         ballY - BALL_RADIUS < brick.y + brick.height;
+  // More precise collision detection with ball radius
+  const ballLeft = ballX - BALL_RADIUS;
+  const ballRight = ballX + BALL_RADIUS;
+  const ballTop = ballY - BALL_RADIUS;
+  const ballBottom = ballY + BALL_RADIUS;
+  
+  const brickLeft = brick.x;
+  const brickRight = brick.x + brick.width;
+  const brickTop = brick.y;
+  const brickBottom = brick.y + brick.height;
+  
+  // Check if ball overlaps with brick
+  return ballRight > brickLeft && 
+         ballLeft < brickRight && 
+         ballBottom > brickTop && 
+         ballTop < brickBottom;
 };
 
 export const checkCollisionWithPath = (ballPath: { x1: number; y1: number; x2: number; y2: number }, brick: Brick): boolean => {
@@ -80,7 +92,7 @@ export const updateBallPosition = (
   bricks: Brick[],
   gameStarted: boolean,
   paddleWidth: number = PADDLE_WIDTH
-): { newBall: Ball; bricksDestroyed: number; paddleHit: boolean; wallHit: boolean; outOfBounds: boolean; hitBrickIndex: number | null } => {
+): { newBall: Ball; bricksDestroyed: number; paddleHit: boolean; wallHit: boolean; outOfBounds: boolean; hitBrickIndex: number | null; brickHealthReduced: boolean } => {
   let newX = ball.x + ball.dx;
   let newY = ball.y + ball.dy;
   let newDx = ball.dx;
@@ -91,14 +103,15 @@ export const updateBallPosition = (
   let outOfBounds = false;
   let hitBrickIndex: number | null = null;
 
-  if (!gameStarted) {
+  if (!gameStarted || (ball.dx === 0 && ball.dy === 0)) {
     return {
       newBall: { ...ball, x: paddleX + paddleWidth / 2, y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS },
       bricksDestroyed: 0,
       paddleHit: false,
       wallHit: false,
       outOfBounds: false,
-      hitBrickIndex: null
+      hitBrickIndex: null,
+      brickHealthReduced: false
     };
   }
 
@@ -130,88 +143,84 @@ export const updateBallPosition = (
     paddleHit = true;
   }
 
-  // Brick collision - improved detection
+  // Improved brick collision detection with trajectory checking
   let brickHit = false;
-  for (let i = 0; i < bricks.length; i++) {
+  const ballSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+  
+  // If ball is moving fast, check multiple points along the trajectory
+  const trajectorySteps = Math.max(1, Math.ceil(ballSpeed / 3)); // Check every 3 pixels for better precision
+  
+  for (let i = 0; i < bricks.length && !brickHit; i++) {
     const brick = bricks[i];
-    if (brick.status === 1 && !brickHit) {
-      // Check collision with the ball's path, not just final position
-      const ballPath = {
-        x1: ball.x,
-        y1: ball.y,
-        x2: newX,
-        y2: newY
-      };
+    if (brick.status === 1) {
+      let collisionDetected = false;
+      let collisionPoint = { x: newX, y: newY };
       
-      // Also try simple collision check as fallback
-      const simpleCollision = checkCollision(newX, newY, brick);
+      // Check multiple points along the ball's trajectory
+      for (let step = 0; step <= trajectorySteps; step++) {
+        const t = step / trajectorySteps;
+        const checkX = ball.x + ball.dx * t;
+        const checkY = ball.y + ball.dy * t;
+        
+        if (checkCollision(checkX, checkY, brick)) {
+          collisionDetected = true;
+          collisionPoint = { x: checkX, y: checkY };
+          break;
+        }
+      }
       
-      if (checkCollisionWithPath(ballPath, brick) || simpleCollision) {
+      if (collisionDetected) {
         brickHit = true;
-        bricksDestroyed = 1;
         hitBrickIndex = i;
         
-        // Determine collision side based on ball's movement direction
-        const ballMovingUp = ball.dy < 0;
-        const ballMovingDown = ball.dy > 0;
-        const ballMovingLeft = ball.dx < 0;
-        const ballMovingRight = ball.dx > 0;
-        
-        // Check which side of the brick was hit
-        const ballTop = newY - BALL_RADIUS;
-        const ballBottom = newY + BALL_RADIUS;
-        const ballLeft = newX - BALL_RADIUS;
-        const ballRight = newX + BALL_RADIUS;
-        
-        const brickTop = brick.y;
-        const brickBottom = brick.y + brick.height;
-        const brickLeft = brick.x;
-        const brickRight = brick.x + brick.width;
-        
-        // Determine collision side based on ball's previous position and movement
-        let hitFromTop = false;
-        let hitFromBottom = false;
-        let hitFromLeft = false;
-        let hitFromRight = false;
-        
-        if (ballMovingDown && ballTop <= brickTop && ball.y - BALL_RADIUS > brickTop) {
-          // Ball hit from above (top of brick)
-          hitFromTop = true;
-        } else if (ballMovingUp && ballBottom >= brickBottom && ball.y + BALL_RADIUS < brickBottom) {
-          // Ball hit from below (bottom of brick)
-          hitFromBottom = true;
-        } else if (ballMovingRight && ballLeft <= brickLeft && ball.x - BALL_RADIUS > brickLeft) {
-          // Ball hit from left side
-          hitFromLeft = true;
-        } else if (ballMovingLeft && ballRight >= brickRight && ball.x + BALL_RADIUS < brickRight) {
-          // Ball hit from right side
-          hitFromRight = true;
+        // Handle brick health and destruction
+        if (brick.health > 1) {
+          // Brick has multiple hits - reduce health and update crack level
+          brick.health--;
+          brick.crackLevel = brick.maxHealth - brick.health;
+          bricksDestroyed = 0; // Brick not destroyed yet
+        } else {
+          // Brick will be destroyed
+          bricksDestroyed = 1;
         }
         
-        // Apply appropriate bounce based on collision side
-        if (hitFromTop || hitFromBottom) {
+        // Determine collision side for proper bounce
+        const ballCenterX = collisionPoint.x;
+        const ballCenterY = collisionPoint.y;
+        const brickCenterX = brick.x + brick.width / 2;
+        const brickCenterY = brick.y + brick.height / 2;
+        
+        // Calculate distances to each side of the brick
+        const distToTop = Math.abs(ballCenterY - brick.y);
+        const distToBottom = Math.abs(ballCenterY - (brick.y + brick.height));
+        const distToLeft = Math.abs(ballCenterX - brick.x);
+        const distToRight = Math.abs(ballCenterX - (brick.x + brick.width));
+        
+        // Find the closest side
+        const minDist = Math.min(distToTop, distToBottom, distToLeft, distToRight);
+        
+        if (minDist === distToTop || minDist === distToBottom) {
           // Vertical collision - reverse Y direction
           newDy = -newDy;
-        } else if (hitFromLeft || hitFromRight) {
+        } else {
           // Horizontal collision - reverse X direction
           newDx = -newDx;
+        }
+        
+        // Position ball at collision point to prevent tunneling
+        // Add a small offset to ensure ball is outside the brick
+        const offsetX = ballCenterX > brickCenterX ? BALL_RADIUS + 1 : -BALL_RADIUS - 1;
+        const offsetY = ballCenterY > brickCenterY ? BALL_RADIUS + 1 : -BALL_RADIUS - 1;
+        
+        // Position ball outside the brick
+        if (Math.abs(ballCenterX - brickCenterX) > Math.abs(ballCenterY - brickCenterY)) {
+          // Horizontal collision - offset X
+          newX = ballCenterX + offsetX;
+          newY = ballCenterY;
         } else {
-          // Fallback: use distance-based collision response
-          const ballCenterX = newX;
-          const ballCenterY = newY;
-          const brickCenterX = brick.x + brick.width / 2;
-          const brickCenterY = brick.y + brick.height / 2;
-          
-          const dx = ballCenterX - brickCenterX;
-          const dy = ballCenterY - brickCenterY;
-          
-          if (Math.abs(dx) > Math.abs(dy)) {
-            // Horizontal collision
-            newDx = -newDx;
-          } else {
-            // Vertical collision
-            newDy = -newDy;
-          }
+          // Vertical collision - offset Y
+          newX = ballCenterX;
+          newY = ballCenterY + offsetY;
         }
         
         break; // Only hit one brick per frame
@@ -235,12 +244,13 @@ export const updateBallPosition = (
     paddleHit,
     wallHit,
     outOfBounds,
-    hitBrickIndex
+    hitBrickIndex,
+    brickHealthReduced: brickHit && bricksDestroyed === 0
   };
 };
 
 // Game state utilities
-export const createInitialBricks = (brickRows: number): Brick[] => {
+export const createInitialBricks = (brickRows: number, level: Level): Brick[] => {
   const bricks: Brick[] = [];
   
   // Calculate brick width and spacing to span full canvas width evenly
@@ -251,13 +261,54 @@ export const createInitialBricks = (brickRows: number): Brick[] => {
   
   for (let c = 0; c < 8; c++) {
     for (let r = 0; r < brickRows; r++) {
+      // Determine brick type based on level configuration
+      const random = Math.random();
+      let brickType: 'normal' | 'tough' | 'indestructible' | 'powerup' = 'normal';
+      let health = 1;
+      let maxHealth = 1;
+      let powerUpType: 'wider_paddle' | 'slower_ball' | undefined;
+      
+             // Check for boss brick (very rare, 2% chance)
+       if (random < 0.02) {
+         brickType = 'indestructible';
+         health = 5;
+         maxHealth = 5;
+       }
+       // Check for power-up brick first (highest priority)
+       else if (random < level.powerUpChance) {
+         brickType = 'powerup';
+         health = 1;
+         maxHealth = 1;
+         // Randomly assign power-up type
+         const powerUpTypes: ('wider_paddle' | 'slower_ball')[] = 
+           ['wider_paddle', 'slower_ball'];
+         powerUpType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+       }
+       // Check for tough brick
+       else if (random < level.powerUpChance + level.toughBrickChance) {
+         brickType = 'tough';
+         health = level.multiHitBricks ? 3 : 2; // 3 hits for multi-hit levels, 2 for others
+         maxHealth = health;
+       }
+       // Normal brick
+       else {
+         brickType = 'normal';
+         health = 1;
+         maxHealth = 1;
+       }
+      
       bricks.push({
         x: 20 + c * (brickWidth + brickPadding), // Start 20px from left edge
         y: r * (BRICK_HEIGHT + BRICK_PADDING) + BRICK_OFFSET_TOP,
         status: 1,
         color: BRICK_COLORS[r],
         width: brickWidth,
-        height: BRICK_HEIGHT
+        height: BRICK_HEIGHT,
+        health,
+        maxHealth,
+        crackLevel: 0, // Start with no cracks
+        brickType,
+        powerUpType
       });
     }
   }
@@ -268,8 +319,8 @@ export const createInitialBall = (ballSpeed: number): Ball => {
   return {
     x: CANVAS_WIDTH / 2,
     y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS,
-    dx: ballSpeed,
-    dy: -ballSpeed,
+    dx: 0, // Start with zero velocity - ball won't move until spacebar is pressed
+    dy: 0,
   };
 };
 

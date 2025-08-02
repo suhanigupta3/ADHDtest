@@ -23,10 +23,12 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [levelStartLives, setLevelStartLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelStartTime, setLevelStartTime] = useState(Date.now());
+  const [levelStartScore, setLevelStartScore] = useState(0);
   
   // Question modal states
   const [showQuestions, setShowQuestions] = useState(false);
@@ -34,6 +36,17 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   const [questionResponses, setQuestionResponses] = useState<{ [key: string]: number }>({});
   const [questionsCompleted, setQuestionsCompleted] = useState(false);
   const [allLevelsCompleted, setAllLevelsCompleted] = useState(false);
+  const [showLevelTransition, setShowLevelTransition] = useState(false);
+  const [transitionData, setTransitionData] = useState<{
+    type: 'level-complete' | 'game-over';
+    level?: number;
+    score: number;
+    time: number;
+    bricksDestroyed: number;
+    totalBricks: number;
+    livesLost: number;
+  } | null>(null);
+  const [levelCompleted, setLevelCompleted] = useState(false);
   
   // Game data collection
   const [gameData, setGameData] = useState<GameData>(() => ({
@@ -61,7 +74,14 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   const [ball, setBall] = useState<Ball>(() => createInitialBall(LEVELS[0].ballSpeed));
 
   // Bricks state
-  const [bricks, setBricks] = useState<Brick[]>(() => createInitialBricks(LEVELS[0].brickRows));
+  const [bricks, setBricks] = useState<Brick[]>(() => createInitialBricks(LEVELS[0].brickRows, LEVELS[0]));
+  
+  // Power-ups state
+  const [activePowerUps, setActivePowerUps] = useState<{ [key: string]: { type: string; endTime: number } }>({});
+  const [paddleWidthMultiplier, setPaddleWidthMultiplier] = useState(1);
+  const [ballSpeedMultiplier, setBallSpeedMultiplier] = useState(1);
+  
+
 
   // Current level data
   const currentLevelData = LEVELS[currentLevel - 1];
@@ -70,7 +90,8 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   const getPaddleWidth = (level: number) => {
     const baseWidth = PADDLE_WIDTH;
     const reduction = (level - 1) * 20; // Reduce by 20px each level
-    return Math.max(baseWidth - reduction, 80); // Minimum 80px
+    const powerUpWidth = paddleWidthMultiplier > 1 ? baseWidth * paddleWidthMultiplier : baseWidth;
+    return Math.max(powerUpWidth - reduction, 80); // Minimum 80px
   };
 
   // Handle keyboard events
@@ -84,10 +105,23 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         setLeftPressed(true);
         setGameData(prev => ({ ...prev, paddleMovements: prev.paddleMovements + 1 }));
       }
-      if (e.key === ' ' && !gameStarted && !gameOver && !gameWon && !showQuestions) {
-        setGameStarted(true);
-        setGameData(prev => ({ ...prev, startTime: Date.now() }));
-        setLevelStartTime(Date.now());
+      if (e.key === ' ' && !gameOver && !gameWon && !showQuestions) {
+        e.preventDefault();
+        
+        // Only launch if ball has no velocity
+        if (ball.dx === 0 && ball.dy === 0) {
+          const ballSpeed = currentLevelData.ballSpeed * ballSpeedMultiplier;
+          console.log('[BounceBack] Launching ball with speed:', ballSpeed, 'gameStarted:', gameStarted);
+          setBall(prev => ({
+            ...prev,
+            dx: ballSpeed,
+            dy: -ballSpeed
+          }));
+          // Set game as started when ball is launched
+          setGameStarted(true);
+        } else {
+          console.log('[BounceBack] Ball launch blocked - ball has velocity:', { dx: ball.dx, dy: ball.dy });
+        }
       }
     };
 
@@ -103,7 +137,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [gameStarted, gameOver, gameWon, showQuestions]);
+  }, [gameOver, gameWon, showQuestions, currentLevel, ballSpeedMultiplier, ball.dx, ball.dy]);
 
   // Save game data to Firebase
   const saveGameDataToFirebase = useCallback(async (finalGameData: GameData) => {
@@ -167,22 +201,26 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       ));
 
       const scores = {
-        attention: attentionScore,
+        inattention: attentionScore,
+        hyperactivity: 0, // BounceBack doesn't measure hyperactivity
         impulsivity: impulsivityScore,
-        frustration: frustrationScore,
-        focus: focusScore,
-        persistence: persistenceScore,
+        executive_function: focusScore, // Map focus to executive_function
         adhd_composite
       };
 
       console.log('[BounceBack][FIREBASE] Calculated scores:', scores);
 
       // Save scores to Firebase
-      await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), { 
+      const firebaseData = { 
         scores,
         gameData: finalGameData,
         timestamp: new Date().toISOString()
-      }, { merge: true });
+      };
+      console.log('[BounceBack][FIREBASE] Saving data to Firebase:', firebaseData);
+      console.log('[BounceBack][FIREBASE] Scores structure:', scores);
+      console.log('[BounceBack][FIREBASE] GameData structure:', finalGameData);
+      
+      await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), firebaseData, { merge: true });
 
       console.log('[BounceBack][FIREBASE] Successfully saved scores to Firebase');
 
@@ -214,68 +252,218 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     }
   }, [userId, onError]);
 
-  // Advance to next level
-  const advanceLevel = useCallback(() => {
-    const levelScore = score;
-    const levelTime = Date.now() - levelStartTime;
+  // Handle transition continue
+  const handleTransitionContinue = useCallback(() => {
+    setShowLevelTransition(false);
     
-    setGameData(prev => ({
-      ...prev,
-      levelScores: [...prev.levelScores, levelScore],
-      levelCompletionTimes: [...prev.levelCompletionTimes, levelTime],
-    }));
-    
-    if (currentLevel < 3) {
-      // Move to next level without showing questions
-      const nextLevel = currentLevel + 1;
-      setCurrentLevel(nextLevel);
-      setLevelStartTime(Date.now());
-      
-      // Reset for next level
-      const nextLevelData = LEVELS[nextLevel - 1];
-      setBall(createInitialBall(nextLevelData.ballSpeed));
-      setBricks(createInitialBricks(nextLevelData.brickRows));
-      setGameStarted(false);
-      setLives(3); // Reset lives to 3 for new level
-      
-      // Update game data for new level
-      setGameData(prev => ({
-        ...prev,
-        currentLevel: nextLevel,
-        totalBricks: nextLevelData.brickRows * 8,
-        ballSpeed: nextLevelData.ballSpeed,
-      }));
-    } else {
-      // All levels completed, show questions
+    if (transitionData?.type === 'level-complete') {
+      if (transitionData.level === 3) {
+        // All levels completed, show questions
+        setAllLevelsCompleted(true);
+        setShowQuestions(true);
+        setGameData(prev => ({ 
+          ...prev, 
+          endTime: Date.now(),
+          finalScore: score + (lives * 50),
+          gameCompleted: true
+        }));
+      } else {
+        // Move to next level
+        const nextLevel = (transitionData.level || 0) + 1;
+        setCurrentLevel(nextLevel);
+        
+        // Reset for next level
+        const nextLevelData = LEVELS[nextLevel - 1];
+        setBall(createInitialBall(nextLevelData.ballSpeed));
+        setBricks(createInitialBricks(nextLevelData.brickRows, nextLevelData));
+        setGameStarted(false);
+        setLives(3); // Reset lives to 3 for new level
+        setLevelStartLives(3); // Reset level start lives to 3 for new level
+        setLevelCompleted(false); // Reset level completion flag for new level
+        // DON'T reset score - keep it cumulative across levels
+        
+        // Update game data for new level
+        setGameData(prev => ({
+          ...prev,
+          currentLevel: nextLevel,
+          totalBricks: nextLevelData.brickRows * 8,
+          ballSpeed: nextLevelData.ballSpeed,
+        }));
+        
+        // Set level start time and score AFTER saving the previous level data
+        setLevelStartTime(Date.now());
+        setLevelStartScore(score); // Track the current score as the start score for next level
+      }
+    } else if (transitionData?.type === 'game-over') {
+      // Game over, show questions
       setAllLevelsCompleted(true);
       setShowQuestions(true);
       setGameData(prev => ({ 
         ...prev, 
         endTime: Date.now(),
-        finalScore: score + (lives * 50),
+        finalScore: score,
         gameCompleted: true
       }));
     }
+  }, [transitionData, score, lives]);
+
+  // Advance to next level
+  const advanceLevel = useCallback(() => {
+    // Handle level 3 completion differently
+    if (currentLevel >= 3) {
+      console.log('[BounceBack] Level 3 completed - preparing to show questions');
+      
+      // Calculate the score for THIS level only (current score minus score at start of level)
+      const levelScore = score - levelStartScore;
+      const levelTime = Date.now() - levelStartTime;
+      
+      // Calculate bricks destroyed for this level
+      const levelTotalBricks = gameData.totalBricks;
+      const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
+      
+      // Calculate lives lost for this level
+      const levelLivesLost = Math.max(0, levelStartLives - lives);
+      
+      console.log('[BounceBack] Level 3 completion data:', {
+        levelScore,
+        levelTime,
+        levelBricksDestroyed,
+        levelLivesLost,
+        levelTotalBricks
+      });
+      
+      // Save level 3 data
+      setGameData(prev => {
+        const newLevelScores = [...prev.levelScores, levelScore];
+        const newLevelTimes = [...prev.levelCompletionTimes, levelTime];
+        const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
+        const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
+        const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+        
+        return {
+          ...prev,
+          levelScores: newLevelScores,
+          levelCompletionTimes: newLevelTimes,
+          levelBricksDestroyed: newLevelBricksDestroyed,
+          levelLivesLost: newLevelLivesLost,
+          levelTotalBricks: newLevelTotalBricks,
+        };
+      });
+      
+      // Show level transition screen for level 3 completion
+      setTransitionData({
+        type: 'level-complete',
+        level: currentLevel,
+        score: levelScore,
+        time: levelTime,
+        bricksDestroyed: levelBricksDestroyed,
+        totalBricks: gameData.totalBricks,
+        livesLost: levelLivesLost
+      });
+      setShowLevelTransition(true);
+      return;
+    }
+    
+    // Calculate the score for THIS level only (current score minus score at start of level)
+    const levelScore = score - levelStartScore;
+    const levelTime = Date.now() - levelStartTime;
+    
+    console.log('[BounceBack] Time calculation debug:', {
+      currentTime: Date.now(),
+      levelStartTime,
+      calculatedLevelTime: levelTime,
+      levelTimeInSeconds: (levelTime / 1000).toFixed(2)
+    });
+    
+    // Calculate bricks destroyed for this level
+    const levelTotalBricks = gameData.totalBricks; // This is the correct total for this level
+    const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
+    
+    // Calculate lives lost for this level (started with levelStartLives lives, current lives = levelStartLives - lives lost)
+    const levelLivesLost = Math.max(0, levelStartLives - lives);
+    console.log('[BounceBack] Lives lost calculation:', {
+      levelStartLives,
+      currentLives: lives,
+      calculatedLivesLost: levelLivesLost
+    });
+    
+    console.log('[BounceBack] Advancing to next level:', {
+      currentLevel,
+      levelScore,
+      levelTime,
+      currentScore: score,
+      previousLevelScores: gameData.levelScores,
+      totalPreviousScore: gameData.levelScores.reduce((sum, s) => sum + s, 0),
+      levelStartTime,
+      levelBricksDestroyed,
+      levelLivesLost,
+      totalBricksInLevel: gameData.totalBricks
+    });
+    
+    setGameData(prev => {
+      const newLevelScores = [...prev.levelScores, levelScore];
+      const newLevelTimes = [...prev.levelCompletionTimes, levelTime];
+      const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
+      const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
+      const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+      
+      console.log('[BounceBack] Updated level data:', {
+        levelScores: newLevelScores,
+        levelTimes: newLevelTimes,
+        levelBricksDestroyed: newLevelBricksDestroyed,
+        levelLivesLost: newLevelLivesLost,
+        levelScoresValues: newLevelScores,
+        levelTimesValues: newLevelTimes.map(time => `${(time/1000).toFixed(1)}s`)
+      });
+      
+      return {
+        ...prev,
+        levelScores: newLevelScores,
+        levelCompletionTimes: newLevelTimes,
+        levelBricksDestroyed: newLevelBricksDestroyed,
+        levelLivesLost: newLevelLivesLost,
+        levelTotalBricks: newLevelTotalBricks,
+      };
+    });
+    
+    // Show level transition screen
+    setTransitionData({
+      type: 'level-complete',
+      level: currentLevel,
+      score: levelScore,
+      time: levelTime,
+      bricksDestroyed: levelBricksDestroyed,
+      totalBricks: gameData.totalBricks,
+      livesLost: levelLivesLost
+    });
+    setShowLevelTransition(true);
+    
+    // Don't advance to next level if this is the final level (Level 3)
+    // The transition screen will handle moving to questions
   }, [currentLevel, score, levelStartTime]);
 
   // Reset game
   const resetGame = useCallback(() => {
     setScore(0);
     setLives(3);
+    setLevelStartLives(3);
     setGameOver(false);
     setGameWon(false);
     setGameStarted(false);
     setCurrentLevel(1);
     setLevelStartTime(Date.now());
+    setLevelStartScore(0);
     setShowQuestions(false);
     setCurrentQuestionIndex(0);
     setQuestionResponses({});
     setQuestionsCompleted(false);
     setAllLevelsCompleted(false);
+    setLevelCompleted(false);
+    setShowLevelTransition(false);
     
     const firstLevel = LEVELS[0];
     setBall(createInitialBall(firstLevel.ballSpeed));
-    setBricks(createInitialBricks(firstLevel.brickRows));
+    setBricks(createInitialBricks(firstLevel.brickRows, firstLevel));
     
     setGameData({
       startTime: Date.now(),
@@ -301,13 +489,76 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
 
   // Check for level completion
   useEffect(() => {
-    if (gameStarted && !gameOver && !gameWon && !showQuestions) {
+    if (gameStarted && !gameOver && !gameWon && !showQuestions && !showLevelTransition && !levelCompleted) {
       const remainingBricks = bricks.filter(brick => brick.status === 1).length;
+      console.log('[BounceBack] Level completion check:', {
+        gameStarted,
+        gameOver,
+        gameWon,
+        showQuestions,
+        showLevelTransition,
+        levelCompleted,
+        remainingBricks,
+        currentLevel,
+        totalBricks: bricks.length,
+        allBricksStatus: bricks.map(brick => ({ status: brick.status, x: brick.x, y: brick.y }))
+      });
+      
       if (remainingBricks === 0) {
+        console.log('[BounceBack] 🎉 Level completed! Calling advanceLevel()');
+        console.log('[BounceBack] All bricks destroyed - current level:', currentLevel);
+        setLevelCompleted(true);
         advanceLevel();
+      } else {
+        console.log('[BounceBack] Level not completed yet - remaining bricks:', remainingBricks);
       }
+    } else if (levelCompleted) {
+      console.log('[BounceBack] Level already completed, skipping completion check');
     }
-  }, [bricks, gameStarted, gameOver, gameWon, showQuestions, advanceLevel, currentLevel]);
+  }, [bricks, gameStarted, gameOver, gameWon, showQuestions, showLevelTransition, levelCompleted, advanceLevel, currentLevel]);
+
+  // Power-up cleanup effect
+  useEffect(() => {
+    const now = Date.now();
+    const expiredPowerUps = Object.entries(activePowerUps).filter(([_, powerUp]) => powerUp.endTime <= now);
+    
+    if (expiredPowerUps.length > 0) {
+      setActivePowerUps(prev => {
+        const newPowerUps = { ...prev };
+        expiredPowerUps.forEach(([type, _]) => {
+          delete newPowerUps[type];
+          
+          // Reset power-up effects
+          switch (type) {
+            case 'wider_paddle':
+              setPaddleWidthMultiplier(1);
+              break;
+            case 'slower_ball':
+              setBallSpeedMultiplier(1);
+              break;
+          }
+        });
+        return newPowerUps;
+      });
+    }
+  }, [activePowerUps]);
+
+  // Ball follows paddle when it has no velocity
+  useEffect(() => {
+    if (ball.dx === 0 && ball.dy === 0 && !gameOver && !gameWon && !showQuestions) {
+      const currentPaddleWidth = getPaddleWidth(currentLevel);
+      const newBallX = paddleX + currentPaddleWidth / 2;
+      const newBallY = CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS;
+      
+      setBall(prev => ({
+        ...prev,
+        x: newBallX,
+        y: newBallY,
+        dx: 0,
+        dy: 0
+      }));
+    }
+  }, [paddleX, currentLevel, gameOver, gameWon, showQuestions, ball.dx, ball.dy]);
 
   // Game loop
   useEffect(() => {
@@ -337,19 +588,68 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         setBall(prevBall => {
           const result = updateBallPosition(prevBall, paddleX, bricks, gameStarted, currentPaddleWidth);
           
-          // Handle brick destruction - only destroy the specific brick that was hit
-          if (result.bricksDestroyed > 0 && result.hitBrickIndex !== null) {
+          // Handle brick destruction and health reduction
+          if (result.hitBrickIndex !== null) {
             setBricks(prev => {
               const newBricks = [...prev];
-              newBricks[result.hitBrickIndex!].status = 0;
+              const hitBrick = newBricks[result.hitBrickIndex!];
+              
+                             if (result.bricksDestroyed > 0) {
+                 // Brick is destroyed
+                 hitBrick.status = 0;
+                 
+                 // Calculate score based on brick type only (no luck-based bonuses)
+                 let baseScore = 10;
+                 
+                 // Points based on brick type (skill-based, not luck-based)
+                 if (hitBrick.brickType === 'indestructible') {
+                   baseScore = 30; // Boss brick gives 30 points
+                 } else if (hitBrick.brickType === 'tough') {
+                   baseScore = 15; // Tough brick gives 15 points
+                 }
+                 
+                 const totalScore = baseScore;
+                 
+                 setScore(prev => prev + totalScore);
+                 setGameData(prev => ({ 
+                   ...prev, 
+                   bricksDestroyed: prev.bricksDestroyed + 1
+                 }));
+                 
+                 // Handle power-up activation
+                 if (hitBrick.brickType === 'powerup' && hitBrick.powerUpType) {
+                   const powerUpType = hitBrick.powerUpType;
+                   const duration = 10000; // 10 seconds
+                   const endTime = Date.now() + duration;
+                   
+                   setActivePowerUps(prev => ({
+                     ...prev,
+                     [powerUpType]: { type: powerUpType, endTime }
+                   }));
+                   
+                   // Apply power-up effects
+                   switch (powerUpType) {
+                     case 'wider_paddle':
+                       setPaddleWidthMultiplier(1.5);
+                       break;
+                     case 'slower_ball':
+                       setBallSpeedMultiplier(0.7);
+                       break;
+
+
+                   }
+                 }
+               } else if (result.brickHealthReduced) {
+                 // Brick health reduced but not destroyed
+                 setScore(prev => prev + 5); // Give some points for hitting tough bricks
+                 setGameData(prev => ({ 
+                   ...prev, 
+                   bricksDestroyed: prev.bricksDestroyed 
+                 }));
+               }
+              
               return newBricks;
             });
-            
-            setScore(prev => prev + 10);
-            setGameData(prev => ({ 
-              ...prev, 
-              bricksDestroyed: prev.bricksDestroyed 
-            }));
           }
 
           // Handle paddle hit
@@ -375,20 +675,100 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                 ...prevData, 
                 livesLost: prevData.livesLost + 1 
               }));
+              console.log('[BounceBack] Life lost - updating gameData.livesLost:', {
+                previousLivesLost: gameData.livesLost,
+                newLivesLost: gameData.livesLost + 1,
+                levelStartLives,
+                currentLives: newLives
+              });
               
               if (newLives <= 0) {
-                // Instead of game over, show questions for assessment
-                setAllLevelsCompleted(true);
-                setShowQuestions(true);
-                setGameData(prev => ({ 
-                  ...prev, 
-                  endTime: Date.now(),
-                  finalScore: score,
-                  gameCompleted: true
-                }));
+                console.log('[BounceBack] No lives left on level', currentLevel, '- continuing to next level');
+                
+                // Save the current level data even if it wasn't completed
+                const levelScore = score - levelStartScore;
+                const levelTime = Date.now() - levelStartTime;
+                const levelBricksDestroyed = gameData.totalBricks - bricks.filter(brick => brick.status === 1).length;
+                const levelLivesLost = Math.max(0, levelStartLives - newLives);
+                console.log('[BounceBack] Lives lost calculation (incomplete level):', {
+                  levelStartLives,
+                  currentLives: newLives,
+                  calculatedLivesLost: levelLivesLost
+                });
+                const levelTotalBricks = gameData.totalBricks;
+                
+                console.log('[BounceBack] Saving incomplete level data:', {
+                  levelScore,
+                  levelTime,
+                  levelBricksDestroyed,
+                  levelLivesLost,
+                  levelTotalBricks
+                });
+                
+                setGameData(prev => {
+                  const newLevelScores = [...prev.levelScores, levelScore];
+                  const newLevelTimes = [...prev.levelCompletionTimes, levelTime];
+                  const newLevelBricksDestroyed = [...(prev.levelBricksDestroyed || []), levelBricksDestroyed];
+                  const newLevelLivesLost = [...(prev.levelLivesLost || []), levelLivesLost];
+                  const newLevelTotalBricks = [...(prev.levelTotalBricks || []), levelTotalBricks];
+                  
+                  return {
+                    ...prev,
+                    levelScores: newLevelScores,
+                    levelCompletionTimes: newLevelTimes,
+                    levelBricksDestroyed: newLevelBricksDestroyed,
+                    levelLivesLost: newLevelLivesLost,
+                    levelTotalBricks: newLevelTotalBricks,
+                  };
+                });
+                
+                // Check if this is the final level (Level 3)
+                if (currentLevel >= 3) {
+                  // All levels completed, show questions
+                  setAllLevelsCompleted(true);
+                  setShowQuestions(true);
+                  setGameData(prev => ({ 
+                    ...prev, 
+                    endTime: Date.now(),
+                    finalScore: score,
+                    gameCompleted: true
+                  }));
+                } else {
+                  // Continue to next level even with 0 lives
+                  const nextLevel = currentLevel + 1;
+                  setCurrentLevel(nextLevel);
+                  
+                  // Reset for next level
+                  const nextLevelData = LEVELS[nextLevel - 1];
+                  setBall(createInitialBall(nextLevelData.ballSpeed));
+                  setBricks(createInitialBricks(nextLevelData.brickRows, nextLevelData));
+                  setGameStarted(false);
+                  setLives(3); // Reset lives to 3 for new level
+                  setLevelStartLives(3); // Reset level start lives to 3 for new level
+                  setLevelCompleted(false); // Reset level completion flag for new level
+                  
+                  // Update game data for new level
+                  setGameData(prev => ({
+                    ...prev,
+                    currentLevel: nextLevel,
+                    totalBricks: nextLevelData.brickRows * 8,
+                    ballSpeed: nextLevelData.ballSpeed,
+                  }));
+                  
+                  // Set level start time and score
+                  setLevelStartTime(Date.now());
+                  setLevelStartScore(score);
+                }
               } else {
-                // Reset ball position
+                // Reset ball to follow paddle
+                console.log('[BounceBack] Ball out of bounds - resetting ball and setting gameStarted to false');
                 setGameStarted(false);
+                setBall(prev => ({
+                  ...prev,
+                  dx: 0,
+                  dy: 0
+                }));
+                outOfBoundsProcessedRef.current = false;
               }
               return newLives;
             });
@@ -397,13 +777,8 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           return result.newBall;
         });
       } else {
-        // Ball follows paddle when game hasn't started
+        // Ball follows paddle when game hasn't started - handled by separate effect
         outOfBoundsProcessedRef.current = false; // Reset flag when ball is reset
-        setBall(prev => ({
-          ...prev,
-          x: paddleX + currentPaddleWidth / 2,
-          y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS,
-        }));
       }
 
       // Update game data
@@ -444,6 +819,9 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     currentLevel,
     currentLevelData,
     
+    // Power-ups state
+    activePowerUps,
+    
     // Question modal state
     showQuestions,
     setShowQuestions,
@@ -455,6 +833,12 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     setQuestionsCompleted,
     allLevelsCompleted,
     setAllLevelsCompleted,
+    
+    // Transition state
+    showLevelTransition,
+    transitionData,
+    handleTransitionContinue,
+    levelCompleted,
     
     // Game data
     gameData,
