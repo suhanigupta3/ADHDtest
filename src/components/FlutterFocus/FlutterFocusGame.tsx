@@ -324,7 +324,13 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       zIndex: selectedConfig.zIndex,
       isActive: true,
       hasCollision: selectedConfig.hasCollision,
-      collisionDamage: selectedConfig.collisionDamage
+      collisionDamage: selectedConfig.collisionDamage,
+      // Initialize collision animation properties
+      collisionState: 'normal',
+      collisionTimer: 0,
+      explosionFrame: 0,
+      explosionX: 0,
+      explosionY: 0
     };
     
     console.log('[FlutterFocus] Spawning debris:', {
@@ -348,7 +354,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       .map(debris => ({
         ...debris,
         x: debris.x - DEBRIS_SPEEDS[debris.speed], // Move by speed per frame
-        rotation: debris.rotation + DEBRIS_ROTATION_SPEEDS[debris.rotationSpeed] // All debris rotate
+        // Only rotate if rotation speed is not 'none'
+        rotation: debris.rotationSpeed === 'none' ? debris.rotation : debris.rotation + DEBRIS_ROTATION_SPEEDS[debris.rotationSpeed]
       }))
       .filter(debris => debris.x > -debris.width && debris.isActive); // Remove debris that's off-screen or inactive
     
@@ -778,7 +785,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     if (currentGameState === 'playing') {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [lives, logDebug, collisionFlash, collisionParticles, updateStars, updateBackgroundDebris, handleObstacleCollision, updateObstacleAnimations, cleanupInactiveDebris, updateDebrisCollisionAnimations]);
+  }, [lives, logDebug, collisionFlash, collisionParticles, updateStars, updateBackgroundDebris, handleObstacleCollision, updateObstacleAnimations, cleanupInactiveDebris, updateDebrisCollisionAnimations, handleDebrisCollision]);
   
   // Start game loop
   const startGameLoop = useCallback(() => {
@@ -1181,7 +1188,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (sprite) {
         ctx.save();
         ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
-        ctx.rotate(debris.rotation * Math.PI / 180);
+        // Only rotate if rotation speed is not 'none'
+        if (debris.rotationSpeed !== 'none') {
+          ctx.rotate(debris.rotation * Math.PI / 180);
+        }
         ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
         ctx.restore();
       } else {
@@ -1270,7 +1280,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (sprite) {
         ctx.save();
         ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
-        ctx.rotate(debris.rotation * Math.PI / 180);
+        // Only rotate if rotation speed is not 'none'
+        if (debris.rotationSpeed !== 'none') {
+          ctx.rotate(debris.rotation * Math.PI / 180);
+        }
         ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
         ctx.restore();
       } else {
@@ -1295,7 +1308,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (sprite) {
         ctx.save();
         ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
-        ctx.rotate(debris.rotation * Math.PI / 180);
+        // Only rotate if rotation speed is not 'none'
+        if (debris.rotationSpeed !== 'none') {
+          ctx.rotate(debris.rotation * Math.PI / 180);
+        }
         ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
         ctx.restore();
       } else {
@@ -1317,6 +1333,25 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
           ctx.strokeRect(debris.x, debris.y, debris.width, debris.height);
         }
         ctx.restore();
+      }
+    });
+    
+    // Draw explosion sprites for debris collisions
+    debrisRef.current.forEach(debris => {
+      if (debris.collisionState === 'exploding' && explosionSpritesRef.current.length > 0 && debris.explosionFrame !== undefined) {
+        const sprite = explosionSpritesRef.current[debris.explosionFrame];
+        if (sprite && debris.explosionX !== undefined && debris.explosionY !== undefined) {
+          // Center the explosion sprite on the collision point
+          const spriteWidth = 80; // Adjust size as needed
+          const spriteHeight = 80;
+          ctx.drawImage(
+            sprite,
+            debris.explosionX - spriteWidth / 2,
+            debris.explosionY - spriteHeight / 2,
+            spriteWidth,
+            spriteHeight
+          );
+        }
       }
     });
     
