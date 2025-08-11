@@ -3,6 +3,37 @@ import { GameState, Target, RoundMetrics } from './types';
 import { getRoundInstructions, getInRoundInstruction } from './utils';
 import ShapeRenderer from './ShapeRenderer';
 
+// Countdown Component
+const Countdown: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const [count, setCount] = React.useState(3);
+  const onCompleteRef = React.useRef(onComplete);
+
+  React.useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  React.useEffect(() => {
+    if (count === 0) {
+      onCompleteRef.current();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCount(count - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [count]);
+
+  if (count === 0) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center z-50">
+      <div className="text-9xl font-bold text-sleek-600">
+        {count}
+      </div>
+    </div>
+  );
+};
+
 interface GameUIProps {
   gameState: GameState;
   elapsedTime: number;
@@ -18,6 +49,8 @@ interface GameUIProps {
   showSelfReport?: boolean;
   selfReportSubmitted?: boolean;
   onSelfReportSubmit?: (answers: number[]) => void;
+  width?: string;
+  height?: string;
 }
 
 const selfReportQuestions = [
@@ -49,11 +82,17 @@ const GameUI: React.FC<GameUIProps> = ({
   onQuestionNav,
   showSelfReport = false,
   selfReportSubmitted = false,
-  onSelfReportSubmit
+  onSelfReportSubmit,
+  width = "960px",
+  height = "540px"
 }) => {
   // Self-report state (must be top-level for hooks order)
   const [answers, setAnswers] = React.useState<number[]>([0, 0, 0, 0, 0]);
   const [submitted, setSubmitted] = React.useState(false);
+
+  // Countdown state (must be top-level for hooks order)
+  const [showCountdown, setShowCountdown] = React.useState(false);
+  const [showRoundCountdown, setShowRoundCountdown] = React.useState(false);
 
   // --- Add localAnswer state for question slider ---
   const currentQuestionIndex = gameState.currentQuestionIndex;
@@ -63,31 +102,70 @@ const GameUI: React.FC<GameUIProps> = ({
     setLocalAnswer(currentAnswer || 3);
   }, [currentQuestionIndex, currentAnswer]);
 
+  // Countdown handlers
+  const handleStartClick = React.useCallback(() => {
+    setShowCountdown(true);
+  }, []);
+
+  const handleCountdownComplete = React.useCallback(() => {
+    setShowCountdown(false);
+    onStartGame();
+  }, [onStartGame]);
+
+  const handleRoundStartClick = React.useCallback(() => {
+    setShowRoundCountdown(true);
+  }, []);
+
+  const handleRoundCountdownComplete = React.useCallback(() => {
+    setShowRoundCountdown(false);
+    onStartRound();
+  }, [onStartRound]);
+
   // Show initial instructions
   if (gameState.showInstructions) {
+
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: 'linear-gradient(to bottom right, #f5f3ff, #e0e7ff)' }}>
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center" style={{ width: '860px', maxHeight: '440px', padding: '32px 32px 32px 32px' }}>
-          {/* Instructions Box */}
-          <div className="w-full flex flex-col items-center">
-            <h2 className="font-extrabold text-3xl md:text-4xl text-sleek-700 mb-8 tracking-wide text-center">How to Play</h2>
-            <ul className="text-gray-800 space-y-4 text-lg w-full max-w-2xl mx-auto list-disc list-inside px-0">
-              <li>Watch for the <b>target shape and pattern</b> shown on the left</li>
-              <li>When a stimulus appears on the right, decide if it matches the target</li>
-              <li><b>Round 1:</b> Click if <b>shape OR pattern</b> matches</li>
-              <li><b>Round 2:</b> Click if <b>BOTH shape AND pattern</b> match</li>
-              <li><b>Round 3:</b> Click if <b>BOTH match</b> (shapes may be rotated)</li>
-              <li>Some trials may have <b>distractions</b> (visual effects) – stay focused!</li>
-            </ul>
-          </div>
-          {/* Start Button */}
-          <div className="w-full flex justify-center items-center mt-10">
-            <button
-              onClick={onStartGame}
-              className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-            >
-              Start Game
-            </button>
+      <div className="w-full h-full bg-white rounded-lg shadow-lg" style={{ width: width, height: height }}>
+        {/* Game Board Container - matches main game structure */}
+        <div className="bg-gray-50 rounded-lg p-4 shadow-md relative" style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'block',
+          margin: '0 auto'
+        }}>
+          
+          {/* Game Play Area - matches main game structure */}
+          <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+            
+            {/* Countdown Overlay */}
+            {showCountdown && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                <Countdown onComplete={handleCountdownComplete} />
+              </div>
+            )}
+            
+            {/* Instructions Content */}
+            <div className="flex flex-col justify-center items-center w-full h-full">
+              <div className="text-center max-w-2xl">
+                <h2 className="font-extrabold text-3xl md:text-4xl text-sleek-700 mb-8 tracking-wide">How to Play</h2>
+                <ul className="text-gray-800 space-y-4 text-lg list-disc list-inside px-0 mb-8">
+                  <li>Watch for the <b>target shape and pattern</b> shown on the left</li>
+                  <li>When a stimulus appears on the right, decide if it matches the target</li>
+                  <li><b>Round 1:</b> Click if <b>shape OR pattern</b> matches</li>
+                  <li><b>Round 2:</b> Click if <b>BOTH shape AND pattern</b> match</li>
+                  <li><b>Round 3:</b> Click if <b>BOTH match</b> (shapes may be rotated)</li>
+                  <li>Some trials may have <b>distractions</b> (visual effects) – stay focused!</li>
+                </ul>
+                <button
+                  onClick={handleStartClick}
+                  className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
+                >
+                  Start Game
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -97,24 +175,50 @@ const GameUI: React.FC<GameUIProps> = ({
   // Show round start screen
   if (gameState.showRoundStart) {
     const instructions = getRoundInstructions(gameState.currentRound);
+
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff', borderRadius: '1.25rem', boxShadow: '0 8px 32px rgba(60,60,120,0.10)' }}>
-        <div className="flex flex-col items-center justify-center w-full h-full px-8">
-          <h1 className="text-4xl font-extrabold text-sleek-700 mb-6 tracking-wide">
-            Round {gameState.currentRound}
-          </h1>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
-          <p className="text-lg text-gray-700 mb-4 text-center max-w-2xl">{instructions.text}</p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left mb-8 max-w-xl w-full">
-            <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
-            <p className="text-emerald-200 text-base">{instructions.example}</p>
+      <div className="w-full h-full bg-white rounded-lg shadow-lg" style={{ width: width, height: height }}>
+        {/* Game Board Container - matches main game structure */}
+        <div className="bg-gray-50 rounded-lg p-4 shadow-md relative" style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'block',
+          margin: '0 auto'
+        }}>
+          
+          {/* Game Play Area - matches main game structure */}
+          <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+            
+            {/* Countdown Overlay */}
+            {showRoundCountdown && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                <Countdown onComplete={handleRoundCountdownComplete} />
+              </div>
+            )}
+            
+            {/* Round Instructions Content */}
+            <div className="flex flex-col justify-center items-center w-full h-full px-8">
+              <div className="text-center max-w-2xl">
+                <h1 className="text-4xl font-extrabold text-sleek-700 mb-6 tracking-wide">
+                  Round {gameState.currentRound}
+                </h1>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
+                <p className="text-lg text-gray-700 mb-4 text-center">{instructions.text}</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left mb-8 max-w-xl w-full">
+                  <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
+                  <p className="text-emerald-200 text-base">{instructions.example}</p>
+                </div>
+                <button
+                  onClick={handleRoundStartClick}
+                  className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
+                >
+                  Start Round
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={onStartRound}
-            className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-          >
-            Start Round
-          </button>
         </div>
       </div>
     );
@@ -123,51 +227,69 @@ const GameUI: React.FC<GameUIProps> = ({
   // Show scores screen after 3rd round
   if (gameState.showScores) {
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: 'linear-gradient(to bottom right, #f5f3ff, #e0e7ff)' }}>
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '900px', maxHeight: '500px' }}>
-          <h1 className="text-4xl font-extrabold text-sleek-700 mb-8 tracking-wide text-center">Game Complete!</h1>
+      <div className="w-full h-full bg-white rounded-lg shadow-lg" style={{ width: width, height: height }}>
+        {/* Game Board Container - matches main game structure */}
+        <div className="bg-gray-50 rounded-lg p-4 shadow-md relative" style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'block',
+          margin: '0 auto'
+        }}>
           
-          {/* Scores Grid */}
-          <div className="grid grid-cols-3 gap-6 mb-8 w-full">
-            {roundMetrics.map((metrics, index) => (
-              <div key={index} className="bg-gradient-to-br from-emerald-50 to-sleek-50 border border-emerald-200 rounded-xl p-6 text-center">
-                <h3 className="text-2xl font-bold text-sleek-700 mb-4">Round {index + 1}</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Accuracy:</span>
-                    <span className="font-semibold text-emerald-400">
-                      {metrics.totalTrials > 0 ? Math.round((metrics.correctTrials / metrics.totalTrials) * 100) : 0}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Correct Hits:</span>
-                    <span className="font-semibold text-green-600">{metrics.correctTrials}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">False Alarms:</span>
-                    <span className="font-semibold text-red-600">{metrics.falsePositives}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Missed Targets:</span>
-                    <span className="font-semibold text-amber-600">{metrics.missedTargets}</span>
-                  </div>
-                  {metrics.reactionTimeValid > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Avg RT:</span>
-                      <span className="font-semibold text-sleek-600">{Math.round(metrics.reactionTimeValid)}ms</span>
+          {/* Game Play Area - matches main game structure */}
+          <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+            
+            {/* Scores Content */}
+            <div className="flex flex-col justify-center items-center w-full h-full">
+              <div className="text-center max-w-4xl">
+                <h1 className="text-4xl font-extrabold text-sleek-700 mb-8 tracking-wide">Game Complete!</h1>
+                
+                {/* Scores Grid */}
+                <div className="grid grid-cols-3 gap-6 mb-8 w-full">
+                  {roundMetrics.map((metrics, index) => (
+                    <div key={index} className="bg-gradient-to-br from-emerald-50 to-sleek-50 border border-emerald-200 rounded-xl p-6 text-center">
+                      <h3 className="text-2xl font-bold text-sleek-700 mb-4">Round {index + 1}</h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Accuracy:</span>
+                          <span className="font-semibold text-emerald-400">
+                            {metrics.totalTrials > 0 ? Math.round((metrics.correctTrials / metrics.totalTrials) * 100) : 0}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Correct Hits:</span>
+                          <span className="font-semibold text-green-600">{metrics.correctTrials}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">False Alarms:</span>
+                          <span className="font-semibold text-red-600">{metrics.falsePositives}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Missed Targets:</span>
+                          <span className="font-semibold text-amber-600">{metrics.missedTargets}</span>
+                        </div>
+                        {metrics.reactionTimeValid > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Avg RT:</span>
+                            <span className="font-semibold text-sleek-600">{Math.round(metrics.reactionTimeValid)}ms</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
+                
+                <button
+                  onClick={onShowQuestions}
+                  className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
+                >
+                  Answer Questions
+                </button>
               </div>
-            ))}
+            </div>
           </div>
-          
-          <button
-            onClick={onShowQuestions}
-            className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-          >
-            Answer Questions
-          </button>
         </div>
       </div>
     );
@@ -176,8 +298,8 @@ const GameUI: React.FC<GameUIProps> = ({
   // Show Thank You screen if flagged
   if (gameState.showThankYou) {
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+      <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
+        <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-12" style={{ maxWidth: '90%', maxHeight: '90%' }}>
           <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
           <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
           <p className="text-gray-500 text-center">You may now close this window.</p>
@@ -191,8 +313,8 @@ const GameUI: React.FC<GameUIProps> = ({
     if (currentQuestionIndex >= selfReportQuestions.length) {
       // All questions answered
       return (
-        <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
-          <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+        <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
+          <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-12" style={{ maxWidth: '90%', maxHeight: '90%' }}>
             <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
             <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
             <p className="text-gray-500 text-center">You may now close this window.</p>
@@ -221,8 +343,8 @@ const GameUI: React.FC<GameUIProps> = ({
     };
 
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8" style={{ width: '800px' }}>
+      <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
+        <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8" style={{ maxWidth: '90%', maxHeight: '90%' }}>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-sleek-700 mb-4">Question {currentQuestionIndex + 1} of {selfReportQuestions.length}</h2>
             <p className="text-lg text-gray-700">{currentQuestion}</p>
@@ -352,8 +474,8 @@ const GameUI: React.FC<GameUIProps> = ({
     };
     if (selfReportSubmitted || submitted) {
       return (
-        <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
-          <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-12" style={{ width: '700px' }}>
+        <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
+          <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-12" style={{ maxWidth: '90%', maxHeight: '90%' }}>
             <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
             <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
             <p className="text-gray-500 text-center">You may now close this window.</p>
@@ -362,8 +484,8 @@ const GameUI: React.FC<GameUIProps> = ({
       );
     }
     return (
-      <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff' }}>
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col items-center justify-center p-8 gap-6" style={{ width: '800px' }}>
+      <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 gap-6" style={{ maxWidth: '90%', maxHeight: '90%' }}>
           <h2 className="text-2xl font-bold text-sleek-700 mb-2">Self-Report Questionnaire</h2>
           <p className="text-gray-700 mb-4 text-center">Please answer the following questions about your experience and attention during the game.</p>
           <div className="flex flex-col gap-6 w-full">
@@ -403,8 +525,8 @@ const GameUI: React.FC<GameUIProps> = ({
   // Show game complete screen (legacy - keeping for compatibility)
   if (gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50">
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-center items-center" style={{ width: '960px', height: '540px' }}>
+      <div className="w-full h-full bg-gradient-to-br from-sleek-50 to-emerald-50 flex items-center justify-center" style={{ width: width, height: height }}>
+        <div className="bg-white rounded-2xl shadow-2xl flex flex-col justify-center items-center" style={{ maxWidth: '90%', maxHeight: '90%' }}>
           <h1 className="text-4xl font-extrabold text-sleek-700 mb-4 tracking-wide">
             Game Complete!
           </h1>
@@ -422,99 +544,115 @@ const GameUI: React.FC<GameUIProps> = ({
 
   // Show main game interface
   return (
-    <div className="flex items-center justify-center" style={{ width: '960px', height: '540px', background: '#fff', borderRadius: '1.25rem', boxShadow: '0 8px 32px rgba(60,60,120,0.10)' }}>
-      <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-between game-area" style={{ width: '960px', height: '540px', overflow: 'hidden', background: '#fff' }}>
-        {/* Simple Centered Header */}
-        <div className="w-full flex justify-between items-center pt-4 pb-2">
-          <div style={{ width: 80 }} /> {/* Spacer for left */}
-          <div className="flex gap-8 text-lg font-semibold">
-            <span className="text-gray-700">Round: <span className="text-sleek-600 font-bold">{gameState.currentRound}/3</span></span>
-            <span className="text-gray-700">Trial: <span className="text-emerald-600 font-bold">{gameState.currentTrial}/30</span></span>
-          </div>
-          <div className="text-right pr-4 min-w-[80px]">
-            <span className="text-gray-500 text-base">Timer:</span>
-            <span className="ml-2 text-xl font-mono text-gray-800">{elapsedTime.toFixed(1)}s</span>
-          </div>
-        </div>
-        {/* Main Content Row */}
-        <div className="flex flex-1 flex-row items-center justify-between px-8 py-4 gap-6">
-          {/* Left: Current Target (40%) */}
-          <div className="flex flex-col items-center justify-center" style={{ flexBasis: '40%', maxWidth: '40%' }}>
-            <h3 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-sleek-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Current Target
-            </h3>
-            <div className="mb-2">
-              <ShapeRenderer 
-                shape={gameState.currentTarget.shape} 
-                pattern={gameState.currentTarget.pattern} 
-                size="w-24 h-24" 
-              />
+    <div className="w-full h-full bg-white rounded-lg shadow-lg" style={{ width: width, height: height }}>
+      {/* Game Board Container - matches BounceBack structure */}
+      <div className="bg-gray-50 rounded-lg p-4 shadow-md relative" style={{
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        display: 'block',
+        margin: '0 auto'
+      }}>
+        
+        {/* Game Play Area - matches canvas area structure */}
+        <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+          
+          {/* Game Content */}
+          <div className="flex flex-col justify-between w-full h-full" style={{ overflow: 'hidden' }}>
+            {/* Simple Centered Header */}
+            <div className="w-full flex justify-between items-center pt-4 pb-2">
+              <div style={{ width: 80 }} /> {/* Spacer for left */}
+              <div className="flex gap-8 text-lg font-semibold">
+                <span className="text-gray-700">Round: <span className="text-sleek-600 font-bold">{gameState.currentRound}/3</span></span>
+                <span className="text-gray-700">Trial: <span className="text-emerald-600 font-bold">{gameState.currentTrial}/30</span></span>
+              </div>
+              <div className="text-right pr-4 min-w-[80px]">
+                <span className="text-gray-500 text-base">Timer:</span>
+                <span className="ml-2 text-xl font-mono text-gray-800">{elapsedTime.toFixed(1)}s</span>
+              </div>
             </div>
-            <p className="text-center text-gray-800 text-lg font-semibold">
-              {gameState.currentTarget.shape.charAt(0).toUpperCase() + gameState.currentTarget.shape.slice(1)}
-            </p>
-            <p className="text-center text-emerald-500 text-base font-medium">
-              {gameState.currentTarget.pattern.charAt(0).toUpperCase() + gameState.currentTarget.pattern.slice(1)}
-            </p>
-          </div>
-          {/* Right: Current Stimulus (60%) */}
-          <div className="flex flex-col items-center justify-center" style={{ flexBasis: '60%', maxWidth: '60%' }}>
-            <h3 className="text-xl font-bold text-gray-700 mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Current Stimulus
-            </h3>
-            <div className={`flex justify-center items-center mb-4 transition-all duration-300 ${gameState.showStimulus ? 'animate-pulse' : ''}`} style={{ minHeight: '200px' }}>
-              {gameState.showStimulus && gameState.currentStimulus ? (
-                <button
-                  onClick={onStimulusClick}
-                  className="cursor-pointer hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-                  title="Click if this matches the target"
-                >
+            {/* Main Content Row */}
+            <div className="flex flex-1 flex-row items-center justify-between px-8 py-4 gap-6">
+              {/* Left: Current Target (40%) */}
+              <div className="flex flex-col items-center justify-center" style={{ flexBasis: '40%', maxWidth: '40%' }}>
+                <h3 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-sleek-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Current Target
+                </h3>
+                <div className="mb-2">
                   <ShapeRenderer 
-                    shape={gameState.currentStimulus.shape} 
-                    pattern={gameState.currentStimulus.pattern} 
-                    size="w-40 h-40"
-                    rotation={stimulusRotation}
+                    shape={gameState.currentTarget.shape} 
+                    pattern={gameState.currentTarget.pattern} 
+                    size="w-24 h-24" 
                   />
-                </button>
-              ) : (
-                <div className="w-40 h-40 border-4 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 rounded-xl text-2xl text-gray-400 font-semibold">
-                  Waiting...
                 </div>
-              )}
+                <p className="text-center text-gray-800 text-lg font-semibold">
+                  {gameState.currentTarget.shape.charAt(0).toUpperCase() + gameState.currentTarget.shape.slice(1)}
+                </p>
+                <p className="text-center text-emerald-500 text-base font-medium">
+                  {gameState.currentTarget.pattern.charAt(0).toUpperCase() + gameState.currentTarget.pattern.slice(1)}
+                </p>
+              </div>
+              {/* Right: Current Stimulus (60%) */}
+              <div className="flex flex-col items-center justify-center" style={{ flexBasis: '60%', maxWidth: '60%' }}>
+                <h3 className="text-xl font-bold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Current Stimulus
+                </h3>
+                <div className={`flex justify-center items-center mb-4 transition-all duration-300 ${gameState.showStimulus ? 'animate-pulse' : ''}`} style={{ minHeight: '200px' }}>
+                  {gameState.showStimulus && gameState.currentStimulus ? (
+                    <button
+                      onClick={onStimulusClick}
+                      className="cursor-pointer hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
+                      title="Click if this matches the target"
+                    >
+                      <ShapeRenderer 
+                        shape={gameState.currentStimulus.shape} 
+                        pattern={gameState.currentStimulus.pattern} 
+                        size="w-40 h-40"
+                        rotation={stimulusRotation}
+                      />
+                    </button>
+                  ) : (
+                    <div className="w-40 h-40 border-4 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 rounded-xl text-2xl text-gray-400 font-semibold">
+                      Waiting...
+                    </div>
+                  )}
+                </div>
+                {gameState.currentStimulus && (
+                  <p className="text-xl text-gray-700 font-bold mb-2 tracking-wide">
+                    {gameState.currentStimulus.shape.charAt(0).toUpperCase() + gameState.currentStimulus.shape.slice(1)} + {gameState.currentStimulus.pattern.charAt(0).toUpperCase() + gameState.currentStimulus.pattern.slice(1)}
+                  </p>
+                )}
+              </div>
             </div>
-            {gameState.currentStimulus && (
-              <p className="text-xl text-gray-700 font-bold mb-2 tracking-wide">
-                {gameState.currentStimulus.shape.charAt(0).toUpperCase() + gameState.currentStimulus.shape.slice(1)} + {gameState.currentStimulus.pattern.charAt(0).toUpperCase() + gameState.currentStimulus.pattern.slice(1)}
-              </p>
-            )}
-          </div>
-        </div>
-        {/* Add the instruction tile just above the progress bar */}
-        <div className="w-full flex justify-center items-center pb-2">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg px-0 py-3 shadow text-center w-full">
-            <span className="text-base text-gray-700 font-medium">
-              {getInRoundInstruction(gameState.currentRound)}
-            </span>
-          </div>
-        </div>
-        {/* Progress Bar (bottom) */}
-        <div className="px-8 pb-6">
-          <div className="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Round Progress</span>
-            <span>{gameState.currentTrial}/30</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-            <div
-                              className="bg-gradient-to-r from-sleek-500 to-emerald-500 h-3 rounded-full transition-all duration-300"
-              style={{ width: `${(gameState.currentTrial / 30) * 100}%` }}
-            />
+            {/* Add the instruction tile just above the progress bar */}
+            <div className="w-full flex justify-center items-center pb-2">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-0 py-3 shadow text-center w-full">
+                <span className="text-base text-gray-700 font-medium">
+                  {getInRoundInstruction(gameState.currentRound)}
+                </span>
+              </div>
+            </div>
+            {/* Progress Bar (bottom) */}
+            <div className="px-8 pb-6">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Round Progress</span>
+                <span>{gameState.currentTrial}/30</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                <div
+                  className="bg-gradient-to-r from-sleek-500 to-emerald-500 h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${(gameState.currentTrial / 30) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

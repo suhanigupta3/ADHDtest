@@ -6,12 +6,9 @@ import LevelTransition from './LevelTransition';
 import { 
   CANVAS_WIDTH, 
   CANVAS_HEIGHT, 
-  PADDLE_WIDTH, 
   PADDLE_HEIGHT, 
   PADDLE_Y_OFFSET, 
   BALL_RADIUS,
-  BRICK_WIDTH,
-  BRICK_HEIGHT,
   PADDLE_COLOR,
   BG_COLOR,
   BALL_COLOR
@@ -453,7 +450,7 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
     lives,
     gameStarted,
     setGameStarted,
-    gameOver,
+
     gameWon,
     currentLevel,
     currentLevelData,
@@ -575,21 +572,7 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
   // Get current paddle width
   const currentPaddleWidth = getPaddleWidth(currentLevel);
   
-  // Create particles when brick is destroyed
-  const createBrickParticles = useCallback((x: number, y: number, color: string) => {
-    const newParticles: Array<{x: number, y: number, vx: number, vy: number, life: number, color: string}> = [];
-    for (let i = 0; i < 8; i++) {
-      newParticles.push({
-        x: x + Math.random() * 80,
-        y: y + Math.random() * 25,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4,
-        life: 60,
-        color: color
-      });
-    }
-    setParticles(prev => [...prev, ...newParticles]);
-  }, []);
+
 
   // Render game on canvas
   useEffect(() => {

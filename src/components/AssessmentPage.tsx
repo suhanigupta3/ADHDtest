@@ -483,7 +483,7 @@ const AssessmentPage: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.5,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     },
     hover: {
@@ -491,7 +491,7 @@ const AssessmentPage: React.FC = () => {
       y: -5,
       transition: {
         duration: 0.3,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -593,7 +593,7 @@ const AssessmentPage: React.FC = () => {
               <motion.div
                 className="w-8 h-8 bg-gradient-to-r from-sleek-500 to-emerald-500 rounded-full flex items-center justify-center mr-4"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" as const }}
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -793,7 +793,7 @@ const AssessmentPage: React.FC = () => {
               <div className="card-dark p-8 text-center">
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" as const }}
                   className="mb-4"
                 >
                   <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-sleek-500 rounded-full flex items-center justify-center mx-auto">
@@ -865,7 +865,7 @@ const AssessmentPage: React.FC = () => {
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
                     animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" as const }}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </motion.svg>

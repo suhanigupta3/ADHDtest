@@ -21,7 +21,7 @@ const WelcomePage: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -251,7 +251,7 @@ const WelcomePage: React.FC = () => {
             duration: 8,
             repeat: Infinity,
             delay: element.delay,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }}
         >
           <element.icon />
@@ -269,7 +269,7 @@ const WelcomePage: React.FC = () => {
           transition={{
             duration: 6,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }}
         />
         <motion.div 
@@ -281,7 +281,7 @@ const WelcomePage: React.FC = () => {
           transition={{
             duration: 8,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: "easeInOut" as const,
             delay: 2
           }}
         />
@@ -294,7 +294,7 @@ const WelcomePage: React.FC = () => {
           transition={{
             duration: 10,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: "easeInOut" as const,
             delay: 4
           }}
         />
@@ -313,12 +313,12 @@ const WelcomePage: React.FC = () => {
             <motion.div 
               className="absolute w-32 h-32 border-2 border-emerald-600 rounded-full"
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" as const }}
             />
             <motion.div 
               className="absolute w-40 h-40 border border-emerald-600 rounded-full"
               animate={{ rotate: -360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" as const }}
             />
             
             <div className="w-24 h-24 relative z-10">

@@ -41,6 +41,8 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
             onGameComplete();
           }
         }}
+        width={width}
+        height={height}
       />
     );
   }
@@ -57,6 +59,8 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
         }}
         onCancel={onCancel}
         onError={onError}
+        width={width}
+        height={height}
       />
     );
   }

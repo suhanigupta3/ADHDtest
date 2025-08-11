@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ResourcesPage: React.FC = () => {
   const [currentMood, setCurrentMood] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [showMoodMessage, setShowMoodMessage] = useState(false);
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
@@ -252,14 +251,9 @@ const ResourcesPage: React.FC = () => {
 
   const handleMoodSelect = (mood: typeof moods[0]) => {
     setCurrentMood(mood.name);
-    setShowMoodMessage(true);
-    setTimeout(() => setShowMoodMessage(false), 3000);
   };
 
-  const getMoodColor = (moodName: string) => {
-    const mood = moods.find(m => m.name === moodName);
-    return mood ? mood.color : 'emerald';
-  };
+
 
   const getSectionGreenShade = (index: number) => {
     const shades = [

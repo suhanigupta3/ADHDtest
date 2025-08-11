@@ -188,7 +188,7 @@ const AboutADHDPage: React.FC = () => {
       scale: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 300,
         damping: 30
       }
@@ -210,7 +210,7 @@ const AboutADHDPage: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -222,7 +222,7 @@ const AboutADHDPage: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.5,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     },
     hover: {
@@ -230,7 +230,7 @@ const AboutADHDPage: React.FC = () => {
       y: -5,
       transition: {
         duration: 0.3,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -287,7 +287,7 @@ const AboutADHDPage: React.FC = () => {
             <motion.h1 
               className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 breathe tracking-tight"
               animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" as const }}
             >
               What is ADHD?
             </motion.h1>
@@ -531,7 +531,7 @@ const AboutADHDPage: React.FC = () => {
                     className="relative h-80 cursor-pointer"
                     style={{ perspective: '1000px' }}
                     whileHover={{ scale: 1.02, y: -5 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    transition={{ duration: 0.3, ease: "easeOut" as const }}
                     onClick={() => handleCardFlip(type.id)}
                   >
                     {/* Flip Card Container */}
@@ -666,7 +666,7 @@ const AboutADHDPage: React.FC = () => {
                   <motion.div 
                     className="w-12 h-12 bg-gradient-to-r from-sleek-500 to-emerald-500 rounded-full flex items-center justify-center mr-4"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" as const }}
                   >
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

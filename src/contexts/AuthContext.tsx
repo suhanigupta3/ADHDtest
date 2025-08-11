@@ -30,7 +30,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+
 
   const signup = async (email: string, password: string, displayName: string) => {
     try {
@@ -44,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(result.user);
     } catch (error) {
       console.error("Signup error:", error);
-      setError(error as Error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(result.user);
     } catch (error) {
       console.error("Login error:", error);
-      setError(error as Error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(result.user);
     } catch (error) {
       console.error("Google sign-in error:", error);
-      setError(error as Error);
     } finally {
       setLoading(false);
     }

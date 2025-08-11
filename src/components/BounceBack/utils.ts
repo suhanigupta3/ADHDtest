@@ -1,5 +1,5 @@
 import { Brick, Ball, Level } from './types';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, PADDLE_HEIGHT, BALL_RADIUS, BRICK_WIDTH, BRICK_HEIGHT, BRICK_PADDING, BRICK_OFFSET_TOP, BRICK_OFFSET_LEFT, BRICK_COLORS } from './constants';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, PADDLE_HEIGHT, BALL_RADIUS, BRICK_PADDING, BRICK_OFFSET_TOP, BRICK_COLORS, BRICK_HEIGHT } from './constants';
 
 // Collision detection utilities
 export const checkCollision = (ballX: number, ballY: number, brick: Brick): boolean => {
@@ -62,7 +62,7 @@ export const lineIntersectsRect = (line: { x1: number; y1: number; x2: number; y
 };
 
 export const linesIntersect = (line1: { x1: number; y1: number; x2: number; y2: number }, line2: { x1: number; y1: number; x2: number; y2: number }): boolean => {
-  const { x1: x1, y1: y1, x2: x2, y2: y2 } = line1;
+  const { x1, y1, x2, y2 } = line1;
   const { x1: x3, y1: y3, x2: x4, y2: y4 } = line2;
   
   const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);

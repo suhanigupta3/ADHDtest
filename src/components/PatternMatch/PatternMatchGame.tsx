@@ -68,7 +68,7 @@ const PatternMatchGame: React.FC<PatternMatchGameProps> = ({
 
   return (
     <div 
-      className={`rounded-lg border border-gray-200 shadow-lg bg-white flex flex-col justify-between game-area ${gameState.isFlickering ? 'animate-pulse' : ''}`}
+      className={`w-full h-full ${gameState.isFlickering ? 'animate-pulse' : ''}`}
       style={{ width, height }}
       onClick={handleScreenClick}
     >
@@ -87,6 +87,8 @@ const PatternMatchGame: React.FC<PatternMatchGameProps> = ({
         showSelfReport={showSelfReport}
         selfReportSubmitted={selfReportSubmitted}
         onSelfReportSubmit={handleSelfReportSubmit}
+        width={width}
+        height={height}
       />
     </div>
   );
