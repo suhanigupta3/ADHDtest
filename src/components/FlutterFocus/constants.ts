@@ -1,4 +1,4 @@
-import { FlutterFocusLevel, Question } from './types';
+import { FlutterFocusLevel, Question, DebrisSpeed, DebrisRotationSpeed, DebrisSize, DebrisConfig, ShootingStar, ShootingStarSpeed, ShootingStarLength } from './types';
 
 // Canvas and game dimensions - following BounceBack pattern
 export const CANVAS_WIDTH = 960;
@@ -135,4 +135,100 @@ export const OBSTACLE_SPEED_MAX = 6;
 // Scoring constants
 export const POINTS_PER_OBSTACLE_AVOIDED = 10;
 export const POINTS_PER_SECOND_SURVIVED = 1;
-export const BONUS_POINTS_PER_LIFE_REMAINING = 50; 
+export const BONUS_POINTS_PER_LIFE_REMAINING = 50;
+
+// Debris system constants
+export const DEBRIS_SPAWN_INTERVAL_MIN = 600; // 0.6 seconds
+export const DEBRIS_SPAWN_INTERVAL_MAX = 1500; // 1.5 seconds
+export const DEBRIS_MAX_ON_SCREEN = 15; // Maximum debris pieces on screen
+
+// Debris speed values (pixels per frame)
+export const DEBRIS_SPEEDS: Record<DebrisSpeed, number> = {
+  slow: 1.0,
+  medium: 2.5,
+  fast: 4.0,
+  very_fast: 6.0
+};
+
+// Debris rotation speeds (degrees per frame)
+export const DEBRIS_ROTATION_SPEEDS: Record<DebrisRotationSpeed, number> = {
+  none: 0.0,
+  slow: 0.5,
+  medium: 1.5,
+  fast: 3.0
+};
+
+// Debris configurations with different behaviors - using actual dimensions
+export const DEBRIS_CONFIGS: DebrisConfig[] = [
+  // Background debris (no collision, visual only) - using b1-b8 sprites
+  { type: 'b1', size: 30, speed: 'slow', rotationSpeed: 'slow', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 8 },
+  { type: 'b2', size: 40, speed: 'medium', rotationSpeed: 'medium', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 7 },
+  { type: 'b3', size: 50, speed: 'fast', rotationSpeed: 'fast', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 6 },
+  { type: 'b4', size: 35, speed: 'medium', rotationSpeed: 'slow', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 7 },
+  { type: 'b5', size: 45, speed: 'fast', rotationSpeed: 'medium', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 6 },
+  { type: 'b6', size: 60, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 5 },
+  { type: 'b7', size: 55, speed: 'medium', rotationSpeed: 'slow', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 5 },
+  { type: 'b8', size: 80, speed: 'slow', rotationSpeed: 'medium', hasCollision: false, collisionDamage: 0, zIndex: 1, spawnWeight: 4 },
+  
+  // Collision debris (with collision, damages player) - using d1-d24 sprites
+  { type: 'd1', size: 25, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd2', size: 35, speed: 'medium', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd3', size: 45, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd4', size: 30, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd5', size: 40, speed: 'fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd6', size: 55, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd7', size: 50, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd8', size: 70, speed: 'slow', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
+  { type: 'd9', size: 20, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd10', size: 30, speed: 'very_fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
+  { type: 'd11', size: 40, speed: 'slow', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd12', size: 50, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd13', size: 65, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
+  { type: 'd14', size: 25, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd15', size: 35, speed: 'fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd16', size: 45, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
+  { type: 'd17', size: 55, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 3 },
+  { type: 'd18', size: 75, speed: 'medium', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
+  { type: 'd19', size: 20, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
+  { type: 'd20', size: 30, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd21', size: 40, speed: 'medium', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
+  { type: 'd22', size: 50, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd23', size: 70, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 3, zIndex: 2, spawnWeight: 2 },
+  { type: 'd24', size: 40, speed: 'medium', rotationSpeed: 'none', hasCollision: true, collisionDamage: 3, zIndex: 2, spawnWeight: 4 }
+];
+
+// Z-index layers
+export const Z_INDEX_LAYERS = {
+  BACKGROUND_STARS: 0,
+  SHOOTING_STARS: 1,
+  BACKGROUND_DEBRIS: 2,
+  GAME_OBJECTS: 3,
+  FOREGROUND_DEBRIS: 4,
+  UI: 5
+};
+
+// Shooting star system constants
+export const SHOOTING_STAR_SPAWN_INTERVAL_MIN = 3000; // 3 seconds
+export const SHOOTING_STAR_SPAWN_INTERVAL_MAX = 8000; // 8 seconds
+export const SHOOTING_STAR_MAX_ON_SCREEN = 2; // Maximum shooting stars on screen
+
+// Shooting star speed values (pixels per frame)
+export const SHOOTING_STAR_SPEEDS: Record<ShootingStarSpeed, number> = {
+  slow: 2.0,
+  medium: 4.0,
+  fast: 6.0
+};
+
+// Shooting star length values (pixels)
+export const SHOOTING_STAR_LENGTHS: Record<ShootingStarLength, number> = {
+  short: 40,
+  medium: 80,
+  long: 120
+};
+
+// Shooting star configurations
+export const SHOOTING_STAR_CONFIGS = [
+  { speed: 'slow' as ShootingStarSpeed, length: 'short' as ShootingStarLength, spawnWeight: 5 },
+  { speed: 'medium' as ShootingStarSpeed, length: 'medium' as ShootingStarLength, spawnWeight: 3 },
+  { speed: 'fast' as ShootingStarSpeed, length: 'long' as ShootingStarLength, spawnWeight: 2 }
+]; 

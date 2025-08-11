@@ -1,5 +1,22 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { FlutterFocusGameProps } from './types';
+import { FlutterFocusGameProps, Debris, DebrisConfig, DebrisType, DebrisSize, DebrisSpeed, DebrisRotationSpeed, ShootingStar } from './types';
+import { 
+  CANVAS_WIDTH, 
+  CANVAS_HEIGHT, 
+  DEBRIS_SPAWN_INTERVAL_MIN, 
+  DEBRIS_SPAWN_INTERVAL_MAX,
+  DEBRIS_MAX_ON_SCREEN,
+  DEBRIS_SPEEDS,
+  DEBRIS_ROTATION_SPEEDS,
+  DEBRIS_CONFIGS,
+  Z_INDEX_LAYERS,
+  SHOOTING_STAR_SPAWN_INTERVAL_MIN,
+  SHOOTING_STAR_SPAWN_INTERVAL_MAX,
+  SHOOTING_STAR_MAX_ON_SCREEN,
+  SHOOTING_STAR_CONFIGS,
+  SHOOTING_STAR_LENGTHS,
+  SHOOTING_STAR_SPEEDS
+} from './constants';
 
 /**
  * FlutterFocusGame - ADHD Assessment Game
@@ -36,6 +53,17 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const [collisionFlash, setCollisionFlash] = useState(false);
   const [collisionParticles, setCollisionParticles] = useState<Array<{x: number, y: number, vx: number, vy: number, life: number}>>([]);
   
+  // Background debris system
+  const [backgroundDebris, setBackgroundDebris] = useState<Debris[]>([]);
+  const [shootingStars, setShootingStars] = useState<ShootingStar[]>([]);
+  const debrisRef = useRef<Debris[]>([]); // Ref to track current debris state
+  const debrisSpawnTimerRef = useRef(0);
+  const shootingStarsRef = useRef<ShootingStar[]>([]); // Ref to track current shooting stars state
+  const shootingStarSpawnTimerRef = useRef(0);
+  const debrisSpeedRef = useRef(0);
+  const debrisRotationSpeedRef = useRef(0);
+  const debrisCountRef = useRef(0);
+  
   // Use ref to track current game state to avoid stale closures
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -57,6 +85,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   
   // Flying saucer sprite
   const alienSpriteRef = useRef<HTMLImageElement | null>(null);
+  
+  // Background debris sprites
+  const debrisSpritesRef = useRef<{ [key: string]: HTMLImageElement }>({});
   
   // Explosion sprite sequence
   const explosionSpritesRef = useRef<HTMLImageElement[]>([]);
@@ -128,6 +159,115 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }
   }, [logDebug]);
   
+  // Clear existing obstacles since we're using the new debris system
+  const clearExistingObstacles = useCallback(() => {
+    obstaclesRef.current = [];
+    console.log('[FlutterFocus] Cleared existing obstacles, using new debris system');
+  }, []);
+
+  // Spawn shooting star
+  const spawnShootingStar = useCallback(() => {
+    // Select random configuration based on weights
+    const totalWeight = SHOOTING_STAR_CONFIGS.reduce((sum, config) => sum + config.spawnWeight, 0);
+    let randomWeight = Math.random() * totalWeight;
+    let selectedConfig = SHOOTING_STAR_CONFIGS[0];
+    
+    for (const config of SHOOTING_STAR_CONFIGS) {
+      randomWeight -= config.spawnWeight;
+      if (randomWeight <= 0) {
+        selectedConfig = config;
+        break;
+      }
+    }
+    
+    // Random starting position (top-right area)
+    const startX = CANVAS_WIDTH + Math.random() * 100;
+    const startY = Math.random() * 200;
+    
+    // Random angle (diagonal from top-right to bottom-left)
+    const angle = Math.PI / 4 + (Math.random() - 0.5) * Math.PI / 6; // 45° ± 15°
+    
+    const newShootingStar: ShootingStar = {
+      id: `shooting-star-${Date.now()}-${Math.random()}`,
+      x: startX,
+      y: startY,
+      length: SHOOTING_STAR_LENGTHS[selectedConfig.length],
+      angle: angle,
+      speed: SHOOTING_STAR_SPEEDS[selectedConfig.speed],
+      life: 120, // Frames the shooting star will live
+      maxLife: 120,
+      alpha: 1.0,
+      isActive: true
+    };
+    
+    shootingStarsRef.current.push(newShootingStar);
+    setShootingStars([...shootingStarsRef.current]);
+    
+    console.log('[FlutterFocus] Shooting star spawned:', { 
+      type: `${selectedConfig.speed}-${selectedConfig.length}`,
+      x: Math.round(startX), 
+      y: Math.round(startY),
+      angle: Math.round(angle * 180 / Math.PI) + '°'
+    });
+  }, []);
+
+  // Update shooting stars
+  const updateShootingStars = useCallback((deltaTime: number) => {
+    shootingStarsRef.current = shootingStarsRef.current
+      .map(star => ({
+        ...star,
+        x: star.x - Math.cos(star.angle) * star.speed,
+        y: star.y + Math.sin(star.angle) * star.speed,
+        life: star.life - 1,
+        alpha: star.life / star.maxLife // Fade out over time
+      }))
+      .filter(star => star.life > 0 && star.x > -star.length && star.y < CANVAS_HEIGHT + star.length); // Remove dead or off-screen stars
+    
+    // Update React state to keep it in sync
+    setShootingStars([...shootingStarsRef.current]);
+    
+    // Debug: log shooting star count
+    if (shootingStarsRef.current.length > 0 && Math.random() < 0.05) { // Log 5% of the time
+      console.log('[FlutterFocus] Shooting stars update:', { 
+        count: shootingStarsRef.current.length,
+        firstStar: shootingStarsRef.current[0] ? { 
+          x: Math.round(shootingStarsRef.current[0].x), 
+          y: Math.round(shootingStarsRef.current[0].y),
+          life: shootingStarsRef.current[0].life 
+        } : null 
+      });
+    }
+  }, []);
+  
+  // Load background debris sprites
+  const loadBackgroundDebrisSprites = useCallback(() => {
+    const backgroundDebrisTypes = ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8'];
+    const collisionDebrisTypes = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'];
+    const allDebrisTypes = [...backgroundDebrisTypes, ...collisionDebrisTypes];
+    let loadedCount = 0;
+    
+    allDebrisTypes.forEach(type => {
+      const img = new Image();
+      img.onload = () => {
+        loadedCount++;
+        debrisSpritesRef.current[type] = img;
+        if (loadedCount === allDebrisTypes.length) {
+          logDebug('All debris sprites loaded successfully');
+        }
+      };
+      img.onerror = () => {
+        console.error(`[FlutterFocus] Failed to load debris sprite ${type}.png`);
+      };
+      
+      // Load from different folders based on type
+      if (backgroundDebrisTypes.includes(type)) {
+        img.src = `/FlutterFocus/debrisBackground/${type}.png`;
+      } else {
+        img.src = `/FlutterFocus/debris/${type}.png`;
+      }
+    });
+  }, [logDebug]);
+  
   // Update star positions
   const updateStars = useCallback((deltaTime: number) => {
     // Layer 2: Slow movement (right to left)
@@ -143,6 +283,94 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     });
   }, []);
   
+  // Spawn background debris
+  const spawnBackgroundDebris = useCallback(() => {
+    // Select random debris configuration based on weights
+    const totalWeight = DEBRIS_CONFIGS.reduce((sum, config) => sum + config.spawnWeight, 0);
+    let randomWeight = Math.random() * totalWeight;
+    let selectedConfig: DebrisConfig = DEBRIS_CONFIGS[0]; // Default fallback
+    
+    for (const config of DEBRIS_CONFIGS) {
+      randomWeight -= config.spawnWeight;
+      if (randomWeight <= 0) {
+        selectedConfig = config;
+        break;
+      }
+    }
+    
+    // Get size dimensions - size is now a direct number value
+    const width = selectedConfig.size;
+    const height = selectedConfig.size; // Assuming square debris for now
+    
+    // Random position (right side of screen, random Y)
+    const x = CANVAS_WIDTH + width;
+    const y = Math.random() * (CANVAS_HEIGHT - height);
+    
+    // Get speed and rotation values
+    const speed = DEBRIS_SPEEDS[selectedConfig.speed];
+    const rotationSpeed = DEBRIS_ROTATION_SPEEDS[selectedConfig.rotationSpeed];
+    const rotation = Math.random() * 360;
+    
+    const newDebris: Debris = {
+      id: `debris_${Date.now()}_${Math.random()}`,
+      x,
+      y,
+      width,
+      height,
+      type: selectedConfig.type,
+      speed: selectedConfig.speed,
+      rotationSpeed: selectedConfig.rotationSpeed,
+      rotation,
+      zIndex: selectedConfig.zIndex,
+      isActive: true,
+      hasCollision: selectedConfig.hasCollision,
+      collisionDamage: selectedConfig.collisionDamage
+    };
+    
+    console.log('[FlutterFocus] Spawning debris:', {
+      config: selectedConfig,
+      speed: speed,
+      rotationSpeed: rotationSpeed,
+      debris: newDebris,
+      spriteLoaded: !!debrisSpritesRef.current[selectedConfig.type]
+    });
+    
+    // Debug: log the current state before and after adding debris
+    console.log('[FlutterFocus] Before adding debris, count:', debrisRef.current.length);
+    debrisRef.current = [...debrisRef.current, newDebris]; // Update ref directly
+    setBackgroundDebris([...debrisRef.current]); // Update state for React
+    console.log('[FlutterFocus] After adding debris, new count:', debrisRef.current.length);
+  }, []);
+  
+  // Update background debris positions and rotation
+  const updateBackgroundDebris = useCallback((deltaTime: number) => {
+    debrisRef.current = debrisRef.current
+      .map(debris => ({
+        ...debris,
+        x: debris.x - DEBRIS_SPEEDS[debris.speed], // Move by speed per frame
+        rotation: debris.rotation + DEBRIS_ROTATION_SPEEDS[debris.rotationSpeed] // All debris rotate
+      }))
+      .filter(debris => debris.x > -debris.width && debris.isActive); // Remove debris that's off-screen or inactive
+    
+    // Update React state to keep it in sync
+    setBackgroundDebris([...debrisRef.current]);
+    
+    // Debug: log debris count and positions
+    if (debrisRef.current.length > 0 && Math.random() < 0.1) { // Log 10% of the time
+      console.log('[FlutterFocus] Debris update:', { 
+        count: debrisRef.current.length, 
+        active: debrisRef.current.filter(d => d.isActive).length,
+        firstDebris: debrisRef.current[0] ? { x: Math.round(debrisRef.current[0].x), y: Math.round(debrisRef.current[0].y) } : null 
+      });
+    }
+  }, []);
+  
+  // Clean up inactive debris to prevent memory issues
+  const cleanupInactiveDebris = useCallback(() => {
+    debrisRef.current = debrisRef.current.filter(debris => debris.isActive);
+    setBackgroundDebris([...debrisRef.current]); // Update state for React
+  }, []);
+  
   // Handle obstacle collision animation
   const handleObstacleCollision = useCallback((obstacle: any) => {
     // Start explosion immediately at collision point
@@ -154,24 +382,58 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     const alien = alienRef.current;
     const collisionX = Math.max(obstacle.x, alien.x) + Math.min(obstacle.width, alien.width) / 2;
     const collisionY = Math.max(obstacle.y, alien.y) + Math.min(obstacle.height, alien.height) / 2;
+    
     obstacle.explosionX = collisionX;
     obstacle.explosionY = collisionY;
     
-    // Add collision particles
+    // Add collision particles for obstacle
     const particleCount = 8;
-    const newParticles: Array<{x: number, y: number, vx: number, vy: number, life: number, maxLife: number, size: number}> = [];
+    const newParticles: Array<{x: number, y: number, vx: number, vy: number, life: number}> = [];
     for (let i = 0; i < particleCount; i++) {
       newParticles.push({
         x: collisionX,
         y: collisionY,
         vx: (Math.random() - 0.5) * 4,
         vy: (Math.random() - 0.5) * 4,
-        life: 30,
-        maxLife: 30,
-        size: Math.random() * 6 + 2
+        life: 30
       });
     }
     setCollisionParticles(prev => [...prev, ...newParticles]);
+  }, []);
+
+  // Handle debris collision animation
+  const handleDebrisCollision = useCallback((debris: Debris) => {
+    // Start explosion immediately at collision point
+    debris.collisionState = 'exploding';
+    debris.collisionTimer = 0;
+    debris.explosionFrame = 0;
+    
+    // Calculate exact collision point (center of overlap between alien and debris)
+    const alien = alienRef.current;
+    const collisionX = Math.max(debris.x, alien.x) + Math.min(debris.width, alien.width) / 2;
+    const collisionY = Math.max(debris.y, alien.y) + Math.min(debris.height, alien.height) / 2;
+    
+    debris.explosionX = collisionX;
+    debris.explosionY = collisionY;
+    
+    // Add collision particles for debris
+    const particleCount = 6;
+    const newParticles: Array<{x: number, y: number, vx: number, vy: number, life: number}> = [];
+    for (let i = 0; i < particleCount; i++) {
+      newParticles.push({
+        x: collisionX,
+        y: collisionY,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        life: 25
+      });
+    }
+    setCollisionParticles(prev => [...prev, ...newParticles]);
+    
+    console.log('[FlutterFocus] Debris collision animation started:', { 
+      debrisId: debris.id, 
+      collisionPoint: { x: Math.round(collisionX), y: Math.round(collisionY) } 
+    });
   }, []);
   
   // Update obstacle collision animations
@@ -185,11 +447,6 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
         const frameIndex = Math.floor(obstacle.collisionTimer / frameTime);
         obstacle.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
         
-        // Start fading obstacle when explosion reaches peak (e5.png = frame 4)
-        if (obstacle.explosionFrame >= 4) {
-          obstacle.alpha = Math.max(0, 1.0 - ((obstacle.collisionTimer - (4 * frameTime)) / (2 * frameTime)));
-        }
-        
         // Remove obstacle immediately when explosion reaches the last frame (e7.png)
         if (obstacle.explosionFrame >= 6) {
           obstacle.collisionState = 'removing';
@@ -199,6 +456,29 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Remove obstacles marked for removal
     obstaclesRef.current = obstaclesRef.current.filter(obstacle => obstacle.collisionState !== 'removing');
+  }, []);
+
+  // Update debris collision animations
+  const updateDebrisCollisionAnimations = useCallback((deltaTime: number) => {
+    debrisRef.current.forEach(debris => {
+      if (debris.collisionState === 'exploding' && debris.collisionTimer !== undefined) {
+        debris.collisionTimer += deltaTime;
+        
+        // Update explosion frame (7 frames over 400ms = ~57ms per frame)
+        const frameTime = 57;
+        const frameIndex = Math.floor(debris.collisionTimer / frameTime);
+        debris.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
+        
+        // Mark debris for removal when explosion reaches the last frame
+        if (debris.explosionFrame >= 6) {
+          debris.collisionState = 'removing';
+        }
+      }
+    });
+    
+    // Remove debris marked for removal
+    debrisRef.current = debrisRef.current.filter(debris => debris.collisionState !== 'removing');
+    setBackgroundDebris([...debrisRef.current]); // Update state for React
   }, []);
   
   // Main game loop
@@ -240,109 +520,236 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     // Update star positions for parallax effect
     updateStars(clampedDeltaTime);
     
+    // Update background debris positions and rotation
+    updateBackgroundDebris(clampedDeltaTime);
+    
+    // Update shooting stars
+    updateShootingStars(clampedDeltaTime);
+    
+    // Clean up inactive debris periodically
+    if (Math.random() < 0.01) { // 1% chance per frame to clean up
+      cleanupInactiveDebris();
+    }
+    
     // Update obstacle collision animations
     updateObstacleAnimations(clampedDeltaTime);
+
+    // Update debris collision animations
+    updateDebrisCollisionAnimations(clampedDeltaTime);
+
+    // Spawn obstacles (harder with each level) - DISABLED: Using new debris system instead
+    // obstacleSpawnTimerRef.current += clampedDeltaTime;
+    // const spawnInterval = Math.max(1000, 3000 - levelRef.current * 500); // Level 1: 2.5s, Level 2: 2s, Level 3: 1.5s
     
-    // Spawn obstacles (harder with each level)
-    obstacleSpawnTimerRef.current += clampedDeltaTime;
-    const spawnInterval = Math.max(1000, 3000 - levelRef.current * 500); // Level 1: 2.5s, Level 2: 2s, Level 3: 1.5s
+    // if (obstacleSpawnTimerRef.current > spawnInterval) {
+    //   obstacleSpawnTimerRef.current = 0;
+    //   const newObstacle = {
+    //     x: 960,
+    //     y: Math.random() * 400 + 50,
+    //     width: 60,
+    //     height: 60,
+    //     type: 'asteroid'
+    //   };
+    //   obstaclesRef.current.push(newObstacle);
+    //   // Only log every few spawns to reduce spam
+    //   if (obstaclesRef.current.length % 3 === 0) {
+    //     logDebug('Obstacle spawned', { 
+    //       count: obstaclesRef.current.length, 
+    //       level: levelRef.current,
+    //       spawnInterval,
+    //       deltaTime: clampedDeltaTime
+    //     });
+    //   }
+    // }
     
-    if (obstacleSpawnTimerRef.current > spawnInterval) {
-      obstacleSpawnTimerRef.current = 0;
-      const newObstacle = {
-        x: 960,
-        y: Math.random() * 400 + 50,
-        width: 60,
-        height: 60,
-        type: 'asteroid'
-      };
-      obstaclesRef.current.push(newObstacle);
+    // Spawn background debris (distractors)
+    debrisSpawnTimerRef.current += 1; // Increment frame counter instead of deltaTime
+    const debrisSpawnInterval = DEBRIS_SPAWN_INTERVAL_MIN / 16 + Math.random() * (DEBRIS_SPAWN_INTERVAL_MAX - DEBRIS_SPAWN_INTERVAL_MIN) / 16; // Convert to frames (assuming 60fps = 16ms per frame)
+    
+    console.log('[FlutterFocus] Debris spawn check:', { 
+      timer: debrisSpawnTimerRef.current, 
+      interval: debrisSpawnInterval,
+      shouldSpawn: debrisSpawnTimerRef.current > debrisSpawnInterval,
+      currentDebris: debrisRef.current.length,
+      maxDebris: DEBRIS_MAX_ON_SCREEN
+    });
+    
+    if (debrisSpawnTimerRef.current > debrisSpawnInterval && debrisRef.current.length < DEBRIS_MAX_ON_SCREEN) {
+      debrisSpawnTimerRef.current = 0;
+      
+      // Random count of debris to spawn (1-3 pieces), but respect max limit
+      const maxSpawnCount = Math.min(3, DEBRIS_MAX_ON_SCREEN - debrisRef.current.length);
+      const debrisCount = Math.floor(Math.random() * maxSpawnCount) + 1;
+      
+      console.log('[FlutterFocus] Attempting to spawn debris:', { 
+        count: debrisCount, 
+        timer: debrisSpawnTimerRef.current,
+        interval: debrisSpawnInterval,
+        currentDebris: debrisRef.current.length,
+        maxDebris: DEBRIS_MAX_ON_SCREEN
+      });
+      
+      for (let i = 0; i < debrisCount; i++) {
+        spawnBackgroundDebris();
+      }
+      
       // Only log every few spawns to reduce spam
-      if (obstaclesRef.current.length % 3 === 0) {
-        logDebug('Obstacle spawned', { 
-          count: obstaclesRef.current.length, 
-          level: levelRef.current,
-          spawnInterval,
+      if (debrisRef.current.length % 5 === 0) {
+        logDebug('Background debris spawned', { 
+          count: debrisCount, 
+          totalDebris: debrisRef.current.length,
+          spawnInterval: debrisSpawnInterval,
           deltaTime: clampedDeltaTime
         });
       }
     }
+
+    // Spawn shooting stars
+    shootingStarSpawnTimerRef.current += clampedDeltaTime;
+    const shootingStarSpawnInterval = SHOOTING_STAR_SPAWN_INTERVAL_MIN + Math.random() * (SHOOTING_STAR_SPAWN_INTERVAL_MAX - SHOOTING_STAR_SPAWN_INTERVAL_MIN);
     
-    // Move obstacles - make movement time-based for smoothness (faster with each level)
-    const baseObstacleSpeed = 0.15; // Base speed in pixels per millisecond
-    const obstacleSpeed = baseObstacleSpeed + (levelRef.current - 1) * 0.05; // Level 1: 0.15, Level 2: 0.20, Level 3: 0.25
-    const previousObstacles = [...obstaclesRef.current];
-    obstaclesRef.current = obstaclesRef.current
-      .map(obstacle => ({ 
-        ...obstacle, 
-        x: obstacle.x - (obstacleSpeed * clampedDeltaTime)
-      }))
-      .filter(obstacle => obstacle.x > -100);
-    
-    // Debug obstacle movement (less frequent to reduce log spam)
-    if (obstaclesRef.current.length > 0 && renderCountRef.current % 30 === 0) {
-      const movedCount = obstaclesRef.current.length;
-      const removedCount = previousObstacles.length - movedCount;
-      logDebug('Obstacles moved', { 
-        count: movedCount,
-        removed: removedCount,
-        firstObstacle: obstaclesRef.current[0] ? { 
-          x: Math.round(obstaclesRef.current[0].x), 
-          y: Math.round(obstaclesRef.current[0].y) 
-        } : null
-      });
+    if (shootingStarSpawnTimerRef.current > shootingStarSpawnInterval && shootingStarsRef.current.length < SHOOTING_STAR_MAX_ON_SCREEN) {
+      shootingStarSpawnTimerRef.current = 0;
+      spawnShootingStar();
+      
+      console.log('[FlutterFocus] Shooting star spawned in game loop');
     }
     
-    // Check collisions - immediate consequences for ADHD assessment
-    obstaclesRef.current.forEach((obstacle, index) => {
-      if (alien.x < obstacle.x + obstacle.width &&
-                          alien.x + alien.width > obstacle.x &&
-                alien.y < obstacle.y + obstacle.height &&
-                alien.y + alien.height > obstacle.y &&
-                obstacle.collisionState !== 'exploding') {
-        // Collision! Immediate life loss for accurate ADHD assessment
-        setLives(prev => {
-          const newLives = prev - 1;
-          if (newLives <= 0) {
-            // Clear all screen effects immediately
-            setCollisionFlash(false);
-            setCollisionParticles([]);
+    // Move obstacles - make movement time-based for smoothness (faster with each level) - DISABLED: Using new debris system instead
+    // const baseObstacleSpeed = 0.15; // Base speed in pixels per millisecond
+    // const obstacleSpeed = baseObstacleSpeed + (levelRef.current - 1) * 0.05; // Level 1: 0.15, Level 2: 0.20, Level 3: 0.25
+    // const previousObstacles = [...obstaclesRef.current];
+    // obstaclesRef.current = obstaclesRef.current
+    //   .map(obstacle => ({ 
+    //     ...obstacle, 
+    //     x: obstacle.x - (obstacleSpeed * clampedDeltaTime)
+    //   }))
+    //   .filter(obstacle => obstacle.x > -100);
+    
+    // Debug obstacle movement (less frequent to reduce log spam) - DISABLED
+    // if (obstaclesRef.current.length > 0 && renderCountRef.current % 30 === 0) {
+    //   const movedCount = obstaclesRef.current.length;
+    //   const removedCount = previousObstacles.length - movedCount;
+    //   logDebug('Obstacles moved', { 
+    //     count: movedCount,
+    //     removed: removedCount,
+    //     firstObstacle: obstaclesRef.current[0] ? { 
+    //       x: Math.round(obstaclesRef.current[0].x), 
+    //       y: Math.round(obstaclesRef.current[0].y) 
+    //     } : null
+    //   });
+    // }
+    
+    // Check collisions - immediate consequences for ADHD assessment - DISABLED: Using new debris system instead
+    // obstaclesRef.current.forEach((obstacle, index) => {
+    //   if (alien.x < obstacle.x + obstacle.width &&
+    //                       alien.x + alien.width > obstacle.x &&
+    //             alien.y < obstacle.y + obstacle.height &&
+    //             alien.y + alien.height > obstacle.y &&
+    //             obstacle.collisionState !== 'exploding') {
+    //     // Collision! Immediate life loss for accurate ADHD assessment
+    //     setLives(prev => {
+    //       const newLives = prev - 1;
+    //       if (newLives <= 0) {
+    //         // Clear all screen effects immediately
+    //         setCollisionFlash(false);
+    //         setCollisionParticles([]);
             
-            // Level complete - post results to Firebase
-            postLevelResults();
+    //         // Level complete - post results to Firebase
+    //         postLevelResults();
             
-            if (levelRef.current < 3) {
-              // Move to next level (user gets 3 more lives)
-              setGameState('levelComplete');
-            } else {
-              // All 3 levels complete - assessment ends, no more gameplay
-              postFinalResults();
-              setGameState('gameComplete');
+    //         if (levelRef.current < 3) {
+    //           // Move to next level (user gets 3 more lives)
+    //           setGameState('levelComplete');
+    //         } else {
+    //           // All 3 levels complete - assessment ends, no more gameplay
+    //           postFinalResults();
+    //           setGameState('gameComplete');
+    //         }
+    //       }
+    //       return newLives;
+    //     });
+        
+    //     // Start collision animation instead of removing immediately
+    //     handleObstacleCollision(obstacle);
+        
+    //     // Add collision animation effects (clean visual feedback for ADHD assessment)
+    //     setCollisionFlash(true); // Brief red flash - no screen movement
+        
+    //     // Create collision particles for alien
+    //     const particles: Array<{x: number, y: number, vx: number, vy: number, life: number}> = [];
+    //     for (let i = 0; i < 8; i++) {
+    //       particles.push({
+    //       x: alien.x + alien.width / 2,
+    //       y: alien.y + alien.height / 2,
+    //       vx: (Math.random() - 0.5) * 4,
+    //       vy: (Math.random() - 0.5) * 4,
+    //       life: 30 // Frames the particle will live
+    //       });
+    //     }
+    //     setCollisionParticles(particles);
+        
+    //     logDebug('Alien hit obstacle! Lives remaining:', lives - 1);
+    //   }
+    // });
+    
+    // Check collisions with debris that have collision enabled
+    debrisRef.current.forEach((debris) => {
+      if (debris.hasCollision && debris.isActive) {
+        if (alien.x < debris.x + debris.width &&
+            alien.x + alien.width > debris.x &&
+            alien.y < debris.y + debris.height &&
+            alien.y + alien.height > debris.y) {
+          
+          // Collision with debris! Life loss based on collision damage
+          const damage = debris.collisionDamage;
+          setLives(prev => {
+            const newLives = Math.max(0, prev - damage);
+            if (newLives <= 0) {
+              // Clear all screen effects immediately
+              setCollisionFlash(false);
+              setCollisionParticles([]);
+              
+              // Level complete - post results to Firebase
+              postLevelResults();
+              
+              if (levelRef.current < 3) {
+                // Move to next level (user gets 3 more lives)
+                setGameState('levelComplete');
+              } else {
+                // All 3 levels complete - assessment ends, no more gameplay
+                postFinalResults();
+                setGameState('gameComplete');
+              }
             }
-          }
-          return newLives;
-        });
-        
-        // Start collision animation instead of removing immediately
-        handleObstacleCollision(obstacle);
-        
-        // Add collision animation effects (clean visual feedback for ADHD assessment)
-        setCollisionFlash(true); // Brief red flash - no screen movement
-        
-        // Create collision particles for alien
-        const particles: Array<{x: number, y: number, vx: number, vy: number, life: number}> = [];
-        for (let i = 0; i < 8; i++) {
-          particles.push({
-            x: alien.x + alien.width / 2,
-            y: alien.y + alien.height / 2,
-            vx: (Math.random() - 0.5) * 4,
-            vy: (Math.random() - 0.5) * 4,
-            life: 30 // Frames the particle will live
+            return newLives;
           });
+          
+          // Add collision animation effects
+          setCollisionFlash(true);
+          
+          // Start collision animation for the debris
+          handleDebrisCollision(debris);
+          
+          // Create collision particles for alien
+          const particles: Array<{x: number, y: number, vx: number, vy: number, life: number}> = [];
+          for (let i = 0; i < 6; i++) {
+            particles.push({
+              x: alien.x + alien.width / 2,
+              y: alien.y + alien.height / 2,
+              vx: (Math.random() - 0.5) * 4,
+              vy: (Math.random() - 0.5) * 4,
+              life: 25
+            });
+          }
+          setCollisionParticles(particles);
+          
+          // Deactivate the debris after collision
+          debrisRef.current = debrisRef.current.map(d => d.id === debris.id ? { ...d, isActive: false } : d);
+          setBackgroundDebris([...debrisRef.current]); // Update state for React
+          
+          logDebug(`Alien hit debris! Damage: ${damage}, Lives remaining:`, Math.max(0, lives - damage));
         }
-        setCollisionParticles(particles);
-        
-        logDebug('Alien hit obstacle! Lives remaining:', lives - 1);
       }
     });
     
@@ -371,7 +778,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     if (currentGameState === 'playing') {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [lives, logDebug, collisionFlash, collisionParticles, updateStars, updateObstacleAnimations, handleObstacleCollision]);
+  }, [lives, logDebug, collisionFlash, collisionParticles, updateStars, updateBackgroundDebris, handleObstacleCollision, updateObstacleAnimations, cleanupInactiveDebris, updateDebrisCollisionAnimations]);
   
   // Start game loop
   const startGameLoop = useCallback(() => {
@@ -428,6 +835,17 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     obstaclesRef.current = [];
     obstacleSpawnTimerRef.current = 0;
     
+    // Clear any existing obstacles (using new debris system)
+    clearExistingObstacles();
+    
+    // Reset background debris
+    setBackgroundDebris([]);
+    debrisSpawnTimerRef.current = 0;
+    
+    // Reset shooting stars
+    setShootingStars([]);
+    shootingStarSpawnTimerRef.current = 0;
+
     // Initialize star layers for deep space effect
     initializeStars();
     
@@ -436,6 +854,24 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Load explosion sprites
     loadExplosionSprites();
+
+    // Load background debris sprites
+    loadBackgroundDebrisSprites();
+    
+    // Load shooting star sprites (no actual sprites needed, just initialize)
+    console.log('[FlutterFocus] Shooting star system initialized');
+    
+    // Spawn initial debris for testing
+    setTimeout(() => {
+      console.log('[FlutterFocus] Spawning initial test debris...');
+      console.log('[FlutterFocus] Available debris configs:', DEBRIS_CONFIGS);
+      console.log('[FlutterFocus] Debris sprites loaded:', Object.keys(debrisSpritesRef.current));
+      
+      for (let i = 0; i < 3; i++) {
+        spawnBackgroundDebris();
+      }
+      console.log('[FlutterFocus] Initial debris spawned, current count:', debrisRef.current.length);
+    }, 1000);
     
     // Reset animation states
     setCollisionFlash(false);
@@ -461,7 +897,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
         return prev - 1;
       });
     }, 1000);
-  }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites]);
+  }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites, loadBackgroundDebrisSprites, spawnBackgroundDebris, spawnShootingStar, clearExistingObstacles]);
   
   // Post level results to Firebase
   const postLevelResults = useCallback(async () => {
@@ -597,6 +1033,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     obstaclesRef.current = [];
     obstacleSpawnTimerRef.current = 0;
     
+    // Reset background debris for new level
+    setBackgroundDebris([]);
+    debrisSpawnTimerRef.current = 0;
+
     // Reinitialize star layers for new level
     initializeStars();
     
@@ -605,6 +1045,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Reload explosion sprites for new level
     loadExplosionSprites();
+
+    // Reload background debris sprites for new level
+    loadBackgroundDebrisSprites();
     
     // Reset animation states completely - ensure no lingering effects
     setCollisionFlash(false);
@@ -623,7 +1066,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     logDebug('Starting next level immediately');
     setGameState('playing');
     startGameLoop();
-  }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites]);
+  }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites, loadBackgroundDebrisSprites]);
   
   // Handle jump
   const handleJump = useCallback(() => {
@@ -716,6 +1159,42 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       ctx.fillRect(star.x, star.y, star.size, star.size);
     });
     
+    // Draw background debris behind the ship (z-index 1)
+    const debrisBehind = debrisRef.current.filter(debris => debris.zIndex === Z_INDEX_LAYERS.BACKGROUND_DEBRIS && debris.isActive);
+    const debrisGameObjects = debrisRef.current.filter(debris => debris.zIndex === Z_INDEX_LAYERS.GAME_OBJECTS && debris.isActive);
+    const debrisFront = debrisRef.current.filter(debris => debris.zIndex === Z_INDEX_LAYERS.FOREGROUND_DEBRIS && debris.isActive);
+    
+    console.log('[FlutterFocus] Rendering debris:', { 
+      total: debrisRef.current.length, 
+      active: debrisRef.current.filter(d => d.isActive).length,
+      behind: debrisBehind.length,
+      gameObjects: debrisGameObjects.length,
+      front: debrisFront.length,
+      spritesLoaded: Object.keys(debrisSpritesRef.current).length,
+      backgroundTypes: debrisBehind.map(d => d.type),
+      collisionTypes: debrisGameObjects.map(d => d.type)
+    });
+    
+    // Draw debris behind the ship (z-index 1)
+    debrisBehind.forEach(debris => {
+      const sprite = debrisSpritesRef.current[debris.type];
+      if (sprite) {
+        ctx.save();
+        ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
+        ctx.rotate(debris.rotation * Math.PI / 180);
+        ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
+        ctx.restore();
+      } else {
+        // Fallback: draw a colored rectangle if sprite not loaded
+        console.warn('[FlutterFocus] Missing sprite for debris type:', debris.type, 'using fallback');
+        ctx.save();
+        // All b1-b8 are background debris (blue)
+        ctx.fillStyle = '#4444FF';
+        ctx.fillRect(debris.x, debris.y, debris.width, debris.height);
+        ctx.restore();
+      }
+    });
+    
     // Draw alien
     const alien = alienRef.current;
     
@@ -752,14 +1231,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Draw obstacles with collision animations
     obstaclesRef.current.forEach((obstacle) => {
-      // Draw obstacle first (if not exploding, or if exploding but still visible)
-      if (obstacle.collisionState !== 'exploding' || (obstacle.alpha !== undefined && obstacle.alpha > 0)) {
+      // Draw obstacle only if not exploding (explosion sprites will be drawn on top)
+      if (obstacle.collisionState !== 'exploding') {
         ctx.save();
-        
-        // Apply alpha for fading out
-        if (obstacle.alpha !== undefined) {
-          ctx.globalAlpha = obstacle.alpha;
-        }
         
         // Draw obstacle with appropriate color
         if (obstacle.collisionState === 'hit') {
@@ -790,6 +1264,97 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       }
     });
     
+    // Draw game objects debris (z-index 2) - collision debris
+    debrisGameObjects.forEach(debris => {
+      const sprite = debrisSpritesRef.current[debris.type];
+      if (sprite) {
+        ctx.save();
+        ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
+        ctx.rotate(debris.rotation * Math.PI / 180);
+        ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
+        ctx.restore();
+      } else {
+        // Fallback: draw a colored rectangle if sprite not loaded
+        console.warn('[FlutterFocus] Missing sprite for debris type:', debris.type, 'using fallback');
+        ctx.save();
+        // Collision debris fallback (red with white border)
+        ctx.fillStyle = '#FF4444';
+        ctx.fillRect(debris.x, debris.y, debris.width, debris.height);
+        
+        // Add collision indicator
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(debris.x, debris.y, debris.width, debris.height);
+        ctx.restore();
+      }
+    });
+    
+    // Draw background debris in front of the ship (z-index 3)
+    debrisFront.forEach(debris => {
+      const sprite = debrisSpritesRef.current[debris.type];
+      if (sprite) {
+        ctx.save();
+        ctx.translate(debris.x + debris.width / 2, debris.y + debris.height / 2);
+        ctx.rotate(debris.rotation * Math.PI / 180);
+        ctx.drawImage(sprite, -debris.width / 2, -debris.height / 2, debris.width, debris.height);
+        ctx.restore();
+      } else {
+        // Fallback: draw a colored rectangle if sprite not loaded
+        console.warn('[FlutterFocus] Missing sprite for debris type:', debris.type, 'using fallback');
+        ctx.save();
+        // Color based on collision status and type
+        let color = '#4444FF'; // Default blue for background
+        if (debris.hasCollision) {
+          color = (debris.type === 'b5' || debris.type === 'b6') ? '#FF8800' : '#FF4444'; // Orange for rotating (b5, b6), red for static (b7, b8)
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(debris.x, debris.y, debris.width, debris.height);
+        
+        // Add collision indicator if debris has collision
+        if (debris.hasCollision) {
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(debris.x, debris.y, debris.width, debris.height);
+        }
+        ctx.restore();
+      }
+    });
+    
+    // Draw shooting stars
+    shootingStarsRef.current.forEach(star => {
+      ctx.save();
+      ctx.globalAlpha = star.alpha;
+      
+      // Draw shooting star trail (line with gradient)
+      const endX = star.x - Math.cos(star.angle) * star.length;
+      const endY = star.y + Math.sin(star.angle) * star.length;
+      
+      // Create gradient for the trail
+      const gradient = ctx.createLinearGradient(star.x, star.y, endX, endY);
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)'); // Bright at start
+      gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.6)'); // Medium brightness
+      gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.3)'); // Fading
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)'); // Transparent at end
+      
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      
+      // Draw the trail
+      ctx.beginPath();
+      ctx.moveTo(star.x, star.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      
+      // Draw bright head of the shooting star
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, 2, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      ctx.restore();
+    });
+    
     // Draw collision particles
     if (collisionParticles.length > 0) {
       ctx.fillStyle = '#FF6B6B';
@@ -807,12 +1372,21 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     ctx.fillText(`Level: ${level}`, 20, 40);
     
           // Collision flash effect applied
-  }, [gameState, level, logDebug, collisionFlash, collisionParticles]);
+  }, [gameState, level, logDebug, collisionFlash, collisionParticles, debrisRef]);
   
   // Monitor game state changes
   useEffect(() => {
     logDebug('Game state changed', { newState: gameState });
   }, [gameState, logDebug]);
+  
+  // Monitor debris state for debugging
+  useEffect(() => {
+    console.log('[FlutterFocus] Debris state changed:', {
+      count: debrisRef.current.length,
+      active: debrisRef.current.filter(d => d.isActive).length,
+      debris: debrisRef.current.map(d => ({ id: d.id, x: d.x, y: d.y, type: d.type, isActive: d.isActive }))
+    });
+  }, [debrisRef]);
   
   // Remove separate render interval - game loop will handle rendering
   // This eliminates conflicts between game loop and render loop

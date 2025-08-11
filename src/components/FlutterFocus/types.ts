@@ -170,3 +170,62 @@ export interface RoundMetrics {
   totalTrials?: number;
   roundDurationMs?: number;
 } 
+
+export interface Debris {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: DebrisType;
+  speed: DebrisSpeed;
+  rotationSpeed: DebrisRotationSpeed;
+  rotation: number;
+  zIndex: number;
+  isActive: boolean;
+  hasCollision: boolean;
+  collisionDamage: number;
+  // Collision animation properties
+  collisionState?: 'normal' | 'exploding' | 'removing';
+  collisionTimer?: number;
+  explosionFrame?: number;
+  explosionX?: number;
+  explosionY?: number;
+}
+
+export type DebrisType = 
+  | 'b1' | 'b2' | 'b3' | 'b4' | 'b5' | 'b6' | 'b7' | 'b8' // Background debris (no collision)
+  | 'd1' | 'd2' | 'd3' | 'd4' | 'd5' | 'd6' | 'd7' | 'd8' | 'd9' | 'd10' | 'd11' | 'd12' | 'd13' | 'd14' | 'd15' | 'd16' | 'd17' | 'd18' | 'd19' | 'd20' | 'd21' | 'd22' | 'd23' | 'd24'; // Collision debris
+
+export type DebrisSpeed = 'slow' | 'medium' | 'fast' | 'very_fast';
+
+export type DebrisRotationSpeed = 'none' | 'slow' | 'medium' | 'fast';
+
+export type DebrisSize = number; // Actual width/height in pixels
+
+export interface DebrisConfig {
+  type: DebrisType;
+  size: DebrisSize;
+  speed: DebrisSpeed;
+  rotationSpeed: DebrisRotationSpeed;
+  hasCollision: boolean;
+  collisionDamage: number;
+  zIndex: number;
+  spawnWeight: number; // Higher weight = more likely to spawn
+} 
+
+export interface ShootingStar {
+  id: string;
+  x: number;
+  y: number;
+  length: number;
+  angle: number;
+  speed: number;
+  life: number;
+  maxLife: number;
+  alpha: number;
+  isActive: boolean;
+}
+
+export type ShootingStarSpeed = 'slow' | 'medium' | 'fast';
+export type ShootingStarLength = 'short' | 'medium' | 'long'; 
