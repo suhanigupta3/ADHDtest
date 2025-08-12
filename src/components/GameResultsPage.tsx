@@ -209,44 +209,46 @@ const GameResultsPage: React.FC = () => {
             console.log('[GameResultsPage] ✅ FlutterFocus has both scores and selfReport, processing...');
             
             // For FlutterFocus, we only want to show the 3 main levels, not all individual rounds
-            // Create a simplified rounds array with just the 3 levels
+            // Create a simplified rounds array with just the 3 levels using real data
             const levelRounds: GameRound[] = [
               {
-                // Use existing GameRound properties that make sense for FlutterFocus
+                // Level 1 data
                 roundScore: flutterFocusData.finalResults?.levelScores?.[0] || 0,
-                timeToComplete: 0, // Duration for level 1
-                asteroidsHit: 3, // Lives lost for level 1
-                asteroidsAvoided: 0,
+                timeToComplete: flutterFocusData.level1Data?.duration || 0,
+                asteroidsHit: flutterFocusData.level1Data?.livesLost || 0,
+                asteroidsAvoided: flutterFocusData.level1Data?.debrisAvoided || 0,
                 aliensDefeated: 0,
                 questionsAnswered: 0,
                 questionsCorrect: 0,
-                reactionTime: 0,
+                reactionTime: flutterFocusData.level1Data?.reactionTime || 0,
                 focusBreaks: 0,
                 navigationErrors: 0,
                 optimalPathDeviation: 0
               },
               {
+                // Level 2 data
                 roundScore: flutterFocusData.finalResults?.levelScores?.[1] || 0,
-                timeToComplete: 0, // Duration for level 2
-                asteroidsHit: 3, // Lives lost for level 2
-                asteroidsAvoided: 0,
+                timeToComplete: flutterFocusData.level2Data?.duration || 0,
+                asteroidsHit: flutterFocusData.level2Data?.livesLost || 0,
+                asteroidsAvoided: flutterFocusData.level2Data?.debrisAvoided || 0,
                 aliensDefeated: 0,
                 questionsAnswered: 0,
                 questionsCorrect: 0,
-                reactionTime: 0,
+                reactionTime: flutterFocusData.level2Data?.reactionTime || 0,
                 focusBreaks: 0,
                 navigationErrors: 0,
                 optimalPathDeviation: 0
               },
               {
+                // Level 3 data
                 roundScore: flutterFocusData.finalResults?.levelScores?.[2] || 0,
-                timeToComplete: 0, // Duration for level 3
-                asteroidsHit: 3, // Lives lost for level 3
-                asteroidsAvoided: 0,
+                timeToComplete: flutterFocusData.level3Data?.duration || 0,
+                asteroidsHit: flutterFocusData.level3Data?.livesLost || 0,
+                asteroidsAvoided: flutterFocusData.level3Data?.debrisAvoided || 0,
                 aliensDefeated: 0,
                 questionsAnswered: 0,
                 questionsCorrect: 0,
-                reactionTime: 0,
+                reactionTime: flutterFocusData.level3Data?.reactionTime || 0,
                 focusBreaks: 0,
                 navigationErrors: 0,
                 optimalPathDeviation: 0
@@ -497,6 +499,13 @@ const GameResultsPage: React.FC = () => {
     console.log(`🔍 User results for ${gameName}:`, userResults?.[gameName]);
     console.log(`🔍 Game data for ${gameName}:`, (userResults?.[gameName] as any)?.gameData);
     
+    // Special logging for FlutterFocus to debug data structure
+    if (gameName === 'flutterFocus') {
+      console.log(`🔍 [FlutterFocus] Rounds data:`, rounds);
+      console.log(`🔍 [FlutterFocus] First round data:`, rounds[0]);
+      console.log(`🔍 [FlutterFocus] Round properties:`, rounds[0] ? Object.keys(rounds[0]) : 'No rounds');
+    }
+    
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
                            gameName === 'bounceBack' ? 'Bounce Back' : 
@@ -506,6 +515,7 @@ const GameResultsPage: React.FC = () => {
     const isBerryBlitz = gameName === 'berryBlitz';
     const isPatternMatch = gameName === 'patternMatch';
     const isBounceBack = gameName === 'bounceBack';
+    const isFlutterFocus = gameName === 'flutterFocus';
 
     // If no rounds data, show a message instead of hiding the entire section
     if (!rounds || rounds.length === 0) {
@@ -618,7 +628,9 @@ const GameResultsPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Round</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                  {isFlutterFocus ? 'Level' : 'Round'}
+                </th>
                 
                 {/* Berry Blitz specific columns */}
                 {isBerryBlitz && rounds[0]?.timeToTargetFruit !== undefined && (
@@ -661,13 +673,24 @@ const GameResultsPage: React.FC = () => {
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Lost</th>
                   </>
                 )}
+
+                {/* FlutterFocus specific columns */}
+                {isFlutterFocus && (
+                  <>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Lost</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Debris Avoided</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reaction Time</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {rounds.map((round, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Round {index + 1}
+                    {isFlutterFocus ? `Level ${index + 1}` : `Round ${index + 1}`}
                   </td>
                   
                   {/* Berry Blitz specific data */}
@@ -734,6 +757,21 @@ const GameResultsPage: React.FC = () => {
                       </>
                     );
                   })()}
+
+                  {/* FlutterFocus specific data */}
+                  {isFlutterFocus && (
+                    <>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.roundScore || '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {round.timeToComplete ? formatTimeToReadable(round.timeToComplete / 1000) : '-'}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.asteroidsHit || '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{round.asteroidsAvoided || '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {round.reactionTime ? `${round.reactionTime.toFixed(0)}ms` : '-'}
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -1359,7 +1397,8 @@ const GameResultsPage: React.FC = () => {
               >
                 {game === 'berryBlitz' ? 'Berry Blitz' : 
                  game === 'patternMatch' ? 'Signal Snap' : 
-                 game === 'bounceBack' ? 'Bounce Back' : game}
+                 game === 'bounceBack' ? 'Bounce Back' : 
+                 game === 'flutterFocus' ? 'Flutter Focus' : game}
               </button>
             ))}
           </div>
@@ -1395,7 +1434,8 @@ const GameResultsPage: React.FC = () => {
                       <h2 className="text-3xl font-bold text-forest-900 mb-2">
                         {selectedGame === 'berryBlitz' ? 'Berry Blitz' : 
                          selectedGame === 'patternMatch' ? 'Signal Snap' : 
-                         selectedGame === 'bounceBack' ? 'Bounce Back' : selectedGame} Results
+                         selectedGame === 'bounceBack' ? 'Bounce Back' : 
+                         selectedGame === 'flutterFocus' ? 'Flutter Focus' : selectedGame} Results
                       </h2>
                     </div>
 

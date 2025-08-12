@@ -15,10 +15,12 @@ import {
   SHOOTING_STAR_MAX_ON_SCREEN,
   SHOOTING_STAR_CONFIGS,
   SHOOTING_STAR_LENGTHS,
-  SHOOTING_STAR_SPEEDS
+  SHOOTING_STAR_SPEEDS,
+  QUESTIONS
 } from './constants';
 import { db } from '../../firebase/config';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import GameStateManager from './GameStateManager';
 
 /**
  * FlutterFocusGame - ADHD Assessment Game
@@ -46,7 +48,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const renderCountRef = useRef<number>(0);
   
   // Simple game state
-  const [gameState, setGameState] = useState<'instructions' | 'countdown' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete'>('instructions');
+  const [gameState, setGameState] = useState<'instructions' | 'countdown' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete' | 'selfReport'>('instructions');
   const [countdown, setCountdown] = useState(3);
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
@@ -54,6 +56,12 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   // Clean collision feedback - no screen shake for ADHD assessment accuracy
   const [collisionFlash, setCollisionFlash] = useState(false);
   const [collisionParticles, setCollisionParticles] = useState<Array<{x: number, y: number, vx: number, vy: number, life: number}>>([]);
+  
+  // Self-reporting questions state - following BounceBack pattern
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [questionResponses, setQuestionResponses] = useState<{ [key: string]: number }>({});
+  const [questionsCompleted, setQuestionsCompleted] = useState(false);
   
   // Background debris system
   const [backgroundDebris, setBackgroundDebris] = useState<Debris[]>([]);
@@ -590,9 +598,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     if (debrisSpawnTimerRef.current > debrisSpawnInterval && debrisRef.current.length < DEBRIS_MAX_ON_SCREEN) {
       debrisSpawnTimerRef.current = 0;
       
-      // Random count of debris to spawn (1-3 pieces), but respect max limit
-      const maxSpawnCount = Math.min(3, DEBRIS_MAX_ON_SCREEN - debrisRef.current.length);
-      const debrisCount = Math.floor(Math.random() * maxSpawnCount) + 1;
+      // Spawn only 1 piece of debris at a time for better playability
+      // This makes the game much more manageable and enjoyable
+      const debrisCount = 1;
       
       console.log('[FlutterFocus] Attempting to spawn debris:', { 
         count: debrisCount, 
@@ -731,10 +739,12 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
                 // Move to next level (user gets 3 more lives)
                 setGameState('levelComplete');
               } else {
-                // All 3 levels complete - assessment ends, no more gameplay
-                console.log('[FlutterFocus] All levels complete, calling postFinalResults');
-                postFinalResults();
-                setGameState('gameComplete');
+                // All 3 levels complete - show self-reporting questions
+                console.log('[FlutterFocus] All levels complete, showing self-reporting questions');
+                setGameState('selfReport');
+                setShowQuestions(true);
+                setCurrentQuestionIndex(0);
+                setQuestionResponses({});
               }
             }
             return newLives;
@@ -876,9 +886,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     // Load shooting star sprites (no actual sprites needed, just initialize)
     console.log('[FlutterFocus] Shooting star system initialized');
     
-    // Spawn initial debris for testing
+    // Spawn initial debris
     setTimeout(() => {
-      console.log('[FlutterFocus] Spawning initial test debris...');
+      console.log('[FlutterFocus] Spawning initial debris...');
       console.log('[FlutterFocus] Available debris configs:', DEBRIS_CONFIGS);
       console.log('[FlutterFocus] Debris sprites loaded:', Object.keys(debrisSpritesRef.current));
       
@@ -1209,7 +1219,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               impulsivity: 10 - impulseControl,
               executiveFunction: overallScore
             },
-            selfReportResponses: {} // No self-report in this game
+            selfReportResponses: { ...questionResponses } // Include self-report responses
           });
         } else {
           console.log('[FlutterFocus] No onGameComplete callback provided');
@@ -1234,6 +1244,79 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }
   }, [userId, score, logDebug, onGameComplete, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
   
+  // Handle question responses - following BounceBack pattern
+  const handleQuestionResponse = useCallback((response: number) => {
+    const currentQuestion = QUESTIONS[currentQuestionIndex];
+    setQuestionResponses(prev => {
+      const newResponses = {
+        ...prev,
+        [currentQuestion.id]: response
+      };
+      return newResponses;
+    });
+  }, [currentQuestionIndex]);
+
+  // Handle questions completion - following BounceBack pattern
+  const handleQuestionsComplete = useCallback(async () => {
+    // All questions completed - finish the game
+    const finalGameData = {
+      startTime: gameStartTimeRef.current,
+      endTime: Date.now(),
+      totalPlayTime: Date.now() - gameStartTimeRef.current,
+      gameCompleted: true,
+      finalScore: score,
+      livesLost: 9, // 3 lives lost per level * 3 levels
+      totalCrashes: 9, // Same as crashes
+      totalObstaclesAvoided: 0, // TODO: Track this
+      totalObstaclesHit: 9, // Same as crashes
+      currentLevel: 3,
+      levelsCompleted: 3,
+      levelScores: [score], // TODO: Track individual level scores
+      levelCompletionTimes: [0], // TODO: Track individual level times
+      adhdScores: {
+        inattention: calculateSustainedAttention(),
+        hyperactivity: 10 - calculateImpulseControl(), // Inverse relationship
+        impulsivity: 10 - calculateImpulseControl(),
+        executiveFunction: calculateOverallScore()
+      },
+      selfReportResponses: { ...questionResponses } // Include self-report responses
+    };
+    
+    // Save to Firebase
+    try {
+      if (userId) {
+        await addDoc(collection(db, 'flutterFocusResults'), {
+          ...finalGameData,
+          userId,
+          timestamp: new Date().toISOString(),
+          finalRound: true
+        });
+        
+        console.log('[FlutterFocus] Game data with self-report saved to Firebase successfully');
+        logDebug('Final results with self-report successfully posted to Firebase');
+      }
+    } catch (error) {
+      console.error('[FlutterFocus] Failed to save game data with self-report to Firebase:', error);
+      if (onError) {
+        onError(`Failed to save game data: ${error}`);
+      }
+    }
+    
+    // Close questions modal
+    setShowQuestions(false);
+    setCurrentQuestionIndex(0);
+    setQuestionResponses({});
+    setQuestionsCompleted(false);
+    
+    // Call the completion callback
+    if (onGameComplete) {
+      onGameComplete(finalGameData);
+    }
+    
+    // Set game to complete state
+    setGameState('gameComplete');
+  }, [score, questionResponses, userId, logDebug, onGameComplete, onError, calculateSustainedAttention, calculateImpulseControl, calculateOverallScore]);
+  
   // Start next level
   const startNextLevel = useCallback(() => {
     const nextLevel = levelRef.current + 1;
@@ -1241,10 +1324,12 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Safety check - prevent going beyond Level 3
     if (nextLevel > 3) {
-      console.log('[FlutterFocus] Cannot start level beyond 3, calling postFinalResults');
-      logDebug('Cannot start level beyond 3, ending assessment');
-      postFinalResults();
-      setGameState('gameComplete');
+      console.log('[FlutterFocus] Cannot start level beyond 3, showing self-reporting questions');
+      logDebug('Cannot start level beyond 3, showing self-reporting questions');
+      setGameState('selfReport');
+      setShowQuestions(true);
+      setCurrentQuestionIndex(0);
+      setQuestionResponses({});
       return;
     }
     
@@ -1689,208 +1774,31 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     };
   }, []);
   
-  // TEST MODE: Auto-complete game after 10 seconds for debugging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const testTimer = setTimeout(() => {
-        if (gameState === 'playing' && userId) {
-          console.log('[FlutterFocus] TEST MODE: Auto-completing game after 10 seconds');
-          postFinalResults();
-          setGameState('gameComplete');
-        }
-      }, 10000); // 10 seconds
-      
-      return () => clearTimeout(testTimer);
-    }
-  }, [gameState, userId, postFinalResults]);
-  
-  // Render instructions
-  if (gameState === 'instructions') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px]">
-        <h1 className="text-3xl font-bold mb-6 text-green-400">Flutter Focus: The Galaxy Hopper</h1>
-        
-        <div className="max-w-2xl text-center space-y-4 mb-8">
-          <p className="text-lg">
-            Navigate your alien through space, dodging obstacles across 3 challenging levels.
-          </p>
-          
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 text-green-400">Controls</h2>
-            <p>Click or tap to make your alien jump and avoid obstacles!</p>
-            <div className="text-sm text-gray-400 mt-2 space-y-1">
-              <p>• SPACEBAR or CLICK to jump</p>
-              <p>• ↑ ARROW UP to move up</p>
-              <p>• ↓ ARROW DOWN to move down</p>
-            </div>
-          </div>          
-        </div>
-        
-        <div className="flex space-x-4">
-          <button
-            onClick={startGame}
-            className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
-          >
-            Start Game
-          </button>
-          {onCancel && (
-            <button
-              onClick={onCancel}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
-            >
-              Cancel
-            </button>
-          )}
-          {/* TEST BUTTON: Manually complete game for debugging */}
-          {process.env.NODE_ENV === 'development' && userId && (
-            <button
-              onClick={() => {
-                console.log('[FlutterFocus] TEST: Manually triggering game completion');
-                postFinalResults();
-                setGameState('gameComplete');
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
-            >
-              TEST: Complete Game
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-  
-  // Render countdown
-  if (gameState === 'countdown') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px]">
-        <div className="text-8xl font-bold text-green-400 mb-4">
-          {countdown}
-        </div>
-        <p className="text-xl text-gray-300">Get ready to navigate the galaxy!</p>
-      </div>
-    );
-  }
-  
-  // Render level complete
-  if (gameState === 'levelComplete') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px] text-center">
-        <h1 className="text-3xl font-bold mb-6 text-green-400">Level {levelRef.current} Complete!</h1>
-        
-        {/* Debug info */}
-        <div className="text-sm text-gray-400 mb-4">
-          Debug: levelRef.current = {levelRef.current}, level state = {level}
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-lg mb-6 text-center">
-          <h2 className="text-xl font-semibold mb-4 text-green-400">Level Results</h2>
-          <div className="text-4xl font-bold text-green-400 mb-2">{score}</div>
-          <p className="text-gray-300">Level Score</p>
-        </div>
-        
-        <button
-          onClick={startNextLevel}
-          className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
-        >
-          Play Level {levelRef.current + 1}
-        </button>
-      </div>
-    );
-  }
-  
-  // Render game complete (all 3 levels finished) - END OF ASSESSMENT
-  // No more gameplay options - assessment is complete
-  if (gameState === 'gameComplete') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px] text-center">
-        <h1 className="text-3xl font-bold mb-6 text-green-400">🎉 Assessment Complete! 🎉</h1>
-        
-        <div className="bg-gray-800 p-6 rounded-lg mb-6 text-center">
-          <h2 className="text-xl font-semibold mb-4 text-green-400">Assessment Results</h2>
-          <div className="text-4xl font-bold text-green-400 mb-2">{score}</div>
-          <p className="text-gray-300">Final Performance Score</p>
-          <p className="text-gray-300">All 3 assessment levels completed!</p>
-          <p className="text-gray-300 mt-2">ADHD evaluation finished!</p>
-        </div>
-        
-        <div className="text-center text-gray-400 text-sm">
-          <p>Thank you for completing the ADHD assessment.</p>
-          <p>Your results have been recorded and analyzed.</p>
-          <p className="mt-2 text-blue-400">Assessment Complete - No Further Action Required</p>
-          <p className="mt-1 text-xs">This concludes your evaluation session.</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Render game over
-  if (gameState === 'gameOver') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px]">
-        <h1 className="text-3xl font-bold mb-6 text-red-400">Game Over!</h1>
-        
-        <div className="bg-gray-800 p-6 rounded-lg mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-green-400">Final Score</h2>
-          <div className="text-4xl font-bold text-green-400 mb-2">{score}</div>
-        </div>
-        
-        <button
-          onClick={() => setGameState('instructions')}
-          className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
-        >
-          Play Again
-        </button>
-      </div>
-    );
-  }
-  
-  // Render game canvas
+  // Render game based on state using GameStateManager
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        width={960}
-        height={540}
-        onClick={handleJump}
-        className="cursor-pointer border border-gray-600"
-        style={{ width, height }}
-      />
-      
-      {/* Game overlay */}
-      <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-4 rounded-lg">
-        <div className="text-center space-y-2">
-          <div>
-            <div className="text-2xl font-bold text-green-400">{score}</div>
-            <div className="text-sm">Score</div>
-          </div>
-          <div>
-            <div className="text-lg font-bold text-red-400">{lives}</div>
-            <div className="text-sm">Lives</div>
-          </div>
-          
-          {/* TEST BUTTON: Manually complete level for debugging */}
-          {process.env.NODE_ENV === 'development' && userId && (
-            <div className="mt-2">
-              <button
-                onClick={() => {
-                  console.log('[FlutterFocus] TEST: Manually triggering level completion');
-                  postLevelResults();
-                  if (levelRef.current < 3) {
-                    setGameState('levelComplete');
-                  } else {
-                    postFinalResults();
-                    setGameState('gameComplete');
-                  }
-                }}
-                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors"
-              >
-                TEST: Complete Level
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <GameStateManager
+      gameState={gameState}
+      showQuestions={showQuestions}
+      currentQuestionIndex={currentQuestionIndex}
+      questionResponses={questionResponses}
+      level={level}
+      score={score}
+      lives={lives}
+      questions={QUESTIONS}
+      width={width}
+      height={height}
+      canvasRef={canvasRef}
+      onStartGame={startGame}
+      onCancel={onCancel || (() => {})}
+      onNextLevel={startNextLevel}
+      onPlayAgain={() => setGameState('instructions')}
+      onJump={handleJump}
+      onQuestionResponse={handleQuestionResponse}
+      onQuestionsComplete={handleQuestionsComplete}
+      onPreviousQuestion={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+      onNextQuestion={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+      userId={userId}
+    />
   );
 };
 

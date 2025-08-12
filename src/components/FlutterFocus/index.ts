@@ -1,5 +1,13 @@
 export { default as FlutterFocusGame } from './FlutterFocusGame';
 export { default as FlutterFocusDebugPage } from './FlutterFocusDebugPage';
+export { default as GameInstructions } from './GameInstructions';
+export { default as Countdown } from './Countdown';
+export { default as LevelComplete } from './LevelComplete';
+export { default as GameComplete } from './GameComplete';
+export { default as GameOver } from './GameOver';
+export { default as SelfReportQuestions } from './SelfReportQuestions';
+export { default as GameCanvas } from './GameCanvas';
+export { default as GameStateManager } from './GameStateManager';
 export * from './types';
 export * from './constants';
 export * from './utils'; 
