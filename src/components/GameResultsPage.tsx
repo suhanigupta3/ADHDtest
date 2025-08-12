@@ -59,6 +59,8 @@ const GameResultsPage: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<string>('combined');
   const [showInterpretationGuide, setShowInterpretationGuide] = useState(false);
 
+  console.log('[GameResultsPage] Component rendered with currentUser:', currentUser?.uid);
+
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
     <div className="bg-forest-300/80 border border-forest-700 rounded-lg p-6 mb-8">
@@ -80,9 +82,17 @@ const GameResultsPage: React.FC = () => {
   );
 
   useEffect(() => {
-    const fetchUserResults = async () => {
-      if (!currentUser) return;
+    console.log('[GameResultsPage] useEffect triggered, currentUser:', currentUser?.uid);
+    
+    if (!currentUser) {
+      console.log('[GameResultsPage] No current user, setting error');
+      setError('Please log in to view your results.');
+      setLoading(false);
+      return;
+    }
 
+    const fetchUserResults = async () => {
+      console.log('[GameResultsPage] fetchUserResults started for user:', currentUser.uid);
       try {
         setLoading(true);
         console.log('🔍 Fetching real user data for:', currentUser.uid);
@@ -189,22 +199,78 @@ const GameResultsPage: React.FC = () => {
         const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'FlutterFocus'));
         if (flutterFocusDoc.exists()) {
           const flutterFocusData = flutterFocusDoc.data();
+          console.log('[GameResultsPage] FlutterFocus document exists, data:', flutterFocusData);
+          console.log('[GameResultsPage] FlutterFocus scores:', flutterFocusData.scores);
+          console.log('[GameResultsPage] FlutterFocus selfReport:', flutterFocusData.selfReport);
+          console.log('[GameResultsPage] FlutterFocus has scores:', !!flutterFocusData.scores);
+          console.log('[GameResultsPage] FlutterFocus has selfReport:', !!flutterFocusData.selfReport);
+          
           if (flutterFocusData.scores && flutterFocusData.selfReport) {
-            let rounds: GameRound[] = [];
-            try {
-              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'FlutterFocus', 'rounds'));
-              rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
-            } catch (roundsError) {
-              if (flutterFocusData.rounds && Array.isArray(flutterFocusData.rounds)) {
-                rounds = flutterFocusData.rounds;
+            console.log('[GameResultsPage] ✅ FlutterFocus has both scores and selfReport, processing...');
+            
+            // For FlutterFocus, we only want to show the 3 main levels, not all individual rounds
+            // Create a simplified rounds array with just the 3 levels
+            const levelRounds: GameRound[] = [
+              {
+                // Use existing GameRound properties that make sense for FlutterFocus
+                roundScore: flutterFocusData.finalResults?.levelScores?.[0] || 0,
+                timeToComplete: 0, // Duration for level 1
+                asteroidsHit: 3, // Lives lost for level 1
+                asteroidsAvoided: 0,
+                aliensDefeated: 0,
+                questionsAnswered: 0,
+                questionsCorrect: 0,
+                reactionTime: 0,
+                focusBreaks: 0,
+                navigationErrors: 0,
+                optimalPathDeviation: 0
+              },
+              {
+                roundScore: flutterFocusData.finalResults?.levelScores?.[1] || 0,
+                timeToComplete: 0, // Duration for level 2
+                asteroidsHit: 3, // Lives lost for level 2
+                asteroidsAvoided: 0,
+                aliensDefeated: 0,
+                questionsAnswered: 0,
+                questionsCorrect: 0,
+                reactionTime: 0,
+                focusBreaks: 0,
+                navigationErrors: 0,
+                optimalPathDeviation: 0
+              },
+              {
+                roundScore: flutterFocusData.finalResults?.levelScores?.[2] || 0,
+                timeToComplete: 0, // Duration for level 3
+                asteroidsHit: 3, // Lives lost for level 3
+                asteroidsAvoided: 0,
+                aliensDefeated: 0,
+                questionsAnswered: 0,
+                questionsCorrect: 0,
+                reactionTime: 0,
+                focusBreaks: 0,
+                navigationErrors: 0,
+                optimalPathDeviation: 0
               }
-            }
+            ];
+            
+            console.log('[GameResultsPage] Created simplified level rounds for FlutterFocus:', levelRounds);
+            
             results.flutterFocus = {
               scores: flutterFocusData.scores,
               selfReport: flutterFocusData.selfReport,
-              rounds: rounds
+              rounds: levelRounds
             };
+            console.log('[GameResultsPage] ✅ FlutterFocus results added to results object');
+          } else {
+            console.log('[GameResultsPage] ❌ FlutterFocus missing required data:', {
+              hasScores: !!flutterFocusData.scores,
+              hasSelfReport: !!flutterFocusData.selfReport,
+              scores: flutterFocusData.scores,
+              selfReport: flutterFocusData.selfReport
+            });
           }
+        } else {
+          console.log('[GameResultsPage] No FlutterFocus document found in Firebase');
         }
         console.log('[GameResultsPage] Final results object:', results);
         console.log('[GameResultsPage] Results keys:', Object.keys(results));

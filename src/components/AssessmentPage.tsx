@@ -362,37 +362,59 @@ const AssessmentPage: React.FC = () => {
     if (!currentUser) return;
 
     try {
-      const docRef = doc(db, 'gameProgress', currentUser.uid);
-      const docSnap = await getDoc(docRef);
+      console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
       
-      if (docSnap.exists()) {
-        const data = docSnap.data() as GameProgress;
-        
-        // Validate and sanitize the data
-        const validatedProgress: GameProgress = {
-          game1Completed: Boolean(data.game1Completed),
-          game2Completed: Boolean(data.game2Completed),
-          game3Completed: Boolean(data.game3Completed),
-          game4Completed: Boolean(data.game4Completed),
-          allGamesCompleted: Boolean(data.allGamesCompleted),
-          completedAt: data.completedAt
-        };
-        
-        setGameProgress(validatedProgress);
-      } else {
-        // Initialize progress document
-        const initialProgress: GameProgress = {
-          game1Completed: false,
-          game2Completed: false,
-          game3Completed: false,
-          game4Completed: false,
-          allGamesCompleted: false
-        };
-        await setDoc(docRef, initialProgress);
-        setGameProgress(initialProgress);
+      // Check each game's completion status from their actual documents
+      const gameIds = ['BerryBlitz', 'PatternMatch', 'BounceBack', 'FlutterFocus'];
+      const gameProgressMap = {
+        game1Completed: false, // BerryBlitz
+        game2Completed: false, // PatternMatch  
+        game3Completed: false, // BounceBack
+        game4Completed: false, // FlutterFocus
+        allGamesCompleted: false,
+        completedAt: null
+      };
+
+      // Check each game document for completion
+      for (let i = 0; i < gameIds.length; i++) {
+        const gameId = gameIds[i];
+        try {
+          const gameDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', gameId));
+          if (gameDoc.exists()) {
+            const gameData = gameDoc.data();
+            console.log(`[AssessmentPage] Game ${gameId} data:`, gameData);
+            console.log(`[AssessmentPage] Game ${gameId} has scores:`, !!gameData.scores);
+            console.log(`[AssessmentPage] Game ${gameId} has selfReport:`, !!gameData.selfReport);
+            console.log(`[AssessmentPage] Game ${gameId} scores:`, gameData.scores);
+            console.log(`[AssessmentPage] Game ${gameId} selfReport:`, gameData.selfReport);
+            
+            // Check if game has scores (indicates completion)
+            const isCompleted = !!(gameData.scores && gameData.selfReport);
+            console.log(`[AssessmentPage] Game ${gameId} completed:`, isCompleted);
+            
+            if (i === 0) gameProgressMap.game1Completed = isCompleted;
+            else if (i === 1) gameProgressMap.game2Completed = isCompleted;
+            else if (i === 2) gameProgressMap.game3Completed = isCompleted;
+            else if (i === 3) gameProgressMap.game4Completed = isCompleted;
+          } else {
+            console.log(`[AssessmentPage] Game ${gameId} document not found`);
+          }
+        } catch (error) {
+          console.error(`[AssessmentPage] Error checking game ${gameId}:`, error);
+        }
       }
+
+      // Calculate overall completion
+      gameProgressMap.allGamesCompleted = gameProgressMap.game1Completed && 
+                                        gameProgressMap.game2Completed && 
+                                        gameProgressMap.game3Completed && 
+                                        gameProgressMap.game4Completed;
+
+      console.log('[AssessmentPage] Final game progress:', gameProgressMap);
+      setGameProgress(gameProgressMap);
+      
     } catch (error) {
-      console.error('Error loading game progress:', error);
+      console.error('[AssessmentPage] Error loading game progress:', error);
       // Set default state on error
       setGameProgress({
         game1Completed: false,
@@ -439,7 +461,11 @@ const AssessmentPage: React.FC = () => {
   const markGameCompleted = () => {
     // Mark game as completed and directly close modal
     setGameCompleted(true);
-    loadGameProgress();
+    console.log('[AssessmentPage] Game completed, refreshing progress...');
+    // Refresh game progress to reflect the newly completed game
+    setTimeout(() => {
+      loadGameProgress();
+    }, 100); // Small delay to ensure Firebase write is complete
     // Directly close modal without showing intermediate screen
     closeGameModal();
   };

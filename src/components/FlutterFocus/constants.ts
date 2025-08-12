@@ -176,25 +176,24 @@ export const DEBRIS_CONFIGS: DebrisConfig[] = [
   { type: 'd3', size: 45, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
   { type: 'd4', size: 30, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
   { type: 'd5', size: 40, speed: 'fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
-  { type: 'd6', size: 55, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
+  { type: 'd6', size: 55, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
   { type: 'd7', size: 50, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
   { type: 'd8', size: 70, speed: 'slow', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
   { type: 'd9', size: 20, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
-  { type: 'd10', size: 30, speed: 'very_fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
+  { type: 'd10', size: 30, speed: 'fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
   { type: 'd11', size: 40, speed: 'slow', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
   { type: 'd12', size: 50, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
   { type: 'd13', size: 65, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
   { type: 'd14', size: 25, speed: 'medium', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
   { type: 'd15', size: 35, speed: 'fast', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
-  { type: 'd16', size: 45, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
+  { type: 'd16', size: 45, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 2 },
   { type: 'd17', size: 55, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 2, zIndex: 2, spawnWeight: 3 },
   { type: 'd18', size: 75, speed: 'medium', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
-  { type: 'd19', size: 20, speed: 'very_fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
+  { type: 'd19', size: 20, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 2 },
   { type: 'd20', size: 30, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
   { type: 'd21', size: 40, speed: 'medium', rotationSpeed: 'medium', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 4 },
   { type: 'd22', size: 50, speed: 'fast', rotationSpeed: 'fast', hasCollision: true, collisionDamage: 1, zIndex: 2, spawnWeight: 3 },
-  { type: 'd23', size: 70, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 3, zIndex: 2, spawnWeight: 2 },
-  { type: 'd24', size: 40, speed: 'medium', rotationSpeed: 'none', hasCollision: true, collisionDamage: 3, zIndex: 2, spawnWeight: 4 }
+  { type: 'd23', size: 70, speed: 'slow', rotationSpeed: 'slow', hasCollision: true, collisionDamage: 3, zIndex: 2, spawnWeight: 2 }
 ];
 
 // Z-index layers
@@ -231,4 +230,17 @@ export const SHOOTING_STAR_CONFIGS = [
   { speed: 'slow' as ShootingStarSpeed, length: 'short' as ShootingStarLength, spawnWeight: 5 },
   { speed: 'medium' as ShootingStarSpeed, length: 'medium' as ShootingStarLength, spawnWeight: 3 },
   { speed: 'fast' as ShootingStarSpeed, length: 'long' as ShootingStarLength, spawnWeight: 2 }
-]; 
+];
+
+// Saturn's Asteroid Belt constants (Level 3)
+export const SATURN_BELT_DEBRIS_MAX = 25; // Much more debris for dense asteroid field
+export const SATURN_BELT_SPAWN_INTERVAL_MIN = 200; // Faster spawning (0.2 seconds)
+export const SATURN_BELT_SPAWN_INTERVAL_MAX = 600; // Faster spawning (0.6 seconds)
+export const SATURN_BELT_DEBRIS_SPEED_MULTIPLIER = 1.5; // Debris moves faster
+export const SATURN_BELT_ROTATION_MULTIPLIER = 1.8; // Debris rotates faster
+
+// Saturn's Ring particles (Level 3 background effect)
+export const SATURN_RING_PARTICLES_MAX = 50;
+export const SATURN_RING_SPAWN_INTERVAL = 100; // Spawn every 100ms
+export const SATURN_RING_PARTICLE_LIFE = 3000; // 3 seconds
+export const SATURN_RING_PARTICLE_SPEED = 0.8; // Pixels per frame 

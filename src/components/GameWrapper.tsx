@@ -35,6 +35,7 @@ const GameWrapper: React.FC<GameWrapperProps> = ({
   if (isFlutterFocus) {
     return (
       <FlutterFocusGame 
+        userId={userId}
         onGameComplete={(gameData) => {
           console.log('Flutter Focus Game completed with data:', gameData);
           if (onGameComplete) {

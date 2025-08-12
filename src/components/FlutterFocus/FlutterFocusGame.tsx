@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { FlutterFocusGameProps, Debris, DebrisConfig, DebrisType, DebrisSize, DebrisSpeed, DebrisRotationSpeed, ShootingStar } from './types';
+import { FlutterFocusGameProps, Debris, DebrisConfig, DebrisType, DebrisSize, DebrisSpeed, DebrisRotationSpeed, ShootingStar, SaturnRingParticle } from './types';
 import { 
   CANVAS_WIDTH, 
   CANVAS_HEIGHT, 
@@ -17,6 +17,8 @@ import {
   SHOOTING_STAR_LENGTHS,
   SHOOTING_STAR_SPEEDS
 } from './constants';
+import { db } from '../../firebase/config';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 
 /**
  * FlutterFocusGame - ADHD Assessment Game
@@ -70,7 +72,11 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   
   // Use ref to track current level to avoid stale closures
   const levelRef = useRef(level);
-  levelRef.current = level;
+  
+  // Sync levelRef with level state
+  useEffect(() => {
+    levelRef.current = level;
+  }, [level]);
   
   // Game objects
   const alienRef = useRef({ x: 100, y: 270, width: 120, height: 92, velocityY: 0 });
@@ -242,7 +248,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   // Load background debris sprites
   const loadBackgroundDebrisSprites = useCallback(() => {
     const backgroundDebrisTypes = ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8'];
-    const collisionDebrisTypes = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'];
+    const collisionDebrisTypes = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23'];
     const allDebrisTypes = [...backgroundDebrisTypes, ...collisionDebrisTypes];
     let loadedCount = 0;
     
@@ -449,8 +455,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (obstacle.collisionState === 'exploding' && obstacle.collisionTimer !== undefined) {
         obstacle.collisionTimer += deltaTime;
         
-        // Update explosion frame (7 frames over 400ms = ~57ms per frame)
-        const frameTime = 57;
+        // Much slower explosion animation - 7 frames over 1400ms = ~200ms per frame
+        const frameTime = 200; // Much slower than before (was 114ms)
         const frameIndex = Math.floor(obstacle.collisionTimer / frameTime);
         obstacle.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
         
@@ -471,13 +477,13 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (debris.collisionState === 'exploding' && debris.collisionTimer !== undefined) {
         debris.collisionTimer += deltaTime;
         
-        // Update explosion frame (7 frames over 400ms = ~57ms per frame)
-        const frameTime = 57;
+        // Much slower explosion animation - 7 frames over 1400ms = ~200ms per frame
+        const frameTime = 200; // Much slower than before (was 114ms)
         const frameIndex = Math.floor(debris.collisionTimer / frameTime);
         debris.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
         
-        // Mark debris for removal when explosion reaches the last frame
-        if (debris.explosionFrame >= 6) {
+        // Mark debris for removal after e5.png (frame 4) for better visual flow
+        if (debris.explosionFrame >= 4) {
           debris.collisionState = 'removing';
         }
       }
@@ -718,6 +724,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               setCollisionParticles([]);
               
               // Level complete - post results to Firebase
+              console.log('[FlutterFocus] Level complete, calling postLevelResults');
               postLevelResults();
               
               if (levelRef.current < 3) {
@@ -725,6 +732,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
                 setGameState('levelComplete');
               } else {
                 // All 3 levels complete - assessment ends, no more gameplay
+                console.log('[FlutterFocus] All levels complete, calling postFinalResults');
                 postFinalResults();
                 setGameState('gameComplete');
               }
@@ -906,32 +914,6 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }, 1000);
   }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites, loadBackgroundDebrisSprites, spawnBackgroundDebris, spawnShootingStar, clearExistingObstacles]);
   
-  // Post level results to Firebase
-  const postLevelResults = useCallback(async () => {
-    try {
-      const levelData = {
-        userId,
-        level,
-        score,
-        lives: 0, // Level ended with 0 lives
-        timestamp: new Date().toISOString(),
-        gameType: 'FlutterFocus',
-        levelStats: {
-          finalScore: score,
-          livesLost: 3, // All 3 lives were lost
-          levelDuration: Date.now() - gameStartTimeRef.current
-        }
-      };
-      
-      logDebug('Posting level results to Firebase:', levelData);
-      // TODO: Implement Firebase posting logic here
-      // await firebase.postLevelResults(levelData);
-      
-    } catch (error) {
-      console.error('[FlutterFocus] Error posting level results:', error);
-    }
-  }, [userId, score]);
-  
   // Calculate ADHD assessment scores
   const calculateReactionTime = useCallback(() => {
     // Simple reaction time calculation based on score and level
@@ -959,57 +941,298 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     return Math.round((reactionTime + impulseControl + sustainedAttention) / 3);
   }, [calculateReactionTime, calculateImpulseControl, calculateSustainedAttention]);
   
-  // Post final ADHD scores to Firebase
-  const postFinalResults = useCallback(async () => {
+  // Post level results to Firebase
+  const postLevelResults = useCallback(async () => {
     try {
-      const finalData = {
+      console.log('[FlutterFocus] postLevelResults called with userId:', userId);
+      
+      // Calculate ADHD scores for this level
+      const reactionTime = calculateReactionTime();
+      const impulseControl = calculateImpulseControl();
+      const sustainedAttention = calculateSustainedAttention();
+      const overallScore = calculateOverallScore();
+      
+      console.log('[FlutterFocus] Calculated scores:', {
+        reactionTime,
+        impulseControl,
+        sustainedAttention,
+        overallScore
+      });
+      
+      const levelData = {
         userId,
-        gameType: 'FlutterFocus',
-        totalScore: score,
-        levelsCompleted: 3,
+        level: levelRef.current,
+        score,
+        lives: 0, // Level ended with 0 lives
         timestamp: new Date().toISOString(),
-        adhdScores: {
-          reactionTime: calculateReactionTime(),
-          impulseControl: calculateImpulseControl(),
-          sustainedAttention: calculateSustainedAttention(),
-          overallScore: calculateOverallScore()
+        gameType: 'FlutterFocus',
+        levelStats: {
+          finalScore: score,
+          livesLost: 3, // All 3 lives were lost
+          levelDuration: Date.now() - gameStartTimeRef.current,
+          debrisHit: 0, // TODO: Track debris collisions
+          debrisAvoided: 0, // TODO: Track debris avoided
+          shootingStarsSeen: 0, // TODO: Track shooting stars
+          accuracy: 0, // TODO: Calculate accuracy
+          reactionTime: 0 // TODO: Track reaction time
         }
       };
       
-      logDebug('Posting final ADHD scores to Firebase:', finalData);
-      // TODO: Implement Firebase posting logic here
-      // await firebase.postFinalResults(finalData);
+      logDebug('Posting level results to Firebase:', levelData);
+      console.log('[FlutterFocus] About to save to Firebase:', levelData);
       
-      // Notify parent component that ADHD assessment is complete
-      if (onGameComplete) {
-        onGameComplete({
+      // Post to main game document with the structure expected by GameResultsPage
+      if (userId) {
+        const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
+        console.log('[FlutterFocus] Saving to document:', docRef.path);
+        
+        await setDoc(docRef, {
+          [`level${levelRef.current}Data`]: levelData,
+          lastUpdated: new Date().toISOString(),
+          currentLevel: levelRef.current,
+          gameCompleted: false,
+          
+          // Save the scores structure expected by GameResultsPage
+          scores: {
+            inattention: sustainedAttention,
+            hyperactivity: 10 - impulseControl, // Inverse relationship
+            impulsivity: 10 - impulseControl,
+            executive_function: overallScore,
+            adhd_composite: overallScore
+          },
+          
+          // Save empty selfReport since this game doesn't have self-report questions
+          selfReport: {},
+          
+          // Save rounds data
+          rounds: [
+            {
+              roundNumber: levelRef.current,
+              roundType: 'level',
+              startTime: gameStartTimeRef.current,
+              endTime: Date.now(),
+              duration: Date.now() - gameStartTimeRef.current,
+              score: score,
+              livesLost: 3,
+              debrisHit: 0,
+              debrisAvoided: 0,
+              shootingStarsSeen: 0,
+              accuracy: 0,
+              reactionTime: reactionTime,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        }, { merge: true });
+        
+        console.log('[FlutterFocus] Successfully saved level data to main document');
+        
+        // Post to rounds subcollection for detailed tracking
+        const roundsRef = collection(db, 'users', userId, 'games', 'FlutterFocus', 'rounds');
+        console.log('[FlutterFocus] Adding to rounds collection:', roundsRef.path);
+        
+        await addDoc(roundsRef, {
+          roundNumber: levelRef.current,
+          roundType: 'level',
           startTime: gameStartTimeRef.current,
           endTime: Date.now(),
-          totalPlayTime: Date.now() - gameStartTimeRef.current,
-          gameCompleted: true,
-          finalScore: score,
-          livesLost: 9, // 3 lives lost per level * 3 levels
-          totalCrashes: 9, // Same as lives lost
-          totalObstaclesAvoided: 0, // TODO: Track this
-          totalObstaclesHit: 9, // Same as crashes
-          currentLevel: 3,
-          levelsCompleted: 3,
-          levelScores: [score], // TODO: Track individual level scores
-          levelCompletionTimes: [0], // TODO: Track individual level times
-          adhdScores: {
-            inattention: calculateSustainedAttention(),
-            hyperactivity: calculateImpulseControl(),
-            impulsivity: calculateReactionTime(),
-            executiveFunction: calculateOverallScore()
-          },
-          selfReportResponses: {} // No self-report in this game
+          duration: Date.now() - gameStartTimeRef.current,
+          score: score,
+          livesLost: 3,
+          debrisHit: 0,
+          debrisAvoided: 0,
+          shootingStarsSeen: 0,
+          accuracy: 0,
+          reactionTime: 0,
+          timestamp: new Date().toISOString()
         });
+        
+        console.log('[FlutterFocus] Successfully added to rounds collection');
+        logDebug('Level results successfully posted to Firebase');
+      } else {
+        console.warn('[FlutterFocus] No userId provided, not posting level results');
+        logDebug('No userId provided, not posting level results');
+      }
+      
+    } catch (error) {
+      console.error('[FlutterFocus] Error posting level results:', error);
+      if (error instanceof Error) {
+        console.error('[FlutterFocus] Error details:', {
+          message: error.message,
+          code: (error as any).code,
+          stack: error.stack
+        });
+      } else {
+        console.error('[FlutterFocus] Unknown error type:', error);
+      }
+    }
+  }, [userId, score, logDebug, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
+  
+  // Post final results to Firebase
+  const postFinalResults = useCallback(async () => {
+    try {
+      console.log('[FlutterFocus] postFinalResults called with userId:', userId);
+      
+      // Calculate ADHD scores based on game performance
+      const reactionTime = calculateReactionTime();
+      const impulseControl = calculateImpulseControl();
+      const sustainedAttention = calculateSustainedAttention();
+      const overallScore = calculateOverallScore();
+      
+      console.log('[FlutterFocus] Calculated final scores:', {
+        reactionTime,
+        impulseControl,
+        sustainedAttention,
+        overallScore
+      });
+      
+      const finalData = {
+        userId,
+        gameType: 'FlutterFocus',
+        assessmentComplete: true,
+        finalScore: score,
+        totalLivesLost: 9, // 3 lives lost per level * 3 levels
+        totalPlayTime: Date.now() - gameStartTimeRef.current,
+        completionTimestamp: new Date().toISOString(),
+        levelScores: [score], // TODO: Track individual level scores
+        levelCompletionTimes: [0], // TODO: Track individual level times
+        levelLivesLost: [3, 3, 3], // TODO: Track per-level lives lost
+        levelDebrisHit: [0, 0, 0], // TODO: Track per-level debris collisions
+        levelDebrisAvoided: [0, 0, 0], // TODO: Track per-level debris avoided
+        levelShootingStarsSeen: [0, 0, 0], // TODO: Track per-level shooting stars
+        levelAccuracy: [0, 0, 0], // TODO: Track per-level accuracy
+        levelReactionTime: [0, 0, 0], // TODO: Track per-level reaction time
+        overallAccuracy: 0, // TODO: Calculate overall accuracy
+        averageReactionTime: 0, // TODO: Calculate average reaction time
+        assessmentMetrics: {
+          focusLevel: 0, // TODO: Calculate focus level
+          reactionSpeed: 0, // TODO: Calculate reaction speed
+          accuracyScore: 0, // TODO: Calculate accuracy score
+          consistencyScore: 0, // TODO: Calculate consistency score
+          adhdIndicators: [] // TODO: Calculate ADHD indicators
+        }
+      };
+      
+      logDebug('Posting final results to Firebase:', finalData);
+      console.log('[FlutterFocus] About to save final results to Firebase:', finalData);
+      
+      // Post to main game document with the structure expected by GameResultsPage
+      if (userId) {
+        const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
+        console.log('[FlutterFocus] Saving final results to document:', docRef.path);
+        
+        await setDoc(docRef, {
+          // Save the final results
+          finalResults: finalData,
+          lastUpdated: new Date().toISOString(),
+          currentLevel: 3,
+          gameCompleted: true,
+          assessmentComplete: true,
+          
+          // Save the scores structure expected by GameResultsPage
+          scores: {
+            inattention: sustainedAttention,
+            hyperactivity: 10 - impulseControl, // Inverse relationship
+            impulsivity: 10 - impulseControl,
+            executive_function: overallScore,
+            adhd_composite: overallScore
+          },
+          
+          // Save empty selfReport since this game doesn't have self-report questions
+          selfReport: {},
+          
+          // Save rounds data
+          rounds: [
+            {
+              roundNumber: 1,
+              roundType: 'level',
+              startTime: gameStartTimeRef.current,
+              endTime: Date.now(),
+              duration: Date.now() - gameStartTimeRef.current,
+              score: score,
+              livesLost: 3,
+              debrisHit: 0,
+              debrisAvoided: 0,
+              shootingStarsSeen: 0,
+              accuracy: 0,
+              reactionTime: reactionTime,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        }, { merge: true });
+        
+        console.log('[FlutterFocus] Successfully saved final results to main document');
+        
+        // Post to rounds subcollection for final round
+        const roundsRef = collection(db, 'users', userId, 'games', 'FlutterFocus', 'rounds');
+        console.log('[FlutterFocus] Adding final round to rounds collection:', roundsRef.path);
+        
+        await addDoc(roundsRef, {
+          roundNumber: 3,
+          roundType: 'final',
+          startTime: gameStartTimeRef.current,
+          endTime: Date.now(),
+          duration: Date.now() - gameStartTimeRef.current,
+          score: score,
+          livesLost: 3,
+          debrisHit: 0,
+          debrisAvoided: 0,
+          shootingStarsSeen: 0,
+          accuracy: 0,
+          reactionTime: 0,
+          timestamp: new Date().toISOString(),
+          finalRound: true
+        });
+        
+        console.log('[FlutterFocus] Successfully added final round to rounds collection');
+        logDebug('Final results successfully posted to Firebase');
+        
+        // Notify parent component that ADHD assessment is complete
+        if (onGameComplete) {
+          console.log('[FlutterFocus] Calling onGameComplete callback');
+          onGameComplete({
+            startTime: gameStartTimeRef.current,
+            endTime: Date.now(),
+            totalPlayTime: Date.now() - gameStartTimeRef.current,
+            gameCompleted: true,
+            finalScore: score,
+            livesLost: 9, // 3 lives lost per level * 3 levels
+            totalCrashes: 9, // Same as lives lost
+            totalObstaclesAvoided: 0, // TODO: Track this
+            totalObstaclesHit: 9, // Same as crashes
+            currentLevel: 3,
+            levelsCompleted: 3,
+            levelScores: [score], // TODO: Track individual level scores
+            levelCompletionTimes: [0], // TODO: Track individual level times
+            adhdScores: {
+              inattention: sustainedAttention,
+              hyperactivity: 10 - impulseControl, // Inverse relationship
+              impulsivity: 10 - impulseControl,
+              executiveFunction: overallScore
+            },
+            selfReportResponses: {} // No self-report in this game
+          });
+        } else {
+          console.log('[FlutterFocus] No onGameComplete callback provided');
+        }
+        
+      } else {
+        console.warn('[FlutterFocus] No userId provided, not posting final results');
+        logDebug('No userId provided, not posting final results');
       }
       
     } catch (error) {
       console.error('[FlutterFocus] Error posting final results:', error);
+      if (error instanceof Error) {
+        console.error('[FlutterFocus] Error details:', {
+          message: error.message,
+          code: (error as any).code,
+          stack: error.stack
+        });
+      } else {
+        console.error('[FlutterFocus] Unknown error type:', error);
+      }
     }
-  }, [userId, score, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
+  }, [userId, score, logDebug, onGameComplete, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
   
   // Start next level
   const startNextLevel = useCallback(() => {
@@ -1018,13 +1241,15 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Safety check - prevent going beyond Level 3
     if (nextLevel > 3) {
+      console.log('[FlutterFocus] Cannot start level beyond 3, calling postFinalResults');
       logDebug('Cannot start level beyond 3, ending assessment');
       postFinalResults();
       setGameState('gameComplete');
       return;
     }
     
-    // Increment level
+    // Increment level - update both ref and state
+    levelRef.current = nextLevel;
     setLevel(nextLevel);
     
     // Reset lives for new level
@@ -1260,15 +1485,17 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (obstacle.collisionState === 'exploding' && explosionSpritesRef.current.length > 0 && obstacle.explosionFrame !== undefined) {
         const sprite = explosionSpritesRef.current[obstacle.explosionFrame];
         if (sprite && obstacle.explosionX !== undefined && obstacle.explosionY !== undefined) {
+          // Make explosion much larger and more visible (minimum 150px, scales with obstacle)
+          const baseSize = Math.max(obstacle.width, obstacle.height);
+          const explosionSize = Math.max(baseSize * 4.0, 150);
+          
           // Center the explosion sprite on the collision point
-          const spriteWidth = 80; // Adjust size as needed
-          const spriteHeight = 80;
           ctx.drawImage(
             sprite,
-            obstacle.explosionX - spriteWidth / 2,
-            obstacle.explosionY - spriteHeight / 2,
-            spriteWidth,
-            spriteHeight
+            obstacle.explosionX - explosionSize / 2,
+            obstacle.explosionY - explosionSize / 2,
+            explosionSize,
+            explosionSize
           );
         }
       }
@@ -1341,15 +1568,17 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (debris.collisionState === 'exploding' && explosionSpritesRef.current.length > 0 && debris.explosionFrame !== undefined) {
         const sprite = explosionSpritesRef.current[debris.explosionFrame];
         if (sprite && debris.explosionX !== undefined && debris.explosionY !== undefined) {
+          // Make explosion much larger and more visible (minimum 150px, scales with debris)
+          const baseSize = Math.max(debris.width, debris.height);
+          const explosionSize = Math.max(baseSize * 4.0, 150);
+          
           // Center the explosion sprite on the collision point
-          const spriteWidth = 80; // Adjust size as needed
-          const spriteHeight = 80;
           ctx.drawImage(
             sprite,
-            debris.explosionX - spriteWidth / 2,
-            debris.explosionY - spriteHeight / 2,
-            spriteWidth,
-            spriteHeight
+            debris.explosionX - explosionSize / 2,
+            debris.explosionY - explosionSize / 2,
+            explosionSize,
+            explosionSize
           );
         }
       }
@@ -1404,13 +1633,14 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     // Draw UI - only level (score and lives are in the overlay)
     ctx.fillStyle = '#F8FAFC';
     ctx.font = '24px Arial';
-    ctx.fillText(`Level: ${level}`, 20, 40);
+    ctx.fillText(`Level: ${levelRef.current}`, 20, 40);
     
           // Collision flash effect applied
   }, [gameState, level, logDebug, collisionFlash, collisionParticles, debrisRef]);
   
   // Monitor game state changes
   useEffect(() => {
+    console.log('[FlutterFocus] Game state changed to:', gameState);
     logDebug('Game state changed', { newState: gameState });
   }, [gameState, logDebug]);
   
@@ -1459,7 +1689,20 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     };
   }, []);
   
-
+  // TEST MODE: Auto-complete game after 10 seconds for debugging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const testTimer = setTimeout(() => {
+        if (gameState === 'playing' && userId) {
+          console.log('[FlutterFocus] TEST MODE: Auto-completing game after 10 seconds');
+          postFinalResults();
+          setGameState('gameComplete');
+        }
+      }, 10000); // 10 seconds
+      
+      return () => clearTimeout(testTimer);
+    }
+  }, [gameState, userId, postFinalResults]);
   
   // Render instructions
   if (gameState === 'instructions') {
@@ -1480,16 +1723,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               <p>• ↑ ARROW UP to move up</p>
               <p>• ↓ ARROW DOWN to move down</p>
             </div>
-          </div>
-          
-                      <div className="bg-gray-800 p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4 text-blue-400">Assessment Structure</h2>
-              <div className="text-sm text-gray-400 space-y-1">
-                <p>• Each level gets progressively harder!</p>
-                <p>• Results posted to Firebase after each level</p>
-                <p>• <strong>Assessment ends after Level 3 - no replay</strong></p>
-              </div>
-            </div>
+          </div>          
         </div>
         
         <div className="flex space-x-4">
@@ -1505,6 +1739,19 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
             >
               Cancel
+            </button>
+          )}
+          {/* TEST BUTTON: Manually complete game for debugging */}
+          {process.env.NODE_ENV === 'development' && userId && (
+            <button
+              onClick={() => {
+                console.log('[FlutterFocus] TEST: Manually triggering game completion');
+                postFinalResults();
+                setGameState('gameComplete');
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
+            >
+              TEST: Complete Game
             </button>
           )}
         </div>
@@ -1529,6 +1776,11 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-gray-900 text-white min-h-[600px] text-center">
         <h1 className="text-3xl font-bold mb-6 text-green-400">Level {levelRef.current} Complete!</h1>
+        
+        {/* Debug info */}
+        <div className="text-sm text-gray-400 mb-4">
+          Debug: levelRef.current = {levelRef.current}, level state = {level}
+        </div>
         
         <div className="bg-gray-800 p-6 rounded-lg mb-6 text-center">
           <h2 className="text-xl font-semibold mb-4 text-green-400">Level Results</h2>
@@ -1615,7 +1867,27 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
             <div className="text-lg font-bold text-red-400">{lives}</div>
             <div className="text-sm">Lives</div>
           </div>
-
+          
+          {/* TEST BUTTON: Manually complete level for debugging */}
+          {process.env.NODE_ENV === 'development' && userId && (
+            <div className="mt-2">
+              <button
+                onClick={() => {
+                  console.log('[FlutterFocus] TEST: Manually triggering level completion');
+                  postLevelResults();
+                  if (levelRef.current < 3) {
+                    setGameState('levelComplete');
+                  } else {
+                    postFinalResults();
+                    setGameState('gameComplete');
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors"
+              >
+                TEST: Complete Level
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
