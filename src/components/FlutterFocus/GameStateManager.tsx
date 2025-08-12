@@ -4,9 +4,7 @@ import Countdown from './Countdown';
 import LevelComplete from './LevelComplete';
 import GameComplete from './GameComplete';
 import GameOver from './GameOver';
-import SelfReportQuestions from './SelfReportQuestions';
 import GameCanvas from './GameCanvas';
-import { Question } from './types';
 
 interface GameStateManagerProps {
   gameState: 'instructions' | 'countdown' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete' | 'selfReport';
@@ -16,7 +14,7 @@ interface GameStateManagerProps {
   level: number;
   score: number;
   lives: number;
-  questions: Question[];
+  questions: any[];
   width: string;
   height: string;
   canvasRef: RefObject<HTMLCanvasElement>;
@@ -25,10 +23,6 @@ interface GameStateManagerProps {
   onNextLevel: () => void;
   onPlayAgain: () => void;
   onJump: () => void;
-  onQuestionResponse: (response: number) => void;
-  onQuestionsComplete: () => void;
-  onPreviousQuestion: () => void;
-  onNextQuestion: () => void;
   userId?: string;
 }
 
@@ -49,10 +43,6 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
   onNextLevel,
   onPlayAgain,
   onJump,
-  onQuestionResponse,
-  onQuestionsComplete,
-  onPreviousQuestion,
-  onNextQuestion,
   userId
 }) => {
   // Render instructions
@@ -86,20 +76,9 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
     );
   }
 
-  // Render self-reporting questions
-  if (gameState === 'selfReport' && showQuestions) {
-    return (
-      <SelfReportQuestions
-        questions={questions}
-        currentQuestionIndex={currentQuestionIndex}
-        questionResponses={questionResponses}
-        onQuestionResponse={onQuestionResponse}
-        onQuestionsComplete={onQuestionsComplete}
-        onPreviousQuestion={onPreviousQuestion}
-        onNextQuestion={onNextQuestion}
-      />
-    );
-  }
+
+
+
 
   // Render game complete
   if (gameState === 'gameComplete') {

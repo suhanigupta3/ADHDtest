@@ -1,5 +1,9 @@
 import React from 'react';
-import { Question } from './types';
+
+interface Question {
+  id: string;
+  text: string;
+}
 
 interface SelfReportQuestionsProps {
   questions: Question[];
@@ -24,68 +28,114 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const isAnswered = questionResponses[currentQuestion.id];
 
-  // Debug logging
-  console.log('[SelfReportQuestions] Component rendered:', {
-    currentQuestionIndex,
-    totalQuestions: questions.length,
-    currentQuestion: currentQuestion?.text,
-    isLastQuestion,
-    isAnswered,
-    questionResponses
-  });
-
-  const handleNextQuestion = () => {
-    console.log('[SelfReportQuestions] handleNextQuestion called');
-    if (isLastQuestion) {
-      console.log('[SelfReportQuestions] Completing assessment');
-      onQuestionsComplete();
-    } else {
-      console.log('[SelfReportQuestions] Moving to next question');
-      onNextQuestion();
-    }
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-8 max-w-2xl w-full h-[700px] flex flex-col relative">
-        {/* Close button */}
-        <button
-          onClick={onQuestionsComplete}
-          className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 text-2xl font-bold"
-          aria-label="Close"
-        >
-          ×
-        </button>
-        
-        <div className="text-center mb-6 flex-shrink-0">
-          <h3 className="text-2xl font-bold text-emerald-700 mb-3">
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#1F2937',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      boxSizing: 'border-box'
+    }}>
+      {/* Main Content Container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        maxWidth: '600px',
+        textAlign: 'center'
+      }}>
+        {/* Header */}
+        <div style={{ 
+          marginBottom: '40px',
+          color: 'white',
+          width: '100%'
+        }}>
+          <h1 style={{
+            fontSize: '32px',
+            fontWeight: 'bold',
+            margin: '0 0 16px 0',
+            color: '#10B981'
+          }}>
             Final Assessment Questions
-          </h3>
-          <p className="text-gray-600 text-base">
+          </h1>
+          <p style={{
+            fontSize: '18px',
+            margin: 0,
+            color: '#D1D5DB'
+          }}>
             Question {currentQuestionIndex + 1} of {questions.length}
           </p>
         </div>
-        
-        <div className="mb-6 flex-grow overflow-y-auto min-h-0">
-          <p className="text-gray-800 font-medium mb-6 text-xl leading-relaxed break-words">
+
+        {/* Question */}
+        <div style={{ 
+          width: '100%',
+          marginBottom: '40px'
+        }}>
+          <p style={{
+            color: 'white',
+            fontSize: '20px',
+            fontWeight: '500',
+            lineHeight: '1.6',
+            margin: '0 0 40px 0'
+          }}>
             {currentQuestion.text}
           </p>
-          
-          <div className="space-y-4">
+
+          {/* Answer Options */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '20px',
+            alignItems: 'center',
+            width: '100%'
+          }}>
             {[1, 2, 3, 4, 5].map((value) => (
-              <label key={value} className="flex items-center space-x-4 cursor-pointer p-4 hover:bg-gray-50 rounded-lg border border-transparent hover:border-gray-200 transition-colors">
+              <label key={value} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                cursor: 'pointer',
+                padding: '16px 24px',
+                borderRadius: '12px',
+                border: `3px solid ${questionResponses[currentQuestion.id] === value ? '#10B981' : '#4B5563'}`,
+                backgroundColor: questionResponses[currentQuestion.id] === value ? '#064E3B' : '#374151',
+                minWidth: '300px',
+                maxWidth: '400px',
+                transition: 'all 0.2s',
+                color: 'white'
+              }}>
                 <input
                   type="radio"
-                  name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
+                  name={`question-${currentQuestion.id}`}
                   value={value}
                   checked={questionResponses[currentQuestion.id] === value}
-                  onChange={() => {
-                    console.log(`[SelfReportQuestions] Selected answer ${value} for question ${currentQuestion.id}`);
-                    onQuestionResponse(value);
+                  onChange={() => onQuestionResponse(value)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    accentColor: '#10B981',
+                    flexShrink: 0
                   }}
-                  className="text-emerald-600 w-6 h-6"
                 />
-                <span className="text-gray-700 text-lg">
+                <span style={{
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  flex: 1
+                }}>
                   {value} - {
                     value === 1 ? 'Not at all' :
                     value === 2 ? 'Slightly' :
@@ -98,68 +148,76 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
             ))}
           </div>
         </div>
-        
-        {/* Navigation buttons - always visible at bottom */}
-        <div 
-          className="flex justify-between items-center mb-4 flex-shrink-0 pt-4 border-t border-gray-200 bg-gray-50 p-4 rounded-lg"
-          style={{ 
-            position: 'relative', 
-            zIndex: 1000,
-            backgroundColor: '#f9fafb',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px'
-          }}
-        >
+
+        {/* Navigation */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '500px',
+          marginBottom: '40px'
+        }}>
           <button
-            onClick={() => {
-              console.log(`[SelfReportQuestions] Previous button clicked, current index: ${currentQuestionIndex}`);
-              onPreviousQuestion();
-            }}
+            onClick={onPreviousQuestion}
             disabled={currentQuestionIndex === 0}
-            className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
-              currentQuestionIndex === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gray-600 hover:bg-gray-700 text-white'
-            }`}
-            style={{ 
-              minWidth: '140px',
-              border: '2px solid currentColor'
+            style={{
+              padding: '16px 32px',
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer',
+              backgroundColor: currentQuestionIndex === 0 ? '#6B7280' : '#4B5563',
+              color: currentQuestionIndex === 0 ? '#9CA3AF' : 'white',
+              transition: 'all 0.2s',
+              minWidth: '120px'
             }}
           >
-            ← Previous
+            Previous
           </button>
-          
+
           <button
             onClick={() => {
-              console.log(`[SelfReportQuestions] Next button clicked, current index: ${currentQuestionIndex}, isLast: ${isLastQuestion}, isAnswered: ${isAnswered}`);
-              handleNextQuestion();
+              if (isLastQuestion) {
+                onQuestionsComplete();
+              } else {
+                onNextQuestion();
+              }
             }}
             disabled={isLastQuestion && !isAnswered}
-            className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
-              (isLastQuestion && !isAnswered)
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-            }`}
-            style={{ 
-              minWidth: '160px',
-              border: '2px solid currentColor'
+            style={{
+              padding: '16px 32px',
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: (isLastQuestion && !isAnswered) ? 'not-allowed' : 'pointer',
+              backgroundColor: (isLastQuestion && !isAnswered) ? '#6B7280' : '#10B981',
+              color: (isLastQuestion && !isAnswered) ? '#white' : 'white',
+              transition: 'all 0.2s',
+              minWidth: '120px'
             }}
           >
-            {isLastQuestion ? 'Complete Assessment' : 'Next →'}
+            {isLastQuestion ? 'Complete' : 'Next'}
           </button>
         </div>
-        
-        {/* Debug info - remove this in production */}
-        <div className="text-sm text-gray-500 text-center mb-3 flex-shrink-0">
-          Debug: Index {currentQuestionIndex + 1}/{questions.length} | Answered: {isAnswered ? 'Yes' : 'No'} | Last: {isLastQuestion ? 'Yes' : 'No'}
-        </div>
-        
-        {/* Progress indicator */}
-        <div className="w-full bg-gray-200 rounded-full h-3 flex-shrink-0">
-          <div 
-            className="bg-emerald-600 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-          ></div>
+
+        {/* Progress Bar */}
+        <div style={{
+          width: '100%',
+          maxWidth: '500px',
+          height: '8px',
+          backgroundColor: '#374151',
+          borderRadius: '4px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%',
+            backgroundColor: '#10B981',
+            width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`,
+            transition: 'width 0.3s ease'
+          }} />
         </div>
       </div>
     </div>

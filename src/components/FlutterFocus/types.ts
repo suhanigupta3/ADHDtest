@@ -27,7 +27,7 @@ export interface FlutterFocusGameData {
   levelScores: number[];
   levelCompletionTimes: number[];
   
-  // ADHD assessment data - following PatternMatch pattern
+    // ADHD assessment data - following PatternMatch pattern
   adhdScores: {
     inattention: number;
     hyperactivity: number;
@@ -35,7 +35,7 @@ export interface FlutterFocusGameData {
     executiveFunction: number;
   };
   
-  // Self-report responses - following BounceBack pattern
+  // Self-report responses
   selfReportResponses: { [key: string]: number };
   
   // Timestamps - following BounceBack pattern

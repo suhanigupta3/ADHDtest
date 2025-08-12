@@ -24,6 +24,12 @@ interface SelfReport {
   q3_frustration_level?: number;
   q4_planning_ability?: number;
   q5_persistence_motivation?: number;
+  // FlutterFocus fields
+  q1_flutter_focus_difficulty?: number;
+  q2_flutter_impulsive_movements?: number;
+  q3_flutter_frustration_level?: number;
+  q4_flutter_planning_ability?: number;
+  q5_flutter_persistence_motivation?: number;
 }
 
 interface GameScores {
@@ -817,6 +823,21 @@ const GameResultsPage: React.FC = () => {
         'q3_frustration_level',
         'q4_planning_ability',
         'q5_persistence_motivation',
+      ];
+    } else if (gameName === 'flutterFocus') {
+      questionLabels = {
+        q1_flutter_focus_difficulty: 'Focus Difficulty',
+        q2_flutter_impulsive_movements: 'Impulsive Movements',
+        q3_flutter_frustration_level: 'Frustration Level',
+        q4_flutter_planning_ability: 'Planning Ability',
+        q5_flutter_persistence_motivation: 'Persistence & Motivation',
+      };
+      questionOrder = [
+        'q1_flutter_focus_difficulty',
+        'q2_flutter_impulsive_movements',
+        'q3_flutter_frustration_level',
+        'q4_flutter_planning_ability',
+        'q5_flutter_persistence_motivation',
       ];
     } else {
       questionLabels = {

@@ -93,27 +93,27 @@ export const LEVELS: FlutterFocusLevel[] = [
 // Assessment questions - following BounceBack pattern
 export const QUESTIONS: Question[] = [
   {
-    id: 'q1_focus_difficulty',
+    id: 'q1_flutter_focus_difficulty',
     text: 'How difficult was it to maintain focus on avoiding obstacles throughout the game?',
     category: 'attention'
   },
   {
-    id: 'q2_impulsive_movements',
+    id: 'q2_flutter_impulsive_movements',
     text: 'How often did you find yourself jumping or moving without thinking?',
     category: 'impulsivity'
   },
   {
-    id: 'q3_frustration_level',
+    id: 'q3_flutter_frustration_level',
     text: 'How frustrated did you feel when you crashed or lost a life?',
     category: 'frustration'
   },
   {
-    id: 'q4_planning_ability',
+    id: 'q4_flutter_planning_ability',
     text: 'How well were you able to plan your movements in advance?',
     category: 'focus'
   },
   {
-    id: 'q5_persistence_motivation',
+    id: 'q5_flutter_persistence_motivation',
     text: 'How motivated were you to continue playing after losing a life?',
     category: 'persistence'
   }
@@ -138,25 +138,25 @@ export const POINTS_PER_SECOND_SURVIVED = 1;
 export const BONUS_POINTS_PER_LIFE_REMAINING = 50;
 
 // Debris system constants - Optimized for better playability
-// Reduced spawn frequency and max debris count to make the game less overwhelming
-export const DEBRIS_SPAWN_INTERVAL_MIN = 2000; // 2.0 seconds (was 0.6)
-export const DEBRIS_SPAWN_INTERVAL_MAX = 4000; // 4.0 seconds (was 1.5)
-export const DEBRIS_MAX_ON_SCREEN = 8; // Maximum debris pieces on screen (was 15)
+// Increased spawn frequency for more engaging background
+export const DEBRIS_SPAWN_INTERVAL_MIN = 500; // 0.5 seconds (was 2.0)
+export const DEBRIS_SPAWN_INTERVAL_MAX = 1500; // 1.5 seconds (was 4.0)
+export const DEBRIS_MAX_ON_SCREEN = 12; // Maximum debris pieces on screen (was 8)
 
-// Debris speed values (pixels per frame)
+// Debris speed values (pixels per frame) - Increased for more dynamic movement
 export const DEBRIS_SPEEDS: Record<DebrisSpeed, number> = {
-  slow: 1.0,
-  medium: 2.5,
-  fast: 4.0,
-  very_fast: 6.0
+  slow: 2.0,      // Was 1.0 - doubled for better visibility
+  medium: 4.0,    // Was 2.5 - increased for more engaging movement
+  fast: 6.0,      // Was 4.0 - increased for dynamic feel
+  very_fast: 10.0 // Was 6.0 - increased for exciting movement
 };
 
-// Debris rotation speeds (degrees per frame)
+// Debris rotation speeds (degrees per frame) - Increased for more visual interest
 export const DEBRIS_ROTATION_SPEEDS: Record<DebrisRotationSpeed, number> = {
   none: 0.0,
-  slow: 0.5,
-  medium: 1.5,
-  fast: 3.0
+  slow: 1.0,    // Was 0.5 - doubled for better visibility
+  medium: 2.5,  // Was 1.5 - increased for more engaging rotation
+  fast: 5.0     // Was 3.0 - increased for dynamic feel
 };
 
 // Debris configurations with different behaviors - using actual dimensions

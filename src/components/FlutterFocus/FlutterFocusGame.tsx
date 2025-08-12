@@ -19,8 +19,9 @@ import {
   QUESTIONS
 } from './constants';
 import { db } from '../../firebase/config';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import GameStateManager from './GameStateManager';
+import SelfReportQuestions from './SelfReportQuestions';
 
 /**
  * FlutterFocusGame - ADHD Assessment Game
@@ -57,7 +58,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const [collisionFlash, setCollisionFlash] = useState(false);
   const [collisionParticles, setCollisionParticles] = useState<Array<{x: number, y: number, vx: number, vy: number, life: number}>>([]);
   
-  // Self-reporting questions state - following BounceBack pattern
+  // Self-reporting questions state
   const [showQuestions, setShowQuestions] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [questionResponses, setQuestionResponses] = useState<{ [key: string]: number }>({});
@@ -92,10 +93,21 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const obstacleSpawnTimerRef = useRef(0);
   const gameStartTimeRef = useRef(Date.now());
   
+  // Level tracking variables
+  const levelStartTimeRef = useRef(Date.now());
+  const levelLivesLostRef = useRef(0);
+  const levelDebrisHitRef = useRef(0);
+  const levelDebrisAvoidedRef = useRef(0);
+  const levelReactionTimeRef = useRef(0);
+  const levelScoreRef = useRef(0);
+  
   // Star layers for deep space effect
-  const starsLayer1Ref = useRef<Array<{x: number, y: number, size: number}>>([]);
-  const starsLayer2Ref = useRef<Array<{x: number, y: number, size: number}>>([]);
-  const starsLayer3Ref = useRef<Array<{x: number, y: number, size: number}>>([]);
+  const starsLayer1Ref = useRef<Array<{x: number, y: number, size: number, brightness?: number, name?: string, twinkleSpeed?: number, twinklePhase?: number, shouldTwinkle?: boolean}>>([]);
+  const starsLayer2Ref = useRef<Array<{x: number, y: number, size: number, brightness?: number, twinkleSpeed?: number, twinklePhase?: number, shouldTwinkle?: boolean}>>([]);
+  const starsLayer3Ref = useRef<Array<{x: number, y: number, size: number, brightness?: number, twinkleSpeed?: number, twinklePhase?: number, shouldTwinkle?: boolean}>>([]);
+  
+  // Planets and celestial objects
+  const planetsRef = useRef<Array<{x: number, y: number, size: number, type: string, color: string, name: string}>>([]);
   
   // Flying saucer sprite
   const alienSpriteRef = useRef<HTMLImageElement | null>(null);
@@ -112,28 +124,69 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     console.log(`[FlutterFocus] ${message}`, data || '');
   }, []);
   
-  // Initialize star layers
+  // Initialize star layers and celestial objects
   const initializeStars = useCallback(() => {
-    // Layer 1: Static stars (background)
-    starsLayer1Ref.current = Array.from({ length: 50 }, () => ({
+    // Layer 1: Static stars (background) - varied sizes and brightness with twinkling
+    starsLayer1Ref.current = Array.from({ length: 80 }, () => ({
       x: Math.random() * 960,
       y: Math.random() * 540,
-      size: Math.random() * 1.5 + 0.5
+      size: Math.random() * 2.0 + 0.8, // 0.8 to 2.8 pixels - smaller, more star-like
+      brightness: Math.random() * 0.5 + 0.3, // 0.3 to 0.8 alpha
+      twinkleSpeed: Math.random() * 0.02 + 0.01, // Twinkling speed
+      twinklePhase: Math.random() * Math.PI * 2, // Random starting phase
+      shouldTwinkle: Math.random() < 0.3 // 30% of stars twinkle
     }));
     
-    // Layer 2: Slow moving stars (medium brightness)
-    starsLayer2Ref.current = Array.from({ length: 40 }, () => ({
+    // Layer 2: Slow moving stars (medium brightness) - varied sizes with some twinkling
+    starsLayer2Ref.current = Array.from({ length: 60 }, () => ({
       x: Math.random() * 960,
       y: Math.random() * 540,
-      size: Math.random() * 1.2 + 0.8
+      size: Math.random() * 1.8 + 0.6, // 0.6 to 2.4 pixels
+      brightness: Math.random() * 0.6 + 0.4, // 0.4 to 1.0 alpha
+      twinkleSpeed: Math.random() * 0.015 + 0.008, // Slower twinkling
+      twinklePhase: Math.random() * Math.PI * 2,
+      shouldTwinkle: Math.random() < 0.4 // 40% of stars twinkle
     }));
     
-    // Layer 3: Fast moving stars (brightest)
-    starsLayer3Ref.current = Array.from({ length: 30 }, () => ({
+    // Layer 3: Fast moving stars (brightest) - varied sizes with more twinkling
+    starsLayer3Ref.current = Array.from({ length: 40 }, () => ({
       x: Math.random() * 960,
       y: Math.random() * 540,
-      size: Math.random() * 1.0 + 1.0
+      size: Math.random() * 1.5 + 0.5, // 0.5 to 2.0 pixels
+      brightness: Math.random() * 0.7 + 0.3, // 0.3 to 1.0 alpha
+      twinkleSpeed: Math.random() * 0.025 + 0.015, // Faster twinkling
+      twinklePhase: Math.random() * Math.PI * 2,
+      shouldTwinkle: Math.random() < 0.6 // 60% of stars twinkle
     }));
+    
+    // Add some larger, brighter stars (like Sirius, Vega, etc.) with strong twinkling
+    const brightStars = [
+      { x: 150, y: 80, size: 3.0, brightness: 1.0, name: 'Sirius', twinkleSpeed: 0.03, twinklePhase: 0, shouldTwinkle: true },
+      { x: 800, y: 120, size: 2.8, brightness: 0.9, name: 'Vega', twinkleSpeed: 0.025, twinklePhase: Math.PI/4, shouldTwinkle: true },
+      { x: 450, y: 400, size: 2.6, brightness: 0.85, name: 'Arcturus', twinkleSpeed: 0.02, twinklePhase: Math.PI/2, shouldTwinkle: true },
+      { x: 700, y: 450, size: 2.4, brightness: 0.8, name: 'Capella', twinkleSpeed: 0.035, twinklePhase: Math.PI, shouldTwinkle: true },
+      { x: 200, y: 480, size: 2.9, brightness: 0.95, name: 'Rigel', twinkleSpeed: 0.04, twinklePhase: Math.PI*3/4, shouldTwinkle: true }
+    ];
+    
+    // Add bright stars to layer 1
+    brightStars.forEach(star => {
+      starsLayer1Ref.current.push(star);
+    });
+    
+    // Add planets and celestial objects
+    const planets = [
+      { x: 50, y: 150, size: 25, type: 'gas_giant', color: '#FFB366', name: 'Jupiter' },
+      { x: 850, y: 300, size: 18, type: 'ice_giant', color: '#87CEEB', name: 'Neptune' },
+      { x: 300, y: 50, size: 15, type: 'terrestrial', color: '#CD853F', name: 'Mars' },
+      { x: 750, y: 80, size: 20, type: 'gas_giant', color: '#F4A460', name: 'Saturn' }
+    ];
+    
+    // Store planets for rendering (using a ref instead of window)
+    if (!planetsRef.current) {
+      planetsRef.current = planets;
+    }
+    
+    console.log('[FlutterFocus] Enhanced star system initialized with varied sizes, twinkling, and planets');
   }, []);
   
   // Load flying saucer sprite
@@ -199,7 +252,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     const startY = Math.random() * 200;
     
     // Random angle (diagonal from top-right to bottom-left)
-    const angle = Math.PI / 4 + (Math.random() - 0.5) * Math.PI / 6; // 45° ± 15°
+    // 135° = 3π/4 radians, creates movement from top-right to bottom-left
+    const angle = 3 * Math.PI / 4 + (Math.random() - 0.5) * Math.PI / 6; // 135° ± 15° (top-right to bottom-left)
     
     const newShootingStar: ShootingStar = {
       id: `shooting-star-${Date.now()}-${Math.random()}`,
@@ -225,13 +279,13 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     });
   }, []);
 
-  // Update shooting stars
+  // Update shooting stars - move from top-right to bottom-left
   const updateShootingStars = useCallback((deltaTime: number) => {
     shootingStarsRef.current = shootingStarsRef.current
       .map(star => ({
         ...star,
-        x: star.x - Math.cos(star.angle) * star.speed,
-        y: star.y + Math.sin(star.angle) * star.speed,
+        x: star.x + Math.cos(star.angle) * star.speed, // Move left (negative cos for 135°)
+        y: star.y + Math.sin(star.angle) * star.speed, // Move down (positive sin for 135°)
         life: star.life - 1,
         alpha: star.life / star.maxLife // Fade out over time
       }))
@@ -282,18 +336,35 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     });
   }, [logDebug]);
   
-  // Update star positions
+  // Update star positions and twinkling
   const updateStars = useCallback((deltaTime: number) => {
-    // Layer 2: Slow movement (right to left)
+    // Layer 2: Slow movement (right to left) with twinkling
     starsLayer2Ref.current.forEach(star => {
       star.x -= 0.02 * deltaTime; // Slow movement
       if (star.x < -10) star.x = 970; // Wrap around
+      
+      // Update twinkling phase
+      if (star.shouldTwinkle && star.twinkleSpeed && star.twinklePhase !== undefined) {
+        star.twinklePhase += star.twinkleSpeed * deltaTime;
+      }
     });
     
-    // Layer 3: Fast movement (right to left)
+    // Layer 3: Fast movement (right to left) with twinkling
     starsLayer3Ref.current.forEach(star => {
       star.x -= 0.05 * deltaTime; // Fast movement
       if (star.x < -10) star.x = 970; // Wrap around
+      
+      // Update twinkling phase
+      if (star.shouldTwinkle && star.twinkleSpeed && star.twinklePhase !== undefined) {
+        star.twinklePhase += star.twinkleSpeed * deltaTime;
+      }
+    });
+    
+    // Update twinkling for static stars (Layer 1)
+    starsLayer1Ref.current.forEach(star => {
+      if (star.shouldTwinkle && star.twinkleSpeed && star.twinklePhase !== undefined) {
+        star.twinklePhase += star.twinkleSpeed * deltaTime;
+      }
     });
   }, []);
   
@@ -377,11 +448,17 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     setBackgroundDebris([...debrisRef.current]);
     
     // Debug: log debris count and positions
-    if (debrisRef.current.length > 0 && Math.random() < 0.1) { // Log 10% of the time
+    if (debrisRef.current.length > 0 && Math.random() < 0.05) { // Log 5% of the time
       console.log('[FlutterFocus] Debris update:', { 
         count: debrisRef.current.length, 
         active: debrisRef.current.filter(d => d.isActive).length,
-        firstDebris: debrisRef.current[0] ? { x: Math.round(debrisRef.current[0].x), y: Math.round(debrisRef.current[0].y) } : null 
+        firstDebris: debrisRef.current[0] ? { 
+          x: Math.round(debrisRef.current[0].x), 
+          y: Math.round(debrisRef.current[0].y),
+          width: debrisRef.current[0].width,
+          speed: debrisRef.current[0].speed,
+          isActive: debrisRef.current[0].isActive
+        } : null 
       });
     }
   }, []);
@@ -463,8 +540,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (obstacle.collisionState === 'exploding' && obstacle.collisionTimer !== undefined) {
         obstacle.collisionTimer += deltaTime;
         
-        // Much slower explosion animation - 7 frames over 1400ms = ~200ms per frame
-        const frameTime = 200; // Much slower than before (was 114ms)
+        // Much slower explosion animation - 7 frames over 7000ms = ~1000ms per frame
+        const frameTime = 1000; // 5x longer explosions for dramatic effect
         const frameIndex = Math.floor(obstacle.collisionTimer / frameTime);
         obstacle.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
         
@@ -485,8 +562,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       if (debris.collisionState === 'exploding' && debris.collisionTimer !== undefined) {
         debris.collisionTimer += deltaTime;
         
-        // Much slower explosion animation - 7 frames over 1400ms = ~200ms per frame
-        const frameTime = 200; // Much slower than before (was 114ms)
+        // Much slower explosion animation - 7 frames over 7000ms = ~1000ms per frame
+        const frameTime = 1000; // 5x longer explosions for dramatic effect
         const frameIndex = Math.floor(debris.collisionTimer / frameTime);
         debris.explosionFrame = Math.min(frameIndex, 6); // Cap at frame 6 (e7.png)
         
@@ -516,7 +593,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     lastTimeRef.current = currentTime;
     
     // Protect against extreme deltaTime values (first frame or lag)
-    const clampedDeltaTime = Math.min(deltaTime, 100); // Max 100ms per frame
+    const clampedDeltaTime = Math.min(deltaTime, 100); // Max 100ms per frame for physics
+    const explosionDeltaTime = Math.min(deltaTime, 1000); // Max 1000ms for explosions to allow longer durations
     
     // Update alien physics - make movement time-based for smoothness
     const alien = alienRef.current;
@@ -553,10 +631,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }
     
     // Update obstacle collision animations
-    updateObstacleAnimations(clampedDeltaTime);
+    updateObstacleAnimations(explosionDeltaTime);
 
     // Update debris collision animations
-    updateDebrisCollisionAnimations(clampedDeltaTime);
+    updateDebrisCollisionAnimations(explosionDeltaTime);
 
     // Spawn obstacles (harder with each level) - DISABLED: Using new debris system instead
     // obstacleSpawnTimerRef.current += clampedDeltaTime;
@@ -584,8 +662,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     // }
     
     // Spawn background debris (distractors)
-    debrisSpawnTimerRef.current += 1; // Increment frame counter instead of deltaTime
-    const debrisSpawnInterval = DEBRIS_SPAWN_INTERVAL_MIN / 16 + Math.random() * (DEBRIS_SPAWN_INTERVAL_MAX - DEBRIS_SPAWN_INTERVAL_MIN) / 16; // Convert to frames (assuming 60fps = 16ms per frame)
+    debrisSpawnTimerRef.current += clampedDeltaTime; // Use actual time instead of frame counter
+    const debrisSpawnInterval = DEBRIS_SPAWN_INTERVAL_MIN + Math.random() * (DEBRIS_SPAWN_INTERVAL_MAX - DEBRIS_SPAWN_INTERVAL_MIN); // 2-4 seconds
     
     console.log('[FlutterFocus] Debris spawn check:', { 
       timer: debrisSpawnTimerRef.current, 
@@ -598,9 +676,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     if (debrisSpawnTimerRef.current > debrisSpawnInterval && debrisRef.current.length < DEBRIS_MAX_ON_SCREEN) {
       debrisSpawnTimerRef.current = 0;
       
-      // Spawn only 1 piece of debris at a time for better playability
-      // This makes the game much more manageable and enjoyable
-      const debrisCount = 1;
+      // Spawn 2-3 pieces of debris at a time for more engaging background
+      // This creates a more dynamic space environment
+      const debrisCount = Math.random() < 0.7 ? 2 : 3;
       
       console.log('[FlutterFocus] Attempting to spawn debris:', { 
         count: debrisCount, 
@@ -731,21 +809,24 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               setCollisionFlash(false);
               setCollisionParticles([]);
               
-              // Level complete - post results to Firebase
-              console.log('[FlutterFocus] Level complete, calling postLevelResults');
-              postLevelResults();
-              
-              if (levelRef.current < 3) {
-                // Move to next level (user gets 3 more lives)
-                setGameState('levelComplete');
-              } else {
-                // All 3 levels complete - show self-reporting questions
-                console.log('[FlutterFocus] All levels complete, showing self-reporting questions');
-                setGameState('selfReport');
-                setShowQuestions(true);
-                setCurrentQuestionIndex(0);
-                setQuestionResponses({});
-              }
+                          // Level complete - post results to Firebase
+            console.log('[FlutterFocus] Level complete, calling postLevelResults');
+            console.log('[FlutterFocus] Current level:', levelRef.current, 'Lives remaining:', newLives);
+            postLevelResults();
+            
+            if (levelRef.current < 3) {
+              // Move to next level (user gets 3 more lives)
+              console.log('[FlutterFocus] Moving to next level, setting state to levelComplete');
+              setGameState('levelComplete');
+            } else {
+              // All 3 levels complete - show self-reporting questions
+              console.log('[FlutterFocus] All levels complete, showing self-reporting questions');
+              console.log('[FlutterFocus] Setting gameState to selfReport and showQuestions to true');
+              setGameState('selfReport');
+              setShowQuestions(true);
+              setCurrentQuestionIndex(0);
+              setQuestionResponses({});
+            }
             }
             return newLives;
           });
@@ -991,48 +1072,52 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       logDebug('Posting level results to Firebase:', levelData);
       console.log('[FlutterFocus] About to save to Firebase:', levelData);
       
-      // Post to main game document with the structure expected by GameResultsPage
-      if (userId) {
-        const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
-        console.log('[FlutterFocus] Saving to document:', docRef.path);
-        
-        await setDoc(docRef, {
-          [`level${levelRef.current}Data`]: levelData,
-          lastUpdated: new Date().toISOString(),
-          currentLevel: levelRef.current,
-          gameCompleted: false,
+              // Post to main game document with the structure expected by GameResultsPage
+        if (userId) {
+          const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
+          console.log('[FlutterFocus] Saving to document:', docRef.path);
           
-          // Save the scores structure expected by GameResultsPage
-          scores: {
-            inattention: sustainedAttention,
-            hyperactivity: 10 - impulseControl, // Inverse relationship
-            impulsivity: 10 - impulseControl,
-            executive_function: overallScore,
-            adhd_composite: overallScore
-          },
+          // Get existing document to preserve selfReport data
+          const existingDoc = await getDoc(docRef);
+          const existingData = existingDoc.exists() ? existingDoc.data() : {};
           
-          // Save empty selfReport since this game doesn't have self-report questions
-          selfReport: {},
-          
-          // Save rounds data
-          rounds: [
-            {
-              roundNumber: levelRef.current,
-              roundType: 'level',
-              startTime: gameStartTimeRef.current,
-              endTime: Date.now(),
-              duration: Date.now() - gameStartTimeRef.current,
-              score: score,
-              livesLost: 3,
-              debrisHit: 0,
-              debrisAvoided: 0,
-              shootingStarsSeen: 0,
-              accuracy: 0,
-              reactionTime: reactionTime,
-              timestamp: new Date().toISOString()
-            }
-          ]
-        }, { merge: true });
+          await setDoc(docRef, {
+            [`level${levelRef.current}Data`]: levelData,
+            lastUpdated: new Date().toISOString(),
+            currentLevel: levelRef.current,
+            gameCompleted: false,
+            
+            // Save the scores structure expected by GameResultsPage
+            scores: {
+              inattention: sustainedAttention,
+              hyperactivity: 10 - impulseControl, // Inverse relationship
+              impulsivity: 10 - impulseControl,
+              executive_function: overallScore,
+              adhd_composite: overallScore
+            },
+            
+            // Preserve existing selfReport data if it exists, otherwise save empty object
+            selfReport: existingData.selfReport || {},
+            
+            // Save rounds data
+            rounds: [
+              {
+                roundNumber: levelRef.current,
+                roundType: 'level',
+                startTime: gameStartTimeRef.current,
+                endTime: Date.now(),
+                duration: Date.now() - gameStartTimeRef.current,
+                score: score,
+                livesLost: 3,
+                debrisHit: 0,
+                debrisAvoided: 0,
+                shootingStarsSeen: 0,
+                accuracy: 0,
+                reactionTime: reactionTime,
+                timestamp: new Date().toISOString()
+              }
+            ]
+          }, { merge: true });
         
         console.log('[FlutterFocus] Successfully saved level data to main document');
         
@@ -1147,7 +1232,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
             adhd_composite: overallScore
           },
           
-          // Save empty selfReport since this game doesn't have self-report questions
+          // Save empty selfReport for now (will be populated when questions are completed)
           selfReport: {},
           
           // Save rounds data
@@ -1219,7 +1304,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               impulsivity: 10 - impulseControl,
               executiveFunction: overallScore
             },
-            selfReportResponses: { ...questionResponses } // Include self-report responses
+            selfReportResponses: { ...questionResponses }
+
           });
         } else {
           console.log('[FlutterFocus] No onGameComplete callback provided');
@@ -1244,20 +1330,30 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }
   }, [userId, score, logDebug, onGameComplete, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
   
-  // Handle question responses - following BounceBack pattern
+  // Handle question responses
   const handleQuestionResponse = useCallback((response: number) => {
     const currentQuestion = QUESTIONS[currentQuestionIndex];
+    console.log('[FlutterFocus] Question response received:', {
+      questionId: currentQuestion.id,
+      response: response,
+      currentIndex: currentQuestionIndex,
+      totalQuestions: QUESTIONS.length
+    });
+    
     setQuestionResponses(prev => {
       const newResponses = {
         ...prev,
         [currentQuestion.id]: response
       };
+      console.log('[FlutterFocus] Updated question responses:', newResponses);
       return newResponses;
     });
   }, [currentQuestionIndex]);
 
-  // Handle questions completion - following BounceBack pattern
+  // Handle questions completion
   const handleQuestionsComplete = useCallback(async () => {
+    console.log('[FlutterFocus] Questions completed, finalizing game with responses:', questionResponses);
+    
     // All questions completed - finish the game
     const finalGameData = {
       startTime: gameStartTimeRef.current,
@@ -1279,12 +1375,13 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
         impulsivity: 10 - calculateImpulseControl(),
         executiveFunction: calculateOverallScore()
       },
-      selfReportResponses: { ...questionResponses } // Include self-report responses
+      selfReportResponses: { ...questionResponses }
     };
     
     // Save to Firebase
     try {
       if (userId) {
+        // Save to flutterFocusResults collection for historical data
         await addDoc(collection(db, 'flutterFocusResults'), {
           ...finalGameData,
           userId,
@@ -1292,35 +1389,89 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
           finalRound: true
         });
         
-        console.log('[FlutterFocus] Game data with self-report saved to Firebase successfully');
-        logDebug('Final results with self-report successfully posted to Firebase');
+        console.log('[FlutterFocus] Game data saved to flutterFocusResults collection successfully');
+        
+        // Also update the main game document that GameResultsPage reads from
+        const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
+        
+        console.log('[FlutterFocus] About to save final game data with selfReport:', {
+          questionResponses,
+          questionResponsesKeys: Object.keys(questionResponses),
+          questionResponsesCount: Object.keys(questionResponses).length
+        });
+        
+        await setDoc(docRef, {
+          finalResults: finalGameData,
+          gameCompleted: true,
+          lastUpdated: new Date().toISOString(),
+          
+          // Save the scores structure expected by GameResultsPage
+          scores: {
+            inattention: calculateSustainedAttention(),
+            hyperactivity: 10 - calculateImpulseControl(), // Inverse relationship
+            impulsivity: 10 - calculateImpulseControl(),
+            executive_function: calculateOverallScore(),
+            adhd_composite: calculateOverallScore()
+          },
+          
+          // Save the self-report data
+          selfReport: questionResponses,
+          
+          // Save final level data
+          level3Data: {
+            duration: Date.now() - gameStartTimeRef.current,
+            livesLost: 3,
+            debrisHit: 0,
+            debrisAvoided: 0,
+            reactionTime: 0,
+            timestamp: new Date().toISOString()
+          }
+        }, { merge: true });
+        
+        console.log('[FlutterFocus] Main game document updated with self-report data successfully');
+        logDebug('Final results and self-report data successfully posted to Firebase');
+        
+        // Now that Firebase save is complete, we can safely call onGameComplete
+        // Close questions modal
+        setShowQuestions(false);
+        setCurrentQuestionIndex(0);
+        setQuestionResponses({});
+        setQuestionsCompleted(false);
+        
+        // Set game to complete state
+        setGameState('gameComplete');
+        
+        // Call the completion callback AFTER Firebase save is complete
+        if (onGameComplete) {
+          console.log('[FlutterFocus] Firebase save complete, calling onGameComplete');
+          onGameComplete(finalGameData);
+        }
       }
     } catch (error) {
-      console.error('[FlutterFocus] Failed to save game data with self-report to Firebase:', error);
+      console.error('[FlutterFocus] Failed to save game data to Firebase:', error);
       if (onError) {
         onError(`Failed to save game data: ${error}`);
       }
+      
+      // Even if Firebase save fails, we should still close the questions and complete the game
+      setShowQuestions(false);
+      setCurrentQuestionIndex(0);
+      setQuestionResponses({});
+      setQuestionsCompleted(false);
+      setGameState('gameComplete');
+      
+      if (onGameComplete) {
+        console.log('[FlutterFocus] Firebase save failed, but calling onGameComplete anyway');
+        onGameComplete(finalGameData);
+      }
     }
-    
-    // Close questions modal
-    setShowQuestions(false);
-    setCurrentQuestionIndex(0);
-    setQuestionResponses({});
-    setQuestionsCompleted(false);
-    
-    // Call the completion callback
-    if (onGameComplete) {
-      onGameComplete(finalGameData);
-    }
-    
-    // Set game to complete state
-    setGameState('gameComplete');
   }, [score, questionResponses, userId, logDebug, onGameComplete, onError, calculateSustainedAttention, calculateImpulseControl, calculateOverallScore]);
   
   // Start next level
   const startNextLevel = useCallback(() => {
     const nextLevel = levelRef.current + 1;
     logDebug('Starting next level:', nextLevel);
+    console.log('[FlutterFocus] startNextLevel called with current level:', levelRef.current, 'next level:', nextLevel);
     
     // Safety check - prevent going beyond Level 3
     if (nextLevel > 3) {
@@ -1458,22 +1609,67 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     // Draw star layers for deep space effect
     
-    // Layer 1: Static background stars (dimmest)
-    ctx.fillStyle = '#666666';
+    // Layer 1: Static background stars (dimmest) - varied sizes and brightness
     starsLayer1Ref.current.forEach(star => {
+      const brightness = star.brightness || 0.6;
+      ctx.globalAlpha = brightness;
+      ctx.fillStyle = '#666666';
       ctx.fillRect(star.x, star.y, star.size, star.size);
+      
+      // Add twinkling effect for bright stars
+      if (star.brightness && star.brightness > 0.8) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.globalAlpha = brightness * 0.5;
+        ctx.fillRect(star.x + star.size * 0.3, star.y + star.size * 0.3, star.size * 0.4, star.size * 0.4);
+      }
     });
     
-    // Layer 2: Slow moving stars (medium brightness)
+    // Layer 2: Slow moving stars (medium brightness) - varied sizes
+    ctx.globalAlpha = 0.8;
     ctx.fillStyle = '#AAAAAA';
     starsLayer2Ref.current.forEach(star => {
+      const brightness = star.brightness || 0.8;
+      ctx.globalAlpha = brightness;
       ctx.fillRect(star.x, star.y, star.size, star.size);
     });
     
-    // Layer 3: Fast moving stars (brightest)
+    // Layer 3: Fast moving stars (brightest) - varied sizes
+    ctx.globalAlpha = 1.0;
     ctx.fillStyle = '#FFFFFF';
     starsLayer3Ref.current.forEach(star => {
+      const brightness = star.brightness || 1.0;
+      ctx.globalAlpha = brightness;
       ctx.fillRect(star.x, star.y, star.size, star.size);
+    });
+    
+    // Reset alpha for other elements
+    ctx.globalAlpha = 1.0;
+    
+    // Draw planets and celestial objects
+    planetsRef.current.forEach(planet => {
+      ctx.save();
+      
+      // Draw planet body
+      ctx.fillStyle = planet.color;
+      ctx.beginPath();
+      ctx.arc(planet.x, planet.y, planet.size, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add planet atmosphere/glow
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = planet.color;
+      ctx.beginPath();
+      ctx.arc(planet.x, planet.y, planet.size * 1.2, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add planet name label
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(planet.name, planet.x, planet.y + planet.size + 20);
+      
+      ctx.restore();
     });
     
     // Draw background debris behind the ship (z-index 1)
@@ -1675,8 +1871,9 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       ctx.globalAlpha = star.alpha;
       
       // Draw shooting star trail (line with gradient)
+      // Trail should extend from current position toward where the star came from
       const endX = star.x - Math.cos(star.angle) * star.length;
-      const endY = star.y + Math.sin(star.angle) * star.length;
+      const endY = star.y - Math.sin(star.angle) * star.length;
       
       // Create gradient for the trail
       const gradient = ctx.createLinearGradient(star.x, star.y, endX, endY);
@@ -1725,9 +1922,13 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   
   // Monitor game state changes
   useEffect(() => {
-    console.log('[FlutterFocus] Game state changed to:', gameState);
+    console.log('[FlutterFocus] Game state changed to:', gameState, {
+      showQuestions,
+      currentQuestionIndex,
+      questionResponsesCount: Object.keys(questionResponses).length
+    });
     logDebug('Game state changed', { newState: gameState });
-  }, [gameState, logDebug]);
+  }, [gameState, showQuestions, currentQuestionIndex, questionResponses, logDebug]);
   
   // Monitor debris state for debugging
   useEffect(() => {
@@ -1776,29 +1977,72 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   
   // Render game based on state using GameStateManager
   return (
-    <GameStateManager
-      gameState={gameState}
-      showQuestions={showQuestions}
-      currentQuestionIndex={currentQuestionIndex}
-      questionResponses={questionResponses}
-      level={level}
-      score={score}
-      lives={lives}
-      questions={QUESTIONS}
-      width={width}
-      height={height}
-      canvasRef={canvasRef}
-      onStartGame={startGame}
-      onCancel={onCancel || (() => {})}
-      onNextLevel={startNextLevel}
-      onPlayAgain={() => setGameState('instructions')}
-      onJump={handleJump}
-      onQuestionResponse={handleQuestionResponse}
-      onQuestionsComplete={handleQuestionsComplete}
-      onPreviousQuestion={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-      onNextQuestion={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-      userId={userId}
-    />
+    <>
+      {/* Render self-report questions outside of height constraints when active */}
+      {gameState === 'selfReport' && showQuestions && (
+        <>
+          {console.log('[FlutterFocus] ✅ Rendering SelfReportQuestions - Conditions met:', { 
+            gameState, 
+            showQuestions, 
+            questionsCount: QUESTIONS.length,
+            currentQuestionIndex,
+            questionResponses,
+            questionResponsesKeys: Object.keys(questionResponses)
+          })}
+          <SelfReportQuestions
+            questions={QUESTIONS}
+            currentQuestionIndex={currentQuestionIndex}
+            questionResponses={questionResponses}
+            onQuestionResponse={handleQuestionResponse}
+            onQuestionsComplete={handleQuestionsComplete}
+            onPreviousQuestion={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+            onNextQuestion={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+          />
+        </>
+      )}
+      
+      {/* Debug: Show when conditions are NOT met */}
+      {!(gameState === 'selfReport' && showQuestions) && (
+        <>
+          {console.log('[FlutterFocus] ❌ NOT rendering SelfReportQuestions - Conditions NOT met:', { 
+            gameState, 
+            showQuestions, 
+            gameStateIsSelfReport: gameState === 'selfReport',
+            bothConditionsMet: gameState === 'selfReport' && showQuestions
+          })}
+        </>
+      )}
+      
+      {/* Debug: Show current game state and question status */}
+      {console.log('[FlutterFocus] Current game state:', {
+        gameState,
+        showQuestions,
+        currentQuestionIndex,
+        questionResponsesCount: Object.keys(questionResponses).length,
+        questionResponsesKeys: Object.keys(questionResponses)
+      })}
+      
+      {/* Render main game content */}
+      <GameStateManager
+        gameState={gameState}
+        showQuestions={showQuestions}
+        currentQuestionIndex={currentQuestionIndex}
+        questionResponses={questionResponses}
+        level={level}
+        score={score}
+        lives={lives}
+        questions={QUESTIONS}
+        width={width}
+        height={height}
+        canvasRef={canvasRef}
+        onStartGame={startGame}
+        onCancel={onCancel || (() => {})}
+        onNextLevel={startNextLevel}
+        onPlayAgain={() => setGameState('instructions')}
+        onJump={handleJump}
+        userId={userId}
+      />
+    </>
   );
 };
 
