@@ -7,6 +7,14 @@ interface GameCanvasProps {
   lives: number;
   onJump: () => void;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  debugData?: {
+    level: number;
+    debrisHit: number;
+    debrisAvoided: number;
+    reactionTime: number;
+    reactionCount: number;
+    spawnTimesCount: number;
+  };
 }
 
 const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -15,7 +23,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   score,
   lives,
   onJump,
-  canvasRef
+  canvasRef,
+  debugData
 }) => {
   return (
     <div className="relative">
@@ -41,6 +50,18 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Debug display */}
+      {debugData && (
+        <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-3 rounded-lg text-xs font-mono">
+          <div>Level: {debugData.level}</div>
+          <div>Debris Hit: {debugData.debrisHit}</div>
+          <div>Debris Avoided: {debugData.debrisAvoided}</div>
+          <div>Reaction Time: {debugData.reactionTime.toFixed(0)}ms</div>
+          <div>Reaction Count: {debugData.reactionCount}</div>
+          <div>Spawn Times: {debugData.spawnTimesCount}</div>
+        </div>
+      )}
     </div>
   );
 };

@@ -211,55 +211,60 @@ const GameResultsPage: React.FC = () => {
           console.log('[GameResultsPage] FlutterFocus has scores:', !!flutterFocusData.scores);
           console.log('[GameResultsPage] FlutterFocus has selfReport:', !!flutterFocusData.selfReport);
           
+          // Debug: Log all available keys and level data
+          console.log('[GameResultsPage] FlutterFocus all keys:', Object.keys(flutterFocusData));
+          console.log('[GameResultsPage] FlutterFocus level1Data:', flutterFocusData.level1Data);
+          console.log('[GameResultsPage] FlutterFocus level2Data:', flutterFocusData.level2Data);
+          console.log('[GameResultsPage] FlutterFocus level3Data:', flutterFocusData.level3Data);
+          console.log('[GameResultsPage] FlutterFocus finalResults:', flutterFocusData.finalResults);
+          
           if (flutterFocusData.scores && flutterFocusData.selfReport) {
             console.log('[GameResultsPage] ✅ FlutterFocus has both scores and selfReport, processing...');
+            console.log('[GameResultsPage] FlutterFocus scores breakdown:', {
+              inattention: flutterFocusData.scores.inattention,
+              hyperactivity: flutterFocusData.scores.hyperactivity,
+              impulsivity: flutterFocusData.scores.impulsivity,
+              executive_function: flutterFocusData.scores.executive_function,
+              adhd_composite: flutterFocusData.scores.adhd_composite,
+              allKeys: Object.keys(flutterFocusData.scores)
+            });
+            
+            // Debug: Check if we can calculate composite manually
+            const manualComposite = (flutterFocusData.scores.inattention + flutterFocusData.scores.hyperactivity + 
+                                   flutterFocusData.scores.impulsivity + flutterFocusData.scores.executive_function) / 4;
+            console.log('[GameResultsPage] Manual composite calculation:', {
+              sum: flutterFocusData.scores.inattention + flutterFocusData.scores.hyperactivity + 
+                   flutterFocusData.scores.impulsivity + flutterFocusData.scores.executive_function,
+              count: 4,
+              manualComposite: manualComposite
+            });
             
             // For FlutterFocus, we only want to show the 3 main levels, not all individual rounds
             // Create a simplified rounds array with just the 3 levels using real data
-            const levelRounds: GameRound[] = [
-              {
-                // Level 1 data
-                roundScore: flutterFocusData.finalResults?.levelScores?.[0] || 0,
-                timeToComplete: flutterFocusData.level1Data?.duration || 0,
-                asteroidsHit: flutterFocusData.level1Data?.livesLost || 0,
-                asteroidsAvoided: flutterFocusData.level1Data?.debrisAvoided || 0,
+            const levelRounds: GameRound[] = [];
+            
+            // Try to get data from individual level documents first, then fall back to finalResults
+            for (let i = 1; i <= 3; i++) {
+              const levelData = flutterFocusData[`level${i}Data`];
+              const finalLevelData = flutterFocusData.finalResults;
+              
+              console.log(`[GameResultsPage] Level ${i} data:`, levelData);
+              console.log(`[GameResultsPage] Level ${i} data:`, levelData);
+              
+              levelRounds.push({
+                roundScore: levelData?.score || finalLevelData?.levelScores?.[i-1] || 0,
+                timeToComplete: levelData?.duration || 0,
+                asteroidsHit: levelData?.livesLost || 0,
+                asteroidsAvoided: levelData?.debrisAvoided || 0,
                 aliensDefeated: 0,
                 questionsAnswered: 0,
                 questionsCorrect: 0,
-                reactionTime: flutterFocusData.level1Data?.reactionTime || 0,
+                reactionTime: levelData?.reactionTime || 0,
                 focusBreaks: 0,
                 navigationErrors: 0,
                 optimalPathDeviation: 0
-              },
-              {
-                // Level 2 data
-                roundScore: flutterFocusData.finalResults?.levelScores?.[1] || 0,
-                timeToComplete: flutterFocusData.level2Data?.duration || 0,
-                asteroidsHit: flutterFocusData.level2Data?.livesLost || 0,
-                asteroidsAvoided: flutterFocusData.level2Data?.debrisAvoided || 0,
-                aliensDefeated: 0,
-                questionsAnswered: 0,
-                questionsCorrect: 0,
-                reactionTime: flutterFocusData.level2Data?.reactionTime || 0,
-                focusBreaks: 0,
-                navigationErrors: 0,
-                optimalPathDeviation: 0
-              },
-              {
-                // Level 3 data
-                roundScore: flutterFocusData.finalResults?.levelScores?.[2] || 0,
-                timeToComplete: flutterFocusData.level3Data?.duration || 0,
-                asteroidsHit: flutterFocusData.level3Data?.livesLost || 0,
-                asteroidsAvoided: flutterFocusData.level3Data?.debrisAvoided || 0,
-                aliensDefeated: 0,
-                questionsAnswered: 0,
-                questionsCorrect: 0,
-                reactionTime: flutterFocusData.level3Data?.reactionTime || 0,
-                focusBreaks: 0,
-                navigationErrors: 0,
-                optimalPathDeviation: 0
-              }
-            ];
+              });
+            }
             
             console.log('[GameResultsPage] Created simplified level rounds for FlutterFocus:', levelRounds);
             
@@ -319,17 +324,33 @@ const GameResultsPage: React.FC = () => {
     games.forEach(game => {
       if (game && game.scores) {
         console.log('Game scores:', game.scores);
-        combinedScores.inattention += game.scores.inattention;
-        combinedScores.hyperactivity += game.scores.hyperactivity;
-        combinedScores.impulsivity += game.scores.impulsivity;
-        combinedScores.executive_function += game.scores.executive_function;
-        combinedScores.adhd_composite += game.scores.adhd_composite;
+        // Ensure all scores are valid numbers before adding
+        const inattention = Number(game.scores.inattention) || 0;
+        const hyperactivity = Number(game.scores.hyperactivity) || 0;
+        const impulsivity = Number(game.scores.impulsivity) || 0;
+        const executive_function = Number(game.scores.executive_function) || 0;
+        const adhd_composite = Number(game.scores.adhd_composite) || 0;
+        
+        combinedScores.inattention += inattention;
+        combinedScores.hyperactivity += hyperactivity;
+        combinedScores.impulsivity += impulsivity;
+        combinedScores.executive_function += executive_function;
+        combinedScores.adhd_composite += adhd_composite;
       }
     });
 
     const numGames = games.length;
     Object.keys(combinedScores).forEach(key => {
       combinedScores[key as keyof GameScores] /= numGames;
+    });
+
+    // Ensure all final scores are valid numbers
+    Object.keys(combinedScores).forEach(key => {
+      const score = combinedScores[key as keyof GameScores];
+      if (isNaN(score) || !isFinite(score)) {
+        console.warn(`Invalid combined score for ${key}:`, score);
+        combinedScores[key as keyof GameScores] = 0;
+      }
     });
 
     console.log('Combined scores:', combinedScores);
@@ -991,6 +1012,49 @@ const GameResultsPage: React.FC = () => {
       );
     }
 
+    // FlutterFocus insights
+    if (gameName === 'flutterFocus' && gameData.rounds.length > 0) {
+      const totalRounds = gameData.rounds.length;
+      const totalScore = gameData.rounds.reduce((sum, r) => sum + (r.score || 0), 0);
+      const totalLivesLost = gameData.rounds.reduce((sum, r) => sum + (r.livesLost || 0), 0);
+      const totalDebrisAvoided = gameData.rounds.reduce((sum, r) => sum + (r.debrisAvoided || 0), 0);
+      const totalDebrisHit = gameData.rounds.reduce((sum, r) => sum + (r.debrisHit || 0), 0);
+      const avgReactionTime = gameData.rounds.reduce((sum, r) => sum + (r.reactionTime || 0), 0) / totalRounds;
+      const avgDuration = gameData.rounds.reduce((sum, r) => sum + (r.duration || 0), 0) / totalRounds;
+      const overallAccuracy = totalDebrisAvoided > 0 ? (totalDebrisAvoided / (totalDebrisAvoided + totalDebrisHit)) * 100 : 0;
+      
+      insights.push(
+        <div key="totalScore" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Total Score</span>
+          <span className="text-sm text-emerald-600 font-semibold">{totalScore}</span>
+        </div>,
+        <div key="avgDuration" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Average Level Duration</span>
+          <span className="text-sm text-sleek-600 font-semibold">{formatTimeToReadable(avgDuration / 1000)}</span>
+        </div>,
+        <div key="livesLost" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Total Lives Lost</span>
+          <span className="text-sm text-sleek-600 font-semibold">{totalLivesLost}</span>
+        </div>,
+        <div key="debrisAvoided" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Debris Avoided</span>
+          <span className="text-sm text-emerald-600 font-semibold">{totalDebrisAvoided}</span>
+        </div>,
+        <div key="debrisHit" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-sleek-700">Debris Collisions</span>
+          <span className="text-sm text-sleek-600 font-semibold">{totalDebrisHit}</span>
+        </div>,
+        <div key="accuracy" className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Overall Accuracy</span>
+          <span className="text-sm text-emerald-600 font-semibold">{overallAccuracy.toFixed(1)}%</span>
+        </div>,
+        <div key="reactionTime" className="flex justify-between items-center p-3 bg-sleek-50 rounded-lg">
+          <span className="text-sm font-medium text-emerald-700">Average Reaction Time</span>
+          <span className="text-sm text-emerald-600 font-semibold">{Math.round(avgReactionTime)}ms</span>
+        </div>
+      );
+    }
+
     // Bounce Back insights
     if (gameName === 'bounceBack' && (gameData as any).gameData) {
       const bounceBackData = (gameData as any).gameData;
@@ -1184,7 +1248,7 @@ const GameResultsPage: React.FC = () => {
                       title={`Click to view detailed ${getGameDisplayName(gameKey)} results`}
                     >
                       <div className="text-2xl font-bold text-emerald-300 mb-1">
-                        {userResults[gameKey]?.scores.adhd_composite.toFixed(1)}
+                        {userResults[gameKey]?.scores?.adhd_composite?.toFixed(1) || 'N/A'}
                       </div>
                       <p className="text-sm text-sage-200">Composite Score</p>
                       <p className="text-xs text-emerald-400 mt-1">Click to view details →</p>
@@ -1234,7 +1298,7 @@ const GameResultsPage: React.FC = () => {
                 </p>
                 
                 <div className="text-6xl font-bold text-sleek-300 mb-4">
-                  {combinedScores.adhd_composite.toFixed(1)}
+                  {combinedScores?.adhd_composite?.toFixed(1) || 'N/A'}
                 </div>
                 <p className="text-lg text-sage-200 mb-6">
                   Overall ADHD Composite Score
@@ -1311,7 +1375,7 @@ const GameResultsPage: React.FC = () => {
                         {getGameDisplayName(gameKey)}
                       </h4>
                       <div className="text-2xl font-bold text-sleek-300 mb-1">
-                        {gameData.scores.adhd_composite.toFixed(1)}
+                        {gameData.scores?.adhd_composite?.toFixed(1) || 'N/A'}
                       </div>
                       <p className="text-sm text-sage-200">Score</p>
                       <p className="text-xs text-sleek-400 mt-1">Click to view details →</p>
@@ -1500,7 +1564,9 @@ const GameResultsPage: React.FC = () => {
         </motion.div>
 
         {/* Medical Disclaimer */}
-        <MedicalDisclaimer />
+        <div className="mt-12">
+          <MedicalDisclaimer />
+        </div>
       </div>
 
       {/* ADHD Score Interpretation Guide Modal */}

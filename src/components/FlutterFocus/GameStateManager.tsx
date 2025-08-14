@@ -24,6 +24,14 @@ interface GameStateManagerProps {
   onPlayAgain: () => void;
   onJump: () => void;
   userId?: string;
+  debugData?: {
+    level: number;
+    debrisHit: number;
+    debrisAvoided: number;
+    reactionTime: number;
+    reactionCount: number;
+    spawnTimesCount: number;
+  };
 }
 
 const GameStateManager: React.FC<GameStateManagerProps> = ({
@@ -43,7 +51,8 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
   onNextLevel,
   onPlayAgain,
   onJump,
-  userId
+  userId,
+  debugData
 }) => {
   // Render instructions
   if (gameState === 'instructions') {
@@ -111,6 +120,7 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
         lives={lives}
         onJump={onJump}
         canvasRef={canvasRef}
+        debugData={debugData}
       />
     );
   }

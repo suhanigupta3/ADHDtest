@@ -114,4 +114,10 @@ export interface GameRound {
   // PatternMatch/score calculation
   totalTrials?: number;
   roundDurationMs?: number;
+  // FlutterFocus fields
+  debrisAvoided?: number;
+  debrisHit?: number;
+  livesLost?: number;
+  score?: number;
+  duration?: number;
 } 
