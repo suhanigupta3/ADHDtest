@@ -213,6 +213,15 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       }
       
       console.log('[BounceBack][FIREBASE] Self-report data available, calculating ADHD scores');
+      console.log('[BounceBack][FIREBASE] Self-report data structure:', {
+        selfReportKeys: Object.keys(selfReport),
+        selfReportValues: selfReport,
+        q1_focus_difficulty: selfReport.q1_focus_difficulty,
+        q2_impulsive_movements: selfReport.q2_impulsive_movements,
+        q3_frustration_level: selfReport.q3_frustration_level,
+        q4_planning_ability: selfReport.q4_planning_ability,
+        q5_persistence_motivation: selfReport.q5_persistence_motivation
+      });
       
       const gameMetrics = {
         accuracy: finalGameData.accuracy,
@@ -236,30 +245,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         timeBetweenMistakes: finalGameData.timeBetweenMistakes,
       };
 
-      // Debug logging for score calculations
-      console.log('[BounceBack][SCORES] Game metrics for score calculation:', {
-        accuracy: gameMetrics.accuracy,
-        maxConsecutiveErrors: gameMetrics.maxConsecutiveErrors,
-        totalMistakes: gameMetrics.totalMistakes,
-        totalPlayTime: gameMetrics.totalPlayTime,
-        movementPatterns: gameMetrics.movementPatterns.length,
-        errorPatterns: gameMetrics.errorPatterns.length,
-        paddleMovements: gameMetrics.paddleMovements,
-        successfulRecoveries: gameMetrics.successfulRecoveries,
-        failedRecoveries: gameMetrics.failedRecoveries,
-        selfReport
-      });
-
-      // Additional debugging for extreme values
-      console.log('[BounceBack][SCORES] Raw values that might cause issues:', {
-        accuracyPercent: gameMetrics.accuracy,
-        maxConsecutiveErrorsRaw: gameMetrics.maxConsecutiveErrors,
-        totalMistakesRaw: gameMetrics.totalMistakes,
-        totalPlayTimeSeconds: gameMetrics.totalPlayTime / 1000,
-        movementPatternsCount: gameMetrics.movementPatterns.length,
-        errorPatternsCount: gameMetrics.errorPatterns.length,
-        paddleMovementsRaw: gameMetrics.paddleMovements
-      });
+      
 
       // Calculate Inattention Score (0-10) - HIGHER score = MORE inattention
       // Convert from "good attention = high score" to "poor attention = high score"
@@ -595,50 +581,24 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     const levelScore = score - levelStartScore;
     const levelTime = Date.now() - levelStartTime;
     
-    console.log('[BounceBack] Time calculation debug:', {
-      currentTime: Date.now(),
-      levelStartTime,
-      calculatedLevelTime: levelTime,
-      levelTimeInSeconds: (levelTime / 1000).toFixed(2)
-    });
-    
-    // Calculate bricks destroyed for this level
-    const levelTotalBricks = gameData.totalBricks; // This is the correct total for this level
-    const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
-    
-    // Calculate total hits for this level (we need to track this from level start)
-    const currentLevelHits = (() => {
-      try {
-        const previousHits = gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0;
-        const result = Math.max(0, gameData.totalHits - previousHits);
-        console.log('[BounceBack] currentLevelHits calculation (scope 2):', { gameDataTotalHits: gameData.totalHits, previousHits, result });
-        return result;
-      } catch (error) {
-        console.error('[BounceBack] Error calculating currentLevelHits (scope 2):', error);
-        return 0;
-      }
-    })();
-    
-    // Calculate lives lost for this level (started with levelStartLives lives, current lives = levelStartLives - lives lost)
-    const levelLivesLost = Math.max(0, levelStartLives - lives);
-    console.log('[BounceBack] Lives lost calculation:', {
-      levelStartLives,
-      currentLives: lives,
-      calculatedLivesLost: levelLivesLost
-    });
-    
-    console.log('[BounceBack] Advancing to next level:', {
-      currentLevel,
-      levelScore,
-      levelTime,
-      currentScore: score,
-      previousLevelScores: gameData.levelScores,
-      totalPreviousScore: gameData.levelScores.reduce((sum, s) => sum + s, 0),
-      levelStartTime,
-      levelBricksDestroyed,
-      levelLivesLost,
-      totalBricksInLevel: gameData.totalBricks
-    });
+          // Calculate bricks destroyed for this level
+      const levelTotalBricks = gameData.totalBricks; // This is the correct total for this level
+      const levelBricksDestroyed = levelTotalBricks - bricks.filter(brick => brick.status === 1).length;
+      
+      // Calculate total hits for this level (we need to track this from level start)
+      const currentLevelHits = (() => {
+        try {
+          const previousHits = gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0;
+          const result = Math.max(0, gameData.totalHits - previousHits);
+          return result;
+        } catch (error) {
+          console.error('[BounceBack] Error calculating currentLevelHits (scope 2):', error);
+          return 0;
+        }
+      })();
+      
+      // Calculate lives lost for this level (started with levelStartLives lives, current lives = levelStartLives - lives lost)
+      const levelLivesLost = Math.max(0, levelStartLives - lives);
     
     setGameData(prev => {
       const newLevelScores = [...prev.levelScores, levelScore];
@@ -775,29 +735,13 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
   useEffect(() => {
     if (gameStarted && !gameOver && !gameWon && !showQuestions && !showLevelTransition && !levelCompleted) {
       const remainingBricks = bricks.filter(brick => brick.status === 1).length;
-      console.log('[BounceBack] Level completion check:', {
-        gameStarted,
-        gameOver,
-        gameWon,
-        showQuestions,
-        showLevelTransition,
-        levelCompleted,
-        remainingBricks,
-        currentLevel,
-        totalBricks: bricks.length,
-        allBricksStatus: bricks.map(brick => ({ status: brick.status, x: brick.x, y: brick.y }))
-      });
       
       if (remainingBricks === 0) {
-        console.log('[BounceBack] 🎉 Level completed! Calling advanceLevel()');
-        console.log('[BounceBack] All bricks destroyed - current level:', currentLevel);
         setLevelCompleted(true);
         advanceLevel();
-      } else {
-        console.log('[BounceBack] Level not completed yet - remaining bricks:', remainingBricks);
       }
     } else if (levelCompleted) {
-      console.log('[BounceBack] Level already completed, skipping completion check');
+      // Level already completed, skipping completion check
     }
   }, [bricks, gameStarted, gameOver, gameWon, showQuestions, showLevelTransition, levelCompleted, advanceLevel, currentLevel]);
 
@@ -971,17 +915,11 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           }
 
           // Handle ball out of bounds
-          console.log('[BounceBack] Out of bounds check:', {
-            outOfBounds: result.outOfBounds,
-            currentLives: lives
-          });
           
           if (result.outOfBounds) {
-            console.log('[BounceBack] Processing out of bounds - current lives:', lives);
-            setLives(prev => {
-              const newLives = Math.max(0, prev - 1);
-              console.log('[BounceBack] Life lost - prev lives:', prev, 'new lives:', newLives);
-              const currentTime = Date.now();
+                            setLives(prev => {
+                  const newLives = Math.max(0, prev - 1);
+                  const currentTime = Date.now();
               
               setGameData(prevData => {
                 const timeSinceLastMistake = currentTime - prevData.lastMistakeTime;
@@ -1008,28 +946,13 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
               });
               
               if (newLives <= 0) {
-                console.log('[BounceBack] No lives left on level', currentLevel, '- continuing to next level');
-                
-                // Save the current level data even if it wasn't completed
-                const levelScore = score - levelStartScore;
-                const levelTime = Date.now() - levelStartTime;
-                const levelBricksDestroyed = gameData.totalBricks - bricks.filter(brick => brick.status === 1).length;
-                const levelLivesLost = Math.max(0, levelStartLives - newLives);
-                const levelTotalHits = gameData.totalHits - (gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0);
-                console.log('[BounceBack] Lives lost calculation (incomplete level):', {
-                  levelStartLives,
-                  currentLives: newLives,
-                  calculatedLivesLost: levelLivesLost
-                });
-                const levelTotalBricks = gameData.totalBricks;
-                
-                console.log('[BounceBack] Saving incomplete level data:', {
-                  levelScore,
-                  levelTime,
-                  levelBricksDestroyed,
-                  levelLivesLost,
-                  levelTotalBricks
-                });
+                                  // Save the current level data even if it wasn't completed
+                  const levelScore = score - levelStartScore;
+                  const levelTime = Date.now() - levelStartTime;
+                  const levelBricksDestroyed = gameData.totalBricks - bricks.filter(brick => brick.status === 1).length;
+                  const levelLivesLost = Math.max(0, levelStartLives - newLives);
+                  const levelTotalHits = gameData.totalHits - (gameData.levelTotalHits?.reduce((sum, hits) => sum + hits, 0) || 0);
+                  const levelTotalBricks = gameData.totalBricks;
                 
                 setGameData(prev => {
                   const newLevelScores = [...prev.levelScores, levelScore];
@@ -1131,8 +1054,6 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                 });
                 
                 // Reset ball to follow paddle
-                console.log('[BounceBack] Ball out of bounds - resetting ball and setting gameStarted to false');
-                console.log('[BounceBack] About to reset ball - current lives:', lives);
                 setGameStarted(false);
                 
                 // Ensure paddleX is within valid bounds before positioning ball
@@ -1147,13 +1068,6 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                   dx: 0,
                   dy: 0
                 }));
-                
-                console.log('[BounceBack] Ball reset to position:', {
-                  x: safePaddleX + currentPaddleWidth / 2,
-                  y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS,
-                  paddleX: safePaddleX,
-                  paddleWidth: currentPaddleWidth
-                });
                 
 
               }
@@ -1182,18 +1096,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           ballSpeedConsistency: calculateBallSpeedConsistency([...prev.ballSpeedHistory, Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)])
         }));
         
-        // Debug logging for metrics tracking
-        if (gameStarted && gameData.ballSpeedHistory.length % 100 === 0) { // Log every 100th update
-          console.log('[BounceBack][METRICS] Current metrics:', {
-            ballSpeed: Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy),
-            ballSpeedHistoryLength: gameData.ballSpeedHistory.length,
-            movementPatternsLength: gameData.movementPatterns.length,
-            errorPatternsLength: gameData.errorPatterns.length,
-            totalMistakes: gameData.totalMistakes,
-            successfulRecoveries: gameData.successfulRecoveries,
-            failedRecoveries: gameData.failedRecoveries
-          });
-        }
+
       }
 
       animationFrameRef.current = requestAnimationFrame(gameLoop);

@@ -14,6 +14,8 @@ import {
   BG_COLOR,
   BALL_COLOR
 } from './constants';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 
 // Particle Background Component
 const ParticleBackground: React.FC = () => {
@@ -520,10 +522,10 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
     // User must click "Next" button to proceed
   }, [currentQuestionIndex, setQuestionResponses]);
 
-  // Handle game completion - immediately call onGameComplete when all levels are done
+  // Handle game completion - save basic game data but don't calculate scores yet
   const handleGameComplete = useCallback(async () => {
     if (allLevelsCompleted) {
-      // All levels completed - finish the game immediately
+      // All levels completed - save basic game data first
       const finalGameData = {
         ...gameData,
         gameId: 'bounce-back', // Add the gameId that AssessmentPage expects
@@ -532,23 +534,28 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
         gameCompleted: true
       };
       
-      // Save to Firebase
+      // Save basic game data to Firebase (without scores)
       try {
-        await saveGameDataToFirebase(finalGameData);
-        console.log('[BounceBack] Game data saved to Firebase successfully');
+        const basicGameData = { 
+          gameData: finalGameData,
+          timestamp: new Date().toISOString()
+        };
+        
+        await setDoc(doc(db, 'users', userId || 'anonymous', 'games', 'bounce-back'), basicGameData, { merge: true });
+        console.log('[BounceBack] Basic game data saved to Firebase (scores will be calculated after self-report)');
       } catch (error) {
-        console.error('[BounceBack] Failed to save game data to Firebase:', error);
+        console.error('[BounceBack] Failed to save basic game data to Firebase:', error);
         if (onError) {
           onError(`Failed to save game data: ${error}`);
         }
       }
       
-      // Call the completion callback immediately - let GameFlow handle the questions
+      // Call the completion callback to let GameFlow handle the questions
       if (onGameComplete) {
         onGameComplete(finalGameData);
       }
     }
-  }, [allLevelsCompleted, gameData, score, lives, onGameComplete, onError, saveGameDataToFirebase]);
+  }, [allLevelsCompleted, gameData, score, lives, onGameComplete, onError, userId]);
 
   // Get current paddle width
   const currentPaddleWidth = getPaddleWidth(currentLevel);

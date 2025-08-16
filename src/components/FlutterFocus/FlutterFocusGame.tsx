@@ -1741,8 +1741,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
             return scoresToSave;
           })(),
           
-          // Save empty selfReport for now (will be populated when questions are completed)
-          selfReport: {},
+
           
           // Save rounds data using real level data
           rounds: allLevels.map((levelData, index) => ({

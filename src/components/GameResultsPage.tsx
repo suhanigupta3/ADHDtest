@@ -64,8 +64,18 @@ const GameResultsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>('combined');
   const [showInterpretationGuide, setShowInterpretationGuide] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  console.log('[GameResultsPage] Component rendered with currentUser:', currentUser?.uid);
+
+
+  // Manual refresh function to clear cached data and re-fetch
+  const handleManualRefresh = () => {
+
+    setUserResults(null);
+    setLoading(true);
+    setError(null);
+    setRefreshTrigger(prev => prev + 1); // This will trigger useEffect
+  };
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
@@ -88,20 +98,16 @@ const GameResultsPage: React.FC = () => {
   );
 
   useEffect(() => {
-    console.log('[GameResultsPage] useEffect triggered, currentUser:', currentUser?.uid);
-    
     if (!currentUser) {
-      console.log('[GameResultsPage] No current user, setting error');
       setError('Please log in to view your results.');
       setLoading(false);
       return;
     }
 
     const fetchUserResults = async () => {
-      console.log('[GameResultsPage] fetchUserResults started for user:', currentUser.uid);
       try {
         setLoading(true);
-        console.log('🔍 Fetching real user data for:', currentUser.uid);
+        setError(null);
         
         const results: UserResults = {};
         
@@ -148,28 +154,18 @@ const GameResultsPage: React.FC = () => {
           }
         }
         // Fetch Bounce Back data
-        const bounceBackDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BounceBack'));
+        const bounceBackDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'bounce-back'));
         if (bounceBackDoc.exists()) {
           const bounceBackData = bounceBackDoc.data();
-          console.log('[GameResultsPage] BounceBack data from Firebase:', bounceBackData);
-          console.log('[GameResultsPage] BounceBack data keys:', Object.keys(bounceBackData));
           
           // Check for both old and new data structures
           const hasScores = bounceBackData.scores;
           const hasSelfReport = bounceBackData.selfReport;
           
-          console.log('[GameResultsPage] BounceBack data structure check:', {
-            hasScores: !!hasScores,
-            hasSelfReport: !!hasSelfReport,
-            scores: bounceBackData.scores,
-            selfReport: bounceBackData.selfReport,
-            gameData: bounceBackData.gameData
-          });
-          
           if (hasScores && hasSelfReport) {
             let rounds: GameRound[] = [];
             try {
-              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'BounceBack', 'rounds'));
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'bounce-back', 'rounds'));
               rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
             } catch (roundsError) {
               if (bounceBackData.rounds && Array.isArray(bounceBackData.rounds)) {
@@ -188,57 +184,18 @@ const GameResultsPage: React.FC = () => {
               rounds: rounds,
               gameData: gameData
             };
-            console.log('[GameResultsPage] Processed BounceBack results:', results.bounceBack);
-          } else {
-            console.log('[GameResultsPage] BounceBack data missing scores or selfReport:', {
-              hasScores: !!hasScores,
-              hasSelfReport: !!hasSelfReport,
-              scores: bounceBackData.scores,
-              selfReport: bounceBackData.selfReport,
-              gameData: bounceBackData.gameData
-            });
           }
-        } else {
-          console.log('[GameResultsPage] No BounceBack document found in Firebase');
         }
+        
         // Fetch Flutter Focus data
         const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'FlutterFocus'));
         if (flutterFocusDoc.exists()) {
           const flutterFocusData = flutterFocusDoc.data();
-          console.log('[GameResultsPage] FlutterFocus document exists, data:', flutterFocusData);
-          console.log('[GameResultsPage] FlutterFocus scores:', flutterFocusData.scores);
-          console.log('[GameResultsPage] FlutterFocus selfReport:', flutterFocusData.selfReport);
-          console.log('[GameResultsPage] FlutterFocus has scores:', !!flutterFocusData.scores);
-          console.log('[GameResultsPage] FlutterFocus has selfReport:', !!flutterFocusData.selfReport);
           
-          // Debug: Log all available keys and level data
-          console.log('[GameResultsPage] FlutterFocus all keys:', Object.keys(flutterFocusData));
-          console.log('[GameResultsPage] FlutterFocus level1Data:', flutterFocusData.level1Data);
-          console.log('[GameResultsPage] FlutterFocus level2Data:', flutterFocusData.level2Data);
-          console.log('[GameResultsPage] FlutterFocus level3Data:', flutterFocusData.level3Data);
-          console.log('[GameResultsPage] FlutterFocus finalResults:', flutterFocusData.finalResults);
+          // Check for selfReport in both possible locations
+          const flutterSelfReport = flutterFocusData.selfReport || flutterFocusData.selfReportResponses;
           
-          if (flutterFocusData.scores && flutterFocusData.selfReport) {
-            console.log('[GameResultsPage] ✅ FlutterFocus has both scores and selfReport, processing...');
-            console.log('[GameResultsPage] FlutterFocus scores breakdown:', {
-              inattention: flutterFocusData.scores.inattention,
-              hyperactivity: flutterFocusData.scores.hyperactivity,
-              impulsivity: flutterFocusData.scores.impulsivity,
-              executive_function: flutterFocusData.scores.executive_function,
-              adhd_composite: flutterFocusData.scores.adhd_composite,
-              allKeys: Object.keys(flutterFocusData.scores)
-            });
-            
-            // Debug: Check if we can calculate composite manually
-            const manualComposite = (flutterFocusData.scores.inattention + flutterFocusData.scores.hyperactivity + 
-                                   flutterFocusData.scores.impulsivity + flutterFocusData.scores.executive_function) / 4;
-            console.log('[GameResultsPage] Manual composite calculation:', {
-              sum: flutterFocusData.scores.inattention + flutterFocusData.scores.hyperactivity + 
-                   flutterFocusData.scores.impulsivity + flutterFocusData.scores.executive_function,
-              count: 4,
-              manualComposite: manualComposite
-            });
-            
+          if (flutterFocusData.scores && flutterSelfReport) {
             // For FlutterFocus, we only want to show the 3 main levels, not all individual rounds
             // Create a simplified rounds array with just the 3 levels using real data
             const levelRounds: GameRound[] = [];
@@ -247,9 +204,6 @@ const GameResultsPage: React.FC = () => {
             for (let i = 1; i <= 3; i++) {
               const levelData = flutterFocusData[`level${i}Data`];
               const finalLevelData = flutterFocusData.finalResults;
-              
-              console.log(`[GameResultsPage] Level ${i} data:`, levelData);
-              console.log(`[GameResultsPage] Level ${i} data:`, levelData);
               
               levelRounds.push({
                 roundScore: levelData?.score || finalLevelData?.levelScores?.[i-1] || 0,
@@ -266,38 +220,21 @@ const GameResultsPage: React.FC = () => {
               });
             }
             
-            console.log('[GameResultsPage] Created simplified level rounds for FlutterFocus:', levelRounds);
-            
             results.flutterFocus = {
               scores: flutterFocusData.scores,
-              selfReport: flutterFocusData.selfReport,
+              selfReport: flutterSelfReport,
               rounds: levelRounds
             };
-            console.log('[GameResultsPage] ✅ FlutterFocus results added to results object');
-          } else {
-            console.log('[GameResultsPage] ❌ FlutterFocus missing required data:', {
-              hasScores: !!flutterFocusData.scores,
-              hasSelfReport: !!flutterFocusData.selfReport,
-              scores: flutterFocusData.scores,
-              selfReport: flutterFocusData.selfReport
-            });
           }
-        } else {
-          console.log('[GameResultsPage] No FlutterFocus document found in Firebase');
         }
-        console.log('[GameResultsPage] Final results object:', results);
-        console.log('[GameResultsPage] Results keys:', Object.keys(results));
         
         if (Object.keys(results).length > 0) {
           setUserResults(results);
-          console.log('[GameResultsPage] ✅ Loaded real user data');
         } else {
-          console.log('[GameResultsPage] ⚠️ No real data found for current user');
           setUserResults({});
           setError('No game data found for your account. Please play some games first.');
         }
       } catch (err) {
-        console.log('[GameResultsPage] ❌ Error loading data:', err);
         setUserResults({});
         setError('Failed to load data. Please try again.');
       } finally {
@@ -305,7 +242,7 @@ const GameResultsPage: React.FC = () => {
       }
     };
     fetchUserResults();
-  }, [currentUser]);
+  }, [currentUser, refreshTrigger]);
 
   const calculateCombinedScores = (): GameScores | null => {
     if (!userResults) return null;
@@ -323,7 +260,6 @@ const GameResultsPage: React.FC = () => {
 
     games.forEach(game => {
       if (game && game.scores) {
-        console.log('Game scores:', game.scores);
         // Ensure all scores are valid numbers before adding
         const inattention = Number(game.scores.inattention) || 0;
         const hyperactivity = Number(game.scores.hyperactivity) || 0;
@@ -353,7 +289,6 @@ const GameResultsPage: React.FC = () => {
       }
     });
 
-    console.log('Combined scores:', combinedScores);
     return combinedScores;
   };
 
@@ -361,16 +296,8 @@ const GameResultsPage: React.FC = () => {
     if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
     const gameOrder = ['berryBlitz', 'patternMatch', 'bounceBack', 'flutterFocus'];
     
-    console.log('[GameResultsPage] getGameProgress - userResults:', userResults);
-    console.log('[GameResultsPage] getGameProgress - checking each game:');
-    
     gameOrder.forEach(game => {
       const gameData = userResults[game];
-      console.log(`[GameResultsPage] ${game}:`, {
-        exists: !!gameData,
-        hasScores: !!gameData?.scores,
-        scores: gameData?.scores
-      });
     });
     
     const completedGames = gameOrder.filter(game => userResults[game]?.scores);
@@ -522,16 +449,7 @@ const GameResultsPage: React.FC = () => {
   };
 
   const renderGameRoundsTable = (rounds: GameRound[], gameName: string) => {
-    console.log(`🔍 Rendering rounds table for ${gameName}:`, rounds);
-    console.log(`🔍 User results for ${gameName}:`, userResults?.[gameName]);
-    console.log(`🔍 Game data for ${gameName}:`, (userResults?.[gameName] as any)?.gameData);
-    
-    // Special logging for FlutterFocus to debug data structure
-    if (gameName === 'flutterFocus') {
-      console.log(`🔍 [FlutterFocus] Rounds data:`, rounds);
-      console.log(`🔍 [FlutterFocus] First round data:`, rounds[0]);
-      console.log(`🔍 [FlutterFocus] Round properties:`, rounds[0] ? Object.keys(rounds[0]) : 'No rounds');
-    }
+
     
     const gameNameDisplay = gameName === 'berryBlitz' ? 'Berry Blitz' : 
                            gameName === 'patternMatch' ? 'Signal Snap' : 
@@ -810,7 +728,9 @@ const GameResultsPage: React.FC = () => {
 
   const renderSelfReportTable = (selfReport: SelfReport, gameName: string) => {
     const questions = Object.keys(selfReport).filter(key => selfReport[key as keyof SelfReport] !== undefined);
-    if (questions.length === 0) return null;
+    if (questions.length === 0) {
+      return null;
+    }
 
     // Use different question keys/labels for different games
     let questionLabels: { [key: string]: string };
@@ -1448,7 +1368,17 @@ const GameResultsPage: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-forest-900 mb-4">Your Assessment Results</h1>
+            <div className="flex justify-between items-center mb-4">
+              <div></div> {/* Spacer */}
+              <h1 className="text-4xl font-bold text-forest-900">Your Assessment Results</h1>
+              <button
+                onClick={handleManualRefresh}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-sm"
+                title="Refresh data from Firebase"
+              >
+                🔄 Refresh
+              </button>
+            </div>
             <p className="text-lg text-forest-700 max-w-3xl mx-auto mb-2">
               Comprehensive analysis of your A(rDx)HD assessment performance across all games
             </p>
