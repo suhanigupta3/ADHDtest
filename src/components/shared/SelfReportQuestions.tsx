@@ -38,11 +38,11 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
   height = '100%',
   isModal = false
 }) => {
-  console.log('[SelfReportQuestions] Received questions prop:', questions);
-  console.log('[SelfReportQuestions] Questions type:', typeof questions);
-  console.log('[SelfReportQuestions] Questions length:', questions?.length);
-  console.log('[SelfReportQuestions] Questions array:', questions);
-  console.log('[SelfReportQuestions] First question:', questions?.[0]);
+  // console.log('[SelfReportQuestions] Received questions prop:', questions);
+  // console.log('[SelfReportQuestions] Questions type:', typeof questions);
+  // console.log('[SelfReportQuestions] Questions length:', questions?.length);
+  // console.log('[SelfReportQuestions] Questions array:', questions);
+  // console.log('[SelfReportQuestions] First question:', questions?.[0]);
   // Theme configurations
   const themes = {
     default: {
@@ -75,9 +75,9 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
 
   // Safety check for questions array
   if (!questions || questions.length === 0) {
-    console.log('[SelfReportQuestions] Questions array is empty or undefined:', questions);
-    console.log('[SelfReportQuestions] Questions type:', typeof questions);
-    console.log('[SelfReportQuestions] Questions length:', questions?.length);
+    // console.log('[SelfReportQuestions] Questions array is empty or undefined:', questions);
+    // console.log('[SelfReportQuestions] Questions type:', typeof questions);
+    // console.log('[SelfReportQuestions] Questions length:', questions?.length);
     return (
       <div style={{
         width,
@@ -102,9 +102,9 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
   
   // Safety check for current question
   if (!currentQuestion || !currentQuestion.id) {
-    console.log('[SelfReportQuestions] Current question is invalid:', currentQuestion);
-    console.log('[SelfReportQuestions] Current question index:', currentQuestionIndex);
-    console.log('[SelfReportQuestions] Questions array:', questions);
+    // console.log('[SelfReportQuestions] Current question is invalid:', currentQuestion);
+    // console.log('[SelfReportQuestions] Current question index:', currentQuestionIndex);
+    // console.log('[SelfReportQuestions] Questions array:', questions);
     return (
       <div style={{
         width,
@@ -255,18 +255,31 @@ const SelfReportQuestions: React.FC<SelfReportQuestionsProps> = ({
         <div style={{
           width: '100%',
           maxWidth: '500px',
-          height: '8px',
-          backgroundColor: currentTheme.cardBg,
-          borderRadius: '4px',
-          overflow: 'hidden',
-          marginBottom: '40px'
+          marginBottom: '20px'
         }}>
           <div style={{
-            height: '100%',
-            backgroundColor: currentTheme.primary,
-            width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`,
-            transition: 'width 0.3s ease'
-          }} />
+            width: '100%',
+            height: '8px',
+            backgroundColor: currentTheme.cardBg,
+            borderRadius: '4px',
+            overflow: 'hidden',
+            marginBottom: '8px'
+          }}>
+            <div style={{
+              height: '100%',
+              backgroundColor: currentTheme.primary,
+              width: `${(Object.keys(questionResponses).length / questions.length) * 100}%`,
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          <div style={{
+            textAlign: 'center',
+            color: currentTheme.text,
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            {Object.keys(questionResponses).length} of {questions.length} questions answered
+          </div>
         </div>
 
 

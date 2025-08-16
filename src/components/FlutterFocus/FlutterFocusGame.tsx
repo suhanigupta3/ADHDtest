@@ -1001,10 +1001,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
           debrisRef.current = debrisRef.current.map(d => d.id === debris.id ? { ...d, isActive: false } : d);
           setBackgroundDebris([...debrisRef.current]); // Update state for React
           
-          // Respawn alien to starting position after collision with a brief delay
-          setTimeout(() => {
-            alienRef.current = { x: 100, y: 250, width: 120, height: 92, velocityY: 0 };
-          }, 500); // 500ms delay to show collision effects
+          // DO NOT reset alien position - just show collision effects
+          // Alien stays where it is, only loses life
           
           logDebug(`Alien hit debris! Damage: ${damage}, Lives remaining:`, Math.max(0, lives - damage));
         }
@@ -1207,38 +1205,33 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     const totalLivesLost = allLevels.reduce((sum, level) => sum + (level?.livesLost || 0), 0);
     const totalDebrisHit = allLevels.reduce((sum, level) => sum + (level?.debrisHit || 0), 0);
     const totalDebrisAvoided = allLevels.reduce((sum, level) => sum + (level?.debrisAvoided || 0), 0);
+    const totalDebrisSpawned = allLevels.reduce((sum, level) => sum + (level?.debrisSpawned || 0), 0);
     
-    // Start with base score of 5 (neutral)
-    let score = 5;
+    // Mathematical formula: Higher performance = Lower ADHD score
+    // All components are 0-10 scale where 0 = perfect, 10 = worst
     
-    // Lives lost is not a reliable metric since level changes at 3 lives
-    // Focus on debris collision and avoidance instead
+    // 1. Debris collision rate: (hits / total) * 10
+    const collisionRate = totalDebrisSpawned > 0 ? (totalDebrisHit / totalDebrisSpawned) * 10 : 10;
     
-    // Debris collisions: fewer = better impulse control (lower ADHD score)
-    // Much stricter scoring - 9 hits should be penalized as poor performance
-    if (totalDebrisHit === 0) score -= 3; // Best case: score = 2
-    else if (totalDebrisHit <= 2) score -= 2; // Excellent: score = 3
-    else if (totalDebrisHit <= 4) score -= 1; // Good: score = 4
-    else if (totalDebrisHit <= 6) score += 0; // Fair: score = 5
-    else if (totalDebrisHit <= 8) score += 1; // Below average: score = 6
-    else if (totalDebrisHit === 9) score += 2; // Poor: score = 7 (was neutral)
-    else if (totalDebrisHit > 9) score += 3; // Very poor: score = 8+
+    // 2. Debris avoidance efficiency: (1 - avoided/total) * 10
+    const avoidanceEfficiency = totalDebrisSpawned > 0 ? (1 - totalDebrisAvoided / totalDebrisSpawned) * 10 : 10;
     
-    // Debris avoided: more = better impulse control (lower ADHD score)
-    // Much stricter scoring for debris avoidance
-    if (totalDebrisAvoided >= 30) score -= 2; // Best: score -2
-    else if (totalDebrisAvoided >= 25) score -= 1.5; // Excellent: score -1.5
-    else if (totalDebrisAvoided >= 20) score -= 1; // Good: score -1
-    else if (totalDebrisAvoided >= 15) score -= 0.5; // Fair: score -0.5
-    else if (totalDebrisAvoided >= 10) score += 0; // Poor: score +0
-    else if (totalDebrisAvoided >= 5) score += 1; // Very poor: score +1
-    else score += 2; // Worst: score +2
+    // 3. Lives lost rate: (lives lost / max possible) * 10
+    const livesRate = (totalLivesLost / 9) * 10;
     
-
+    // 4. Impulse control score: weighted average of all components
+    const adhdScore = (collisionRate * 0.5 + avoidanceEfficiency * 0.3 + livesRate * 0.2);
     
-    // Ensure score is between 1-10 and not negative
-    const finalScore = Math.max(1, Math.min(10, Math.round(score)));
-    // console.log(`[FlutterFocus] calculateImpulseControl - final score: ${finalScore} (was ${score})`);
+    // Ensure score is between 1-10
+    const finalScore = Math.max(1, Math.min(10, Math.round(adhdScore)));
+    
+    console.log('[FlutterFocus] Impulse Control calculation:', {
+      totalDebrisHit, totalDebrisSpawned, collisionRate,
+      totalDebrisAvoided, avoidanceEfficiency,
+      totalLivesLost, livesRate,
+      finalScore
+    });
+    
     return finalScore;
   }, []);
   
@@ -1250,61 +1243,63 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     const totalDuration = allLevels.reduce((sum, level) => sum + (level?.duration || 0), 0);
     const levelsCompleted = allLevels.length;
     
-    // Start with base score of 5 (neutral)
-    let score = 5;
+    // Mathematical formula: Higher performance = Lower ADHD score
+    // All components are 0-10 scale where 0 = perfect, 10 = worst
     
-    // Level completion: more levels completed = better sustained attention (lower ADHD score)
-    if (levelsCompleted === 3) score -= 2; // Best case: score = 3
-    else if (levelsCompleted === 2) score -= 1; // Good: score = 4
-    else if (levelsCompleted === 1) score += 0; // Neutral: score = 5
+    // 1. Score efficiency: (1 - actual/max_expected) * 10
+    // Max expected score for 3 levels: 8000 (excellent), 4000 (average), 1000 (poor)
+    const maxExpectedScore = 8000;
+    const scoreEfficiency = Math.max(0, Math.min(10, (1 - totalScore / maxExpectedScore) * 10));
     
-    // Score achievement: higher total scores indicate better focus (lower ADHD score)
-    // Much stricter scoring - your total score of 4608 should be penalized
-    if (totalScore >= 5000) score -= 3; // Best case: score = 2
-    else if (totalScore >= 4000) score -= 2; // Excellent: score = 3
-    else if (totalScore >= 3000) score -= 1; // Good: score = 4
-    else if (totalScore >= 2000) score += 0; // Fair: score = 5
-    else if (totalScore >= 1000) score += 1; // Poor: score = 6
-    else score += 2; // Very poor: score = 7+
+    // 2. Debris avoidance rate: (avoided / total_spawned) * 10
+    const totalDebrisSpawned = allLevels.reduce((sum, level) => sum + (level?.debrisSpawned || 0), 0);
+    const avoidanceRate = totalDebrisSpawned > 0 ? (totalDebrisAvoided / totalDebrisSpawned) * 10 : 0;
+    const avoidanceComponent = 10 - avoidanceRate; // Invert: higher avoidance = lower ADHD
     
-    // Debris avoidance: shows sustained attention to obstacles (lower ADHD score)
-    // Much stricter scoring - your total of 36 should be penalized
-    if (totalDebrisAvoided >= 50) score -= 2; // Best case: score -2
-    else if (totalDebrisAvoided >= 40) score -= 1.5; // Excellent: score -1.5
-    else if (totalDebrisAvoided >= 30) score -= 1; // Good: score -1
-    else if (totalDebrisAvoided >= 20) score -= 0.5; // Fair: score -0.5
-    else if (totalDebrisAvoided >= 10) score += 0; // Poor: score +0
-    else if (totalDebrisAvoided >= 5) score += 1; // Very poor: score +1
-    else score += 2; // Worst: score +2
+    // 3. Duration efficiency: longer play time = better focus = lower ADHD
+    // Optimal duration: 60s (excellent focus), 30s (average focus), 15s (poor focus)
+    const minDuration = 15000; // 15 seconds minimum
+    const maxDuration = 60000; // 60 seconds maximum
+    const durationEfficiency = Math.max(0, Math.min(10, 
+      (1 - (totalDuration - minDuration) / (maxDuration - minDuration)) * 10
+    ));
     
-    // Duration: very short total time might indicate lack of focus (higher ADHD score)
-    // Much stricter scoring for duration
-    if (totalDuration < 25000) score += 2; // Less than 25 seconds total (very poor)
-    else if (totalDuration < 35000) score += 1; // Less than 35 seconds total (poor)
-    else if (totalDuration < 45000) score += 0.5; // Less than 45 seconds total (below average)
+    // 4. Lives lost rate: (lives lost / max possible) * 10
+    const totalLivesLost = allLevels.reduce((sum, level) => sum + (level?.livesLost || 0), 0);
+    const livesComponent = (totalLivesLost / 9) * 10;
     
-
+    // 5. Sustained attention score: weighted average of all components
+    const adhdScore = (scoreEfficiency * 0.35 + avoidanceComponent * 0.3 + durationEfficiency * 0.2 + livesComponent * 0.15);
     
-    // Ensure score is between 1-10 and not negative
-    const finalScore = Math.max(1, Math.min(10, Math.round(score)));
-    // console.log(`[FlutterFocus] calculateSustainedAttention - final score: ${finalScore} (was ${score})`);
+    // Ensure score is between 1-10
+    const finalScore = Math.max(1, Math.min(10, Math.round(adhdScore)));
+    
+    console.log('[FlutterFocus] Sustained Attention calculation:', {
+      totalScore, scoreEfficiency,
+      totalDebrisAvoided, avoidanceComponent,
+      totalDuration, durationEfficiency,
+      totalLivesLost, livesComponent,
+      finalScore
+    });
+    
     return finalScore;
   }, []);
   
-  // Calculate final ADHD scores integrating gameplay and self-assessment (60% gameplay, 40% self-report)
+  // Calculate final ADHD scores integrating gameplay and self-assessment (70% gameplay, 30% self-report)
   const calculateFinalADHDScores = useCallback((gameplayScores: any, selfReport: any) => {
     // Convert self-report scores (1-5) to ADHD scores (1-10)
     // Higher self-report scores = higher ADHD scores (worse performance)
-    // We want self-report to contribute 4 out of 10 when answer is 5 (40% weight)
+    // We want self-report to contribute 3 out of 10 when answer is 5 (30% weight)
     // So map 1→1, 2→3, 3→5, 4→7, 5→10
-    // This means: 40% of 10 = 4 points from self-report when answer is 5
+    // This means: 30% of 10 = 3 points from self-report when answer is 5
     // 
     // IMPORTANT: All questions now follow the same logic:
     // - Higher self-report score = Higher ADHD score (worse performance)
     // - No more inverted logic confusion
     const convertSelfReportToADHD = (selfReportScore: number) => {
-      // Map 1-5 to 1-10 so that 40% of 10 = 4 points exactly
-      return 1 + (selfReportScore - 1) * 2.25;
+      // Map 1-5 to 1-10 so that 30% of 10 = 3 points exactly
+      // 1→1, 2→3, 3→5, 4→7, 5→10
+      return 1 + (selfReportScore - 1) * 2;
     };
     
     // Calculate self-report based ADHD scores
@@ -1315,54 +1310,71 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     
     if (selfReport) {
       // ALL QUESTIONS: Higher self-report score = Higher ADHD score (worse performance)
-      // No inverted logic - consistent scoring across all questions
+      // Consistent direction across all questions for proper ADHD assessment
       
       // Focus difficulty (q1_flutter_focus_difficulty: 1-5, higher = more difficulty)
       if (selfReport.q1_flutter_focus_difficulty) {
         const originalScore = selfReport.q1_flutter_focus_difficulty;
-        selfReportInattention = convertSelfReportToADHD(originalScore);
+        const convertedScore = convertSelfReportToADHD(originalScore);
+        selfReportInattention = convertedScore;
+        console.log('[FlutterFocus] Q1 Focus difficulty:', { original: originalScore, converted: convertedScore });
       }
       
       // Impulsive movements (q2_flutter_impulsive_movements: 1-5, higher = more impulsive)
       if (selfReport.q2_flutter_impulsive_movements) {
         const originalScore = selfReport.q2_flutter_impulsive_movements;
-        const impulsiveScore = convertSelfReportToADHD(originalScore);
-        selfReportHyperactivity = impulsiveScore;
-        selfReportImpulsivity = impulsiveScore;
+        const convertedScore = convertSelfReportToADHD(originalScore);
+        selfReportHyperactivity = convertedScore;
+        selfReportImpulsivity = convertedScore;
+        console.log('[FlutterFocus] Q2 Impulsive movements:', { original: originalScore, converted: convertedScore });
       }
       
       // Frustration level (q3_flutter_frustration_level: 1-5, higher = more frustration)
       if (selfReport.q3_flutter_frustration_level) {
         const originalScore = selfReport.q3_flutter_frustration_level;
-        const frustrationScore = convertSelfReportToADHD(originalScore);
-        // Frustration affects all areas
-        selfReportInattention = Math.max(selfReportInattention, frustrationScore);
-        selfReportHyperactivity = Math.max(selfReportHyperactivity, frustrationScore);
-        selfReportImpulsivity = Math.max(selfReportImpulsivity, frustrationScore);
-        selfReportExecutiveFunction = Math.max(selfReportExecutiveFunction, frustrationScore);
+        const convertedScore = convertSelfReportToADHD(originalScore);
+        // Frustration affects all areas - use direct assignment for consistency
+        selfReportInattention = convertedScore;
+        selfReportHyperactivity = convertedScore;
+        selfReportImpulsivity = convertedScore;
+        selfReportExecutiveFunction = convertedScore;
+        console.log('[FlutterFocus] Q3 Frustration level:', { original: originalScore, converted: convertedScore });
       }
       
       // Planning ability (q4_flutter_planning_ability: 1-5, higher = better planning)
       if (selfReport.q4_flutter_planning_ability) {
         const originalScore = selfReport.q4_flutter_planning_ability;
-        // For planning ability: 1=excellent (ADHD score 1), 5=poor (ADHD score 5)
-        // We want excellent planning (1) to result in low ADHD score (1)
-        // Use convertSelfReportToADHD for consistent mapping
-        selfReportExecutiveFunction = convertSelfReportToADHD(originalScore);
+        // For planning ability: 1=excellent (ADHD score 1), 5=poor (ADHD score 10)
+        // Higher answer = Better planning = Lower ADHD score
+        // So we need to INVERT: 1 (excellent) → 1 (ADHD score), 5 (poor) → 10 (ADHD score)
+        const invertedScore = 6 - originalScore; // 1→5, 2→4, 3→3, 4→2, 5→1
+        const convertedScore = convertSelfReportToADHD(invertedScore);
+        selfReportExecutiveFunction = convertedScore;
+        console.log('[FlutterFocus] Q4 Planning ability:', { original: originalScore, inverted: invertedScore, converted: convertedScore });
       }
       
       // Persistence motivation (q5_flutter_persistence_motivation: 1-5, higher = better persistence)
       if (selfReport.q5_flutter_persistence_motivation) {
         const originalScore = selfReport.q5_flutter_persistence_motivation;
-        // For persistence: 1=excellent (ADHD score 1), 5=poor (ADHD score 5)
-        // We want excellent persistence (1) to result in low ADHD score (1)
-        // Persistence affects both inattention AND executive function
-        // Use convertSelfReportToADHD for consistent mapping
-        const persistenceScore = convertSelfReportToADHD(originalScore);
-        selfReportInattention = Math.min(selfReportInattention, persistenceScore); // Take the better score
-        selfReportExecutiveFunction = Math.min(selfReportExecutiveFunction, persistenceScore); // Take the better score
+        // For persistence: 1=excellent (ADHD score 1), 5=poor (ADHD score 10)
+        // Higher answer = Better persistence = Lower ADHD score
+        // So we need to INVERT: 1 (excellent) → 1 (ADHD score), 5 (poor) → 10 (ADHD score)
+        const invertedScore = 6 - originalScore; // 1→5, 2→4, 3→3, 4→2, 5→1
+        const convertedScore = convertSelfReportToADHD(invertedScore);
+        selfReportInattention = convertedScore; // Direct assignment for consistency
+        selfReportExecutiveFunction = convertedScore; // Direct assignment for consistency
+        console.log('[FlutterFocus] Q5 Persistence motivation:', { original: originalScore, inverted: invertedScore, converted: convertedScore });
       }
     }
+    
+    // Debug logging for self-report calculations
+    console.log('[FlutterFocus] Self-report calculations:', {
+      selfReportInattention,
+      selfReportHyperactivity,
+      selfReportImpulsivity,
+      selfReportExecutiveFunction,
+      rawSelfReport: selfReport
+    });
     
 
     
@@ -1379,6 +1391,23 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     // Convert overall performance score back to ADHD score: 11 - performanceScore
     const overallADHDScore = 11 - gameplayScores.overall;
     const executiveFunction = (overallADHDScore * 0.7) + (selfReportExecutiveFunction * 0.3);
+    
+    // Debug logging for final calculations
+    console.log('[FlutterFocus] Final score calculations:', {
+      gameplayScores,
+      selfReportScores: {
+        inattention: selfReportInattention,
+        hyperactivity: selfReportHyperactivity,
+        impulsivity: selfReportImpulsivity,
+        executiveFunction: selfReportExecutiveFunction
+      },
+      finalScores: {
+        inattention,
+        hyperactivity,
+        impulsivity,
+        executiveFunction
+      }
+    });
     
 
     
@@ -1765,13 +1794,14 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
             return scoresToSave;
           })(),
           
-          // Preserve individual level data from earlier saves
-          level1Data: existingData.level1Data || null,
-          level2Data: existingData.level2Data || null,
-          level3Data: existingData.level3Data || null,
+          // NO DATA PRESERVATION - Use current game data only
+          // Individual level data comes from allLevels array
+          level1Data: allLevels[0] || null,
+          level2Data: allLevels[1] || null,
+          level3Data: allLevels[2] || null,
           
-          // Preserve self-report data
-          selfReport: existingData.selfReport || {},
+          // Self-report data comes from current questionResponses
+          selfReport: { ...questionResponses },
           
           // Save rounds data using real level data
           rounds: allLevels.map((levelData, index) => ({

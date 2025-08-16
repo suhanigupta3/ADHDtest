@@ -64,18 +64,6 @@ const GameResultsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>('combined');
   const [showInterpretationGuide, setShowInterpretationGuide] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-
-
-  // Manual refresh function to clear cached data and re-fetch
-  const handleManualRefresh = () => {
-
-    setUserResults(null);
-    setLoading(true);
-    setError(null);
-    setRefreshTrigger(prev => prev + 1); // This will trigger useEffect
-  };
 
   // IMPORTANT MEDICAL DISCLAIMER
   const MedicalDisclaimer = () => (
@@ -191,12 +179,6 @@ const GameResultsPage: React.FC = () => {
         const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'flutter-focus'));
         if (flutterFocusDoc.exists()) {
           const flutterFocusData = flutterFocusDoc.data();
-          console.log('[GameResultsPage] FlutterFocus data retrieved:', flutterFocusData);
-          console.log('[GameResultsPage] FlutterFocus document keys:', Object.keys(flutterFocusData));
-          console.log('[GameResultsPage] Level 1 data:', flutterFocusData.level1Data);
-          console.log('[GameResultsPage] Level 2 data:', flutterFocusData.level2Data);
-          console.log('[GameResultsPage] Level 3 data:', flutterFocusData.level3Data);
-          console.log('[GameResultsPage] Self-report data:', flutterFocusData.selfReport);
           
           // Check for selfReport and scores
           const flutterSelfReport = flutterFocusData.selfReport;
@@ -204,21 +186,13 @@ const GameResultsPage: React.FC = () => {
           
           // Get reaction times from the rounds array in the main document
           let levelReactionTimes = [0, 0, 0];
-          console.log('[GameResultsPage] DEBUG - flutterFocusData.rounds:', flutterFocusData.rounds);
-          console.log('[GameResultsPage] DEBUG - rounds length:', flutterFocusData.rounds?.length);
           
           if (flutterFocusData.rounds && flutterFocusData.rounds.length >= 3) {
-            console.log('[GameResultsPage] DEBUG - Processing rounds array');
             flutterFocusData.rounds.slice(0, 3).forEach((round: any, index: number) => {
-              console.log(`[GameResultsPage] DEBUG - Round ${index + 1}:`, round);
               if (round.reactionTime) {
                 levelReactionTimes[index] = round.reactionTime;
-                console.log(`[GameResultsPage] DEBUG - Set reaction time for level ${index + 1}:`, round.reactionTime);
               }
             });
-            console.log('[GameResultsPage] DEBUG - Final levelReactionTimes:', levelReactionTimes);
-          } else {
-            console.log('[GameResultsPage] DEBUG - No rounds array found or insufficient length');
           }
           
           if (flutterScores) {
@@ -227,10 +201,7 @@ const GameResultsPage: React.FC = () => {
             
                          // Use the rounds array data which contains the most accurate information
              if (flutterFocusData.rounds && flutterFocusData.rounds.length >= 3) {
-               console.log('[GameResultsPage] DEBUG - Using rounds array for levelRounds');
                flutterFocusData.rounds.slice(0, 3).forEach((round: any, index: number) => {
-                 console.log(`[GameResultsPage] DEBUG - Processing round ${index + 1} for levelRounds:`, round);
-                 
                  const roundData = {
                    roundScore: round.score || round.roundScore || 0,
                    timeToComplete: round.duration || round.timeToComplete || 0,
@@ -245,12 +216,10 @@ const GameResultsPage: React.FC = () => {
                    optimalPathDeviation: round.optimalPathDeviation || 0
                  };
                  
-                 console.log(`[GameResultsPage] DEBUG - Level ${index + 1} roundData created:`, roundData);
                  levelRounds.push(roundData);
                });
              } else {
                // Fallback to individual level data if rounds array is not available
-               console.log('[GameResultsPage] Rounds array not available, falling back to level data');
                for (let i = 1; i <= 3; i++) {
                  const levelDataKey = `level${i}Data`;
                  const levelData = flutterFocusData[levelDataKey];
@@ -262,17 +231,6 @@ const GameResultsPage: React.FC = () => {
                  const levelLivesLost = levelData?.livesLost || 0;
                  const levelDebrisHit = levelData?.debrisHit || 0;
                  const levelDebrisAvoided = levelData?.debrisAvoided || 0;
-                 
-                 // Debug logging for level data
-                 console.log(`[GameResultsPage] Level ${i} data:`, {
-                   levelData,
-                   score: levelScore,
-                   time: levelTime,
-                   reactionTime: levelReactionTime,
-                   livesLost: levelLivesLost,
-                   debrisHit: levelDebrisHit,
-                   debrisAvoided: levelDebrisAvoided
-                 });
                  
                  const roundData = {
                    roundScore: levelScore,
@@ -288,7 +246,6 @@ const GameResultsPage: React.FC = () => {
                    optimalPathDeviation: 0
                  };
                  
-                 console.log(`[GameResultsPage] Level ${i} round data:`, roundData);
                  levelRounds.push(roundData);
                }
              }
@@ -298,8 +255,6 @@ const GameResultsPage: React.FC = () => {
               selfReport: flutterSelfReport,
               rounds: levelRounds
             };
-            
-            console.log('[GameResultsPage] Final FlutterFocus results:', results.flutterFocus);
           }
         }
         
@@ -317,7 +272,7 @@ const GameResultsPage: React.FC = () => {
       }
     };
     fetchUserResults();
-  }, [currentUser, refreshTrigger]);
+  }, [currentUser]);
 
   const calculateCombinedScores = (): GameScores | null => {
     if (!userResults) return null;
@@ -1443,16 +1398,8 @@ const GameResultsPage: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <div></div> {/* Spacer */}
+            <div className="text-center mb-4">
               <h1 className="text-4xl font-bold text-forest-900">Your Assessment Results</h1>
-              <button
-                onClick={handleManualRefresh}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-sm"
-                title="Refresh data from Firebase"
-              >
-                🔄 Refresh
-              </button>
             </div>
             <p className="text-lg text-forest-700 max-w-3xl mx-auto mb-2">
               Comprehensive analysis of your A(rDx)HD assessment performance across all games

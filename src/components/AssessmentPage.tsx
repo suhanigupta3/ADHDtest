@@ -362,7 +362,7 @@ const AssessmentPage: React.FC = () => {
     if (!currentUser) return;
 
     try {
-      console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
+      // console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
       
       // Check each game's completion status from their actual documents
       const gameIds = ['BerryBlitz', 'pattern-match', 'BounceBack', 'FlutterFocus'];
@@ -380,7 +380,7 @@ const AssessmentPage: React.FC = () => {
         const gameProgressDoc = await getDoc(doc(db, 'gameProgress', currentUser.uid));
         if (gameProgressDoc.exists()) {
           const progressData = gameProgressDoc.data();
-          console.log('[AssessmentPage] GameProgress document data:', progressData);
+          // console.log('[AssessmentPage] GameProgress document data:', progressData);
           
           // Update completion status from gameProgress collection
           if (progressData.game1Completed) gameProgressMap.game1Completed = true;
@@ -388,12 +388,12 @@ const AssessmentPage: React.FC = () => {
           if (progressData.game3Completed) gameProgressMap.game3Completed = true;
           if (progressData.game4Completed) gameProgressMap.game4Completed = true;
           
-          console.log('[AssessmentPage] Completion status from gameProgress:', {
-            game1Completed: progressData.game1Completed,
-            game2Completed: progressData.game2Completed,
-            game3Completed: progressData.game3Completed,
-            game4Completed: progressData.game4Completed
-          });
+          // console.log('[AssessmentPage] Completion status from gameProgress:', {
+          //   game1Completed: progressData.game1Completed,
+          //   game2Completed: progressData.game2Completed,
+          //   game3Completed: progressData.game3Completed,
+          //   game4Completed: progressData.game4Completed
+          // });
         } else {
           console.log('[AssessmentPage] GameProgress document does not exist for user:', currentUser.uid);
         }
@@ -408,15 +408,15 @@ const AssessmentPage: React.FC = () => {
           const gameDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', gameId));
           if (gameDoc.exists()) {
             const gameData = gameDoc.data();
-            console.log(`[AssessmentPage] Game ${gameId} data:`, gameData);
-            console.log(`[AssessmentPage] Game ${gameId} has scores:`, !!gameData.scores);
-            console.log(`[AssessmentPage] Game ${gameId} has selfReport:`, !!gameData.selfReport);
-            console.log(`[AssessmentPage] Game ${gameId} scores:`, gameData.scores);
-            console.log(`[AssessmentPage] Game ${gameId} selfReport:`, gameData.selfReport);
+            // console.log(`[AssessmentPage] Game ${gameId} data:`, gameData);
+            // console.log(`[AssessmentPage] Game ${gameId} has scores:`, !!gameData.scores);
+            // console.log(`[AssessmentPage] Game ${gameId} has selfReport:`, !!gameData.selfReport);
+            // console.log(`[AssessmentPage] Game ${gameId} scores:`, gameData.scores);
+            // console.log(`[AssessmentPage] Game ${gameId} selfReport:`, gameData.selfReport);
             
             // Check if game has scores (indicates completion)
             const isCompleted = !!(gameData.scores && gameData.selfReport);
-            console.log(`[AssessmentPage] Game ${gameId} completed:`, isCompleted);
+            // console.log(`[AssessmentPage] Game ${gameId} completed:`, isCompleted);
             
             // If gameProgress says it's completed OR the game document has scores+selfReport, mark as completed
             if (i === 0) gameProgressMap.game1Completed = gameProgressMap.game1Completed || isCompleted;
@@ -437,14 +437,14 @@ const AssessmentPage: React.FC = () => {
                                         gameProgressMap.game3Completed && 
                                         gameProgressMap.game4Completed;
 
-      console.log('[AssessmentPage] Final game progress:', gameProgressMap);
-      console.log('[AssessmentPage] Individual game completion status:', {
-        'BerryBlitz (game1)': gameProgressMap.game1Completed,
-        'PatternMatch (game2)': gameProgressMap.game2Completed,
-        'BounceBack (game3)': gameProgressMap.game3Completed,
-        'FlutterFocus (game4)': gameProgressMap.game4Completed,
-        'All Games': gameProgressMap.allGamesCompleted
-      });
+      // console.log('[AssessmentPage] Final game progress:', gameProgressMap);
+      // console.log('[AssessmentPage] Individual game completion status:', {
+      //   'BerryBlitz (game1)': gameProgressMap.game1Completed,
+      //   'PatternMatch (game2)': gameProgressMap.game2Completed,
+      //   'BounceBack (game3)': gameProgressMap.game3Completed,
+      //   'FlutterFocus (game4)': gameProgressMap.game4Completed,
+      //   'All Games': gameProgressMap.allGamesCompleted
+      // });
       setGameProgress(gameProgressMap);
       
     } catch (error) {
@@ -494,7 +494,7 @@ const AssessmentPage: React.FC = () => {
   const markGameCompleted = async (completeGameData: any) => {
     // Mark game as completed and save complete data to Firebase
     setGameCompleted(true);
-    console.log('[AssessmentPage] Game completed with data:', completeGameData);
+    // console.log('[AssessmentPage] Game completed with data:', completeGameData);
     
     // Save the complete game data (including self-report) to Firebase
     if (completeGameData && currentUser?.uid) {
@@ -505,8 +505,7 @@ const AssessmentPage: React.FC = () => {
       if ((gameId === 'bounce-back' || gameId === 'flutter-focus') && completeGameData.selfReport) {
         // Get self-report data
         const selfReport = completeGameData.selfReport;
-        console.log(`[AssessmentPage] Calculating ADHD scores for ${gameId} with self-report:`, selfReport);
-        const gameData = completeGameData.gameData || completeGameData;
+        const gameData = completeGameData;
         
         // Game metrics for score calculation
         let gameMetrics;
@@ -558,7 +557,7 @@ const AssessmentPage: React.FC = () => {
         
         // Safety check for gameMetrics
         if (!gameMetrics) {
-          console.error('[AssessmentPage] gameMetrics is undefined for gameId:', gameId);
+          // console.error('[AssessmentPage] gameMetrics is undefined for gameId:', gameId);
           return;
         }
         
@@ -688,7 +687,7 @@ const AssessmentPage: React.FC = () => {
           // For FlutterFocus, planning component based on debris hit and lives lost
           planningComponent = Math.min(1, (gameMetrics.debrisHit + gameMetrics.livesLost) / 6) * 4;
           execSelfReportComponent = selfReport.q4_flutter_planning_ability ? 
-            (5 - selfReport.q4_flutter_planning_ability) / 4 * 3 : 0;
+            (selfReport.q4_flutter_planning_ability - 1) / 4 * 3 : 0;
         }
         
         // Calculate planning bonus based on game type
@@ -740,7 +739,7 @@ const AssessmentPage: React.FC = () => {
             (5 - selfReport.q5_persistence_motivation) / 4 * 2 : 0;
         } else if (gameId === 'flutter-focus') {
           persistenceComponent = selfReport.q5_flutter_persistence_motivation ? 
-            (5 - selfReport.q5_flutter_persistence_motivation) / 4 * 2 : 0;
+            (selfReport.q5_flutter_persistence_motivation - 1) / 4 * 2 : 0;
         }
         
         if (persistenceComponent > 0) {
@@ -777,22 +776,22 @@ const AssessmentPage: React.FC = () => {
           }
         }
         
-        if (gameId === 'bounce-back') {
-          console.log('[AssessmentPage] Calculated BounceBack ADHD scores:', scores);
-        } else if (gameId === 'flutter-focus') {
-          console.log('[AssessmentPage] Calculated FlutterFocus ADHD scores:', scores);
-          console.log('[AssessmentPage] FlutterFocus calculation breakdown:', {
-            accuracy: gameMetrics.accuracy,
-            livesLost: gameMetrics.livesLost,
-            debrisHit: gameMetrics.debrisHit,
-            debrisAvoided: gameMetrics.debrisAvoided,
-            totalPlayTime: gameMetrics.totalPlayTime,
-            inattentionScore,
-            hyperactivityScore,
-            impulsivityScore,
-            executiveFunctionScore
-          });
-        }
+        // if (gameId === 'bounce-back') {
+        //   console.log('[AssessmentPage] Calculated BounceBack ADHD scores:', scores);
+        // } else if (gameId === 'flutter-focus') {
+        //   console.log('[AssessmentPage] Calculated FlutterFocus ADHD scores:', scores);
+        //   console.log('[AssessmentPage] FlutterFocus calculation breakdown:', {
+        //     accuracy: gameMetrics.accuracy,
+        //     livesLost: gameMetrics.livesLost,
+        //     debrisHit: gameMetrics.debrisHit,
+        //     debrisAvoided: gameMetrics.debrisAvoided,
+        //     totalPlayTime: gameMetrics.totalPlayTime,
+        //     inattentionScore,
+        //     hyperactivityScore,
+        //     impulsivityScore,
+        //     executiveFunctionScore
+        //   });
+        // }
         
         // Save the complete data with calculated scores
         const completeDataWithScores = {
@@ -808,42 +807,21 @@ const AssessmentPage: React.FC = () => {
           const flutterSelfReport = completeGameData.selfReport;
           completeDataWithScores.selfReport = flutterSelfReport;
           
-          // Preserve individual level data from existing document
-          try {
-            const existingDoc = await getDoc(doc(db, firebasePath));
-            if (existingDoc.exists()) {
-              const existingData = existingDoc.data();
-              completeDataWithScores.level1Data = existingData.level1Data || null;
-              completeDataWithScores.level2Data = existingData.level2Data || null;
-              completeDataWithScores.level3Data = existingData.level3Data || null;
-              
-              // Preserve existing self-report data if it exists
-              if (existingData.selfReport && Object.keys(existingData.selfReport).length > 0) {
-                completeDataWithScores.selfReport = existingData.selfReport;
-                console.log('[AssessmentPage] FlutterFocus existing selfReport data preserved:', existingData.selfReport);
-              }
-              
-              console.log('[AssessmentPage] FlutterFocus individual level data preserved:', {
-                level1Data: existingData.level1Data,
-                level2Data: existingData.level2Data,
-                level3Data: existingData.level3Data
-              });
-            }
-          } catch (error) {
-            console.log('[AssessmentPage] Could not preserve FlutterFocus level data:', error);
-          }
+          // NO DATA PRESERVATION - Fresh start every time
+          // console.log('[AssessmentPage] FlutterFocus using NEW game data - no preservation of old data');
+          // console.log('[AssessmentPage] FlutterFocus self-report data from current game:', flutterSelfReport);
           
-          console.log('[AssessmentPage] FlutterFocus selfReport data being saved in ADHD path:', flutterSelfReport);
-          console.log('[AssessmentPage] FlutterFocus completeDataWithScores before save:', completeDataWithScores);
-          console.log('[AssessmentPage] FlutterFocus completeDataWithScores.selfReport:', completeDataWithScores.selfReport);
-          console.log('[AssessmentPage] FlutterFocus completeDataWithScores keys:', Object.keys(completeDataWithScores));
+          // console.log('[AssessmentPage] FlutterFocus selfReport data being saved in ADHD path:', flutterSelfReport);
+          // console.log('[AssessmentPage] FlutterFocus completeDataWithScores before save:', completeDataWithScores);
+          // console.log('[AssessmentPage] FlutterFocus completeDataWithScores.selfReport:', completeDataWithScores.selfReport);
+          // console.log('[AssessmentPage] FlutterFocus completeDataWithScores keys:', Object.keys(completeDataWithScores));
         }
         
-        console.log(`[AssessmentPage] About to save to Firebase path: ${firebasePath}`);
-        console.log(`[AssessmentPage] Firebase document reference:`, doc(db, firebasePath));
+        // console.log(`[AssessmentPage] About to save to Firebase path: ${firebasePath}`);
+        // console.log(`[AssessmentPage] Firebase document reference:`, doc(db, firebasePath));
         setDoc(doc(db, firebasePath), completeDataWithScores, { merge: true }).then(() => {
-          console.log(`[AssessmentPage] Complete ${gameId} data with scores saved to Firebase:`, firebasePath);
-          console.log(`[AssessmentPage] Data that was saved:`, completeDataWithScores);
+          // console.log(`[AssessmentPage] Complete ${gameId} data with scores saved to Firebase:`, firebasePath);
+          // console.log(`[AssessmentPage] Data that was saved:`, completeDataWithScores);
         }).catch(err => {
           console.error(`[AssessmentPage] Failed to save ${gameId} data with scores:`, err);
         });
@@ -861,7 +839,7 @@ const AssessmentPage: React.FC = () => {
         if (gameId === 'flutter-focus' && completeGameData.selfReport) {
           const flutterSelfReport = completeGameData.selfReport;
           dataToSave.selfReport = flutterSelfReport;
-          console.log('[AssessmentPage] FlutterFocus selfReport data being saved:', flutterSelfReport);
+          // console.log('[AssessmentPage] FlutterFocus selfReport data being saved:', flutterSelfReport);
         }
         
         setDoc(doc(db, firebasePath), dataToSave, { merge: true }).then(() => {
