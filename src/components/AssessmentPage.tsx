@@ -491,7 +491,7 @@ const AssessmentPage: React.FC = () => {
     setGameCompleted(false);
   };
 
-  const markGameCompleted = (completeGameData: any) => {
+  const markGameCompleted = async (completeGameData: any) => {
     // Mark game as completed and save complete data to Firebase
     setGameCompleted(true);
     console.log('[AssessmentPage] Game completed with data:', completeGameData);
@@ -502,9 +502,9 @@ const AssessmentPage: React.FC = () => {
       const firebasePath = `users/${currentUser.uid}/games/${gameId}`;
       
       // For BounceBack and FlutterFocus, calculate ADHD scores here since the games can't do it
-      if ((gameId === 'bounce-back' || gameId === 'flutter-focus') && (completeGameData.selfReport || completeGameData.selfReportResponses)) {
-        // Get self-report data from either field
-        const selfReport = completeGameData.selfReport || completeGameData.selfReportResponses;
+      if ((gameId === 'bounce-back' || gameId === 'flutter-focus') && completeGameData.selfReport) {
+        // Get self-report data
+        const selfReport = completeGameData.selfReport;
         console.log(`[AssessmentPage] Calculating ADHD scores for ${gameId} with self-report:`, selfReport);
         const gameData = completeGameData.gameData || completeGameData;
         
@@ -533,18 +533,26 @@ const AssessmentPage: React.FC = () => {
             timeBetweenMistakes: gameData.timeBetweenMistakes || [],
           };
         } else if (gameId === 'flutter-focus') {
+          // Calculate accuracy from obstacles hit vs avoided
+          const totalObstacles = (gameData.totalObstaclesHit || 0) + (gameData.totalObstaclesAvoided || 0);
+          const accuracy = totalObstacles > 0 ? ((gameData.totalObstaclesAvoided || 0) / totalObstacles) * 100 : 0;
+          
           gameMetrics = {
-            accuracy: gameData.overallAccuracy || 0,
-            averageReactionTime: gameData.averageReactionTime || 0,
-            livesLost: gameData.totalLivesLost || 0,
+            accuracy: accuracy,
+            averageReactionTime: 0, // Not available in current data structure
+            livesLost: gameData.livesLost || 0,
             totalPlayTime: gameData.totalPlayTime || 0,
             finalScore: gameData.finalScore || 0,
             levelScores: gameData.levelScores || [],
             levelCompletionTimes: gameData.levelCompletionTimes || [],
-            totalMistakes: gameData.totalLivesLost || 0,
+            totalMistakes: gameData.livesLost || 0,
             // FlutterFocus specific metrics
-            debrisHit: gameData.totalCrashes || 0,
+            debrisHit: gameData.totalObstaclesHit || 0,
             debrisAvoided: gameData.totalObstaclesAvoided || 0,
+            // FlutterFocus doesn't have these BounceBack-specific fields, so set defaults
+            maxConsecutiveErrors: 0,
+            failedRecoveries: 0,
+            successfulRecoveries: 0,
           };
         }
         
@@ -579,22 +587,45 @@ const AssessmentPage: React.FC = () => {
           focusComponent = Math.min(1, gameMetrics.debrisHit / Math.max(1, gameMetrics.totalPlayTime / 3000)) * 2;
         }
         
-        const inattentionBonus = gameMetrics.maxConsecutiveErrors > 1 ? 2 : 0;
+        // Calculate inattention bonus based on game type
+        let inattentionBonus = 0;
+        if (gameId === 'bounce-back') {
+          inattentionBonus = gameMetrics.maxConsecutiveErrors > 1 ? 2 : 0;
+        } else if (gameId === 'flutter-focus') {
+          // For FlutterFocus, bonus based on debris hit and lives lost
+          inattentionBonus = (gameMetrics.debrisHit > 2 ? 1 : 0) + (gameMetrics.livesLost > 1 ? 1 : 0);
+        }
         
         let inattentionScore = Math.max(0, Math.min(10, 
           accuracyComponent + consistencyComponent + focusComponent + inattentionSelfReportComponent + inattentionBonus
         ));
         
-        if (gameMetrics.accuracy > 80 && gameMetrics.totalMistakes > 0) {
-          inattentionScore = Math.min(10, inattentionScore + 2);
-        }
-        
-        if (gameMetrics.maxConsecutiveErrors >= 2) {
-          inattentionScore = Math.min(10, inattentionScore + 3);
-        }
-        
-        if (gameMetrics.totalMistakes > 0 && inattentionScore < 2) {
-          inattentionScore = Math.max(2, inattentionScore);
+        // Apply game-specific adjustments
+        if (gameId === 'bounce-back') {
+          if (gameMetrics.accuracy > 80 && gameMetrics.totalMistakes > 0) {
+            inattentionScore = Math.min(10, inattentionScore + 2);
+          }
+          
+          if (gameMetrics.maxConsecutiveErrors >= 2) {
+            inattentionScore = Math.min(10, inattentionScore + 3);
+          }
+          
+          if (gameMetrics.totalMistakes > 0 && inattentionScore < 2) {
+            inattentionScore = Math.max(2, inattentionScore);
+          }
+        } else if (gameId === 'flutter-focus') {
+          // FlutterFocus-specific adjustments
+          if (gameMetrics.accuracy < 50) {
+            inattentionScore = Math.min(10, inattentionScore + 1);
+          }
+          
+          if (gameMetrics.debrisHit > 3) {
+            inattentionScore = Math.min(10, inattentionScore + 1);
+          }
+          
+          if (gameMetrics.livesLost > 0 && inattentionScore < 2) {
+            inattentionScore = Math.max(2, inattentionScore);
+          }
         }
         
         // Calculate Hyperactivity Score (0-10) - HIGHER score = MORE hyperactivity
@@ -613,23 +644,29 @@ const AssessmentPage: React.FC = () => {
             ? Math.min(10, (gameMetrics.paddleMovements / 20) * 2 + hyperactivitySelfReportComponent)
             : Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent + hyperactivitySelfReportComponent));
         } else if (gameId === 'flutter-focus') {
-          // For FlutterFocus, use reaction time and lives lost as hyperactivity indicators
-          const reactionComponent = Math.min(1, gameMetrics.averageReactionTime / 2000) * 3;
+          // For FlutterFocus, use lives lost and debris hit as hyperactivity indicators
           const livesComponent = Math.min(1, gameMetrics.livesLost / 3) * 3;
+          const debrisComponent = Math.min(1, gameMetrics.debrisHit / 5) * 3;
           const hyperactivitySelfReportComponent = selfReport.q3_flutter_frustration_level ? 
             (selfReport.q3_flutter_frustration_level - 1) / 4 * 3 : 0;
-          hyperactivityScore = Math.max(0, Math.min(10, reactionComponent + livesComponent + hyperactivitySelfReportComponent));
+          hyperactivityScore = Math.max(0, Math.min(10, livesComponent + debrisComponent + hyperactivitySelfReportComponent));
         }
         
         // Calculate Impulsivity Score (0-10) - HIGHER score = MORE impulsivity
-        const errorComponent = Math.min(1, gameMetrics.totalMistakes / 5) * 4;
-        const recoveryComponent = Math.min(1, gameMetrics.failedRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 3;
+        let errorComponent = 0;
+        let recoveryComponent = 0;
         let impulsivitySelfReportComponent = 0;
         
         if (gameId === 'bounce-back') {
+          errorComponent = Math.min(1, gameMetrics.totalMistakes / 5) * 4;
+          recoveryComponent = Math.min(1, gameMetrics.failedRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 3;
           impulsivitySelfReportComponent = selfReport.q2_impulsive_movements ? 
             (selfReport.q2_impulsive_movements - 1) / 4 * 3 : 0;
         } else if (gameId === 'flutter-focus') {
+          // For FlutterFocus, error component based on debris hit and lives lost
+          errorComponent = Math.min(1, (gameMetrics.debrisHit + gameMetrics.livesLost) / 6) * 4;
+          // For FlutterFocus, recovery component based on accuracy
+          recoveryComponent = gameMetrics.accuracy < 50 ? 2 : 0;
           impulsivitySelfReportComponent = selfReport.q2_flutter_impulsive_movements ? 
             (selfReport.q2_flutter_impulsive_movements - 1) / 4 * 3 : 0;
         }
@@ -639,34 +676,60 @@ const AssessmentPage: React.FC = () => {
         ));
         
         // Calculate Executive Function Score (0-10) - HIGHER score = WORSE executive function
-        const planningComponent = (1 - Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes))) * 4;
-        const execAccuracyComponent = (1 - gameMetrics.accuracy / 100) * 3;
+        let planningComponent = 0;
+        let execAccuracyComponent = (1 - gameMetrics.accuracy / 100) * 3;
         let execSelfReportComponent = 0;
         
         if (gameId === 'bounce-back') {
+          planningComponent = (1 - Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes))) * 4;
           execSelfReportComponent = selfReport.q4_planning_ability ? 
             (5 - selfReport.q4_planning_ability) / 4 * 3 : 0;
         } else if (gameId === 'flutter-focus') {
+          // For FlutterFocus, planning component based on debris hit and lives lost
+          planningComponent = Math.min(1, (gameMetrics.debrisHit + gameMetrics.livesLost) / 6) * 4;
           execSelfReportComponent = selfReport.q4_flutter_planning_ability ? 
             (5 - selfReport.q4_flutter_planning_ability) / 4 * 3 : 0;
         }
         
-        const planningBonus = gameMetrics.failedRecoveries > 0 ? 2 : 0;
+        // Calculate planning bonus based on game type
+        let planningBonus = 0;
+        if (gameId === 'bounce-back') {
+          planningBonus = gameMetrics.failedRecoveries > 0 ? 2 : 0;
+        } else if (gameId === 'flutter-focus') {
+          // For FlutterFocus, bonus based on debris hit and lives lost
+          planningBonus = (gameMetrics.debrisHit > 2 ? 1 : 0) + (gameMetrics.livesLost > 1 ? 1 : 0);
+        }
         
         let executiveFunctionScore = Math.max(0, Math.min(10,
           planningComponent + execAccuracyComponent + execSelfReportComponent + planningBonus
         ));
         
-        if (gameMetrics.failedRecoveries > 0) {
-          executiveFunctionScore = Math.min(10, executiveFunctionScore + 2);
-        }
-        
-        if (gameMetrics.accuracy > 70 && gameMetrics.successfulRecoveries < gameMetrics.totalMistakes * 0.5) {
-          executiveFunctionScore = Math.min(10, executiveFunctionScore + 1);
-        }
-        
-        if (gameMetrics.failedRecoveries > 0 && executiveFunctionScore < 2) {
-          executiveFunctionScore = Math.max(2, executiveFunctionScore);
+        // Apply game-specific adjustments
+        if (gameId === 'bounce-back') {
+          if (gameMetrics.failedRecoveries > 0) {
+            executiveFunctionScore = Math.min(10, executiveFunctionScore + 2);
+          }
+          
+          if (gameMetrics.accuracy > 70 && gameMetrics.successfulRecoveries < gameMetrics.totalMistakes * 0.5) {
+            executiveFunctionScore = Math.min(10, executiveFunctionScore + 1);
+          }
+          
+          if (gameMetrics.failedRecoveries > 0 && executiveFunctionScore < 2) {
+            executiveFunctionScore = Math.max(2, executiveFunctionScore);
+          }
+        } else if (gameId === 'flutter-focus') {
+          // FlutterFocus-specific adjustments
+          if (gameMetrics.debrisHit > 3) {
+            executiveFunctionScore = Math.min(10, executiveFunctionScore + 1);
+          }
+          
+          if (gameMetrics.livesLost > 1) {
+            executiveFunctionScore = Math.min(10, executiveFunctionScore + 1);
+          }
+          
+          if (gameMetrics.accuracy < 50 && executiveFunctionScore < 2) {
+            executiveFunctionScore = Math.max(2, executiveFunctionScore);
+          }
         }
         
         // Add persistence/motivation component from self-report
@@ -718,6 +781,17 @@ const AssessmentPage: React.FC = () => {
           console.log('[AssessmentPage] Calculated BounceBack ADHD scores:', scores);
         } else if (gameId === 'flutter-focus') {
           console.log('[AssessmentPage] Calculated FlutterFocus ADHD scores:', scores);
+          console.log('[AssessmentPage] FlutterFocus calculation breakdown:', {
+            accuracy: gameMetrics.accuracy,
+            livesLost: gameMetrics.livesLost,
+            debrisHit: gameMetrics.debrisHit,
+            debrisAvoided: gameMetrics.debrisAvoided,
+            totalPlayTime: gameMetrics.totalPlayTime,
+            inattentionScore,
+            hyperactivityScore,
+            impulsivityScore,
+            executiveFunctionScore
+          });
         }
         
         // Save the complete data with calculated scores
@@ -729,14 +803,44 @@ const AssessmentPage: React.FC = () => {
         assessmentComplete: true
         };
         
-        // For FlutterFocus, ensure selfReport data is saved (it might be in selfReport or selfReportResponses)
-        if (gameId === 'flutter-focus' && (completeGameData.selfReport || completeGameData.selfReportResponses)) {
-          const flutterSelfReport = completeGameData.selfReport || completeGameData.selfReportResponses;
+        // For FlutterFocus, ensure selfReport data is saved and preserve individual level data
+        if (gameId === 'flutter-focus' && completeGameData.selfReport) {
+          const flutterSelfReport = completeGameData.selfReport;
           completeDataWithScores.selfReport = flutterSelfReport;
+          
+          // Preserve individual level data from existing document
+          try {
+            const existingDoc = await getDoc(doc(db, firebasePath));
+            if (existingDoc.exists()) {
+              const existingData = existingDoc.data();
+              completeDataWithScores.level1Data = existingData.level1Data || null;
+              completeDataWithScores.level2Data = existingData.level2Data || null;
+              completeDataWithScores.level3Data = existingData.level3Data || null;
+              
+              // Preserve existing self-report data if it exists
+              if (existingData.selfReport && Object.keys(existingData.selfReport).length > 0) {
+                completeDataWithScores.selfReport = existingData.selfReport;
+                console.log('[AssessmentPage] FlutterFocus existing selfReport data preserved:', existingData.selfReport);
+              }
+              
+              console.log('[AssessmentPage] FlutterFocus individual level data preserved:', {
+                level1Data: existingData.level1Data,
+                level2Data: existingData.level2Data,
+                level3Data: existingData.level3Data
+              });
+            }
+          } catch (error) {
+            console.log('[AssessmentPage] Could not preserve FlutterFocus level data:', error);
+          }
+          
           console.log('[AssessmentPage] FlutterFocus selfReport data being saved in ADHD path:', flutterSelfReport);
           console.log('[AssessmentPage] FlutterFocus completeDataWithScores before save:', completeDataWithScores);
+          console.log('[AssessmentPage] FlutterFocus completeDataWithScores.selfReport:', completeDataWithScores.selfReport);
+          console.log('[AssessmentPage] FlutterFocus completeDataWithScores keys:', Object.keys(completeDataWithScores));
         }
         
+        console.log(`[AssessmentPage] About to save to Firebase path: ${firebasePath}`);
+        console.log(`[AssessmentPage] Firebase document reference:`, doc(db, firebasePath));
         setDoc(doc(db, firebasePath), completeDataWithScores, { merge: true }).then(() => {
           console.log(`[AssessmentPage] Complete ${gameId} data with scores saved to Firebase:`, firebasePath);
           console.log(`[AssessmentPage] Data that was saved:`, completeDataWithScores);
@@ -754,8 +858,8 @@ const AssessmentPage: React.FC = () => {
         };
         
         // For FlutterFocus, ensure selfReport data is saved
-        if (gameId === 'flutter-focus' && (completeGameData.selfReport || completeGameData.selfReportResponses)) {
-          const flutterSelfReport = completeGameData.selfReport || completeGameData.selfReportResponses;
+        if (gameId === 'flutter-focus' && completeGameData.selfReport) {
+          const flutterSelfReport = completeGameData.selfReport;
           dataToSave.selfReport = flutterSelfReport;
           console.log('[AssessmentPage] FlutterFocus selfReport data being saved:', flutterSelfReport);
         }
@@ -1246,7 +1350,7 @@ const AssessmentPage: React.FC = () => {
                         paddleMovements: 200,
                         levelScores: [150, 200, 250],
                         levelCompletionTimes: [45000, 35000, 40000],
-                        selfReportResponses: {
+                        selfReport: {
                           attention_1: 3,
                           impulsivity_1: 2,
                           frustration_1: 4,

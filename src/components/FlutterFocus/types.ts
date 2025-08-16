@@ -36,7 +36,7 @@ export interface FlutterFocusGameData {
   };
   
   // Self-report responses
-  selfReportResponses: { [key: string]: number };
+  selfReport: { [key: string]: number };
   
   // Timestamps - following BounceBack pattern
   createdAt?: any;

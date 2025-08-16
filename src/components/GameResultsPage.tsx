@@ -175,7 +175,7 @@ const GameResultsPage: React.FC = () => {
             
             // Handle both data structures
             const scores = bounceBackData.scores || bounceBackData.gameData?.scores;
-            const selfReport = bounceBackData.selfReport || bounceBackData.gameData?.selfReportResponses;
+            const selfReport = bounceBackData.selfReport;
             const gameData = bounceBackData.gameData || bounceBackData;
             
             results.bounceBack = {
@@ -188,43 +188,118 @@ const GameResultsPage: React.FC = () => {
         }
         
         // Fetch Flutter Focus data
-        const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'FlutterFocus'));
+        const flutterFocusDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'flutter-focus'));
         if (flutterFocusDoc.exists()) {
           const flutterFocusData = flutterFocusDoc.data();
+          console.log('[GameResultsPage] FlutterFocus data retrieved:', flutterFocusData);
+          console.log('[GameResultsPage] FlutterFocus document keys:', Object.keys(flutterFocusData));
+          console.log('[GameResultsPage] Level 1 data:', flutterFocusData.level1Data);
+          console.log('[GameResultsPage] Level 2 data:', flutterFocusData.level2Data);
+          console.log('[GameResultsPage] Level 3 data:', flutterFocusData.level3Data);
+          console.log('[GameResultsPage] Self-report data:', flutterFocusData.selfReport);
           
-          // Check for selfReport in both possible locations
-          const flutterSelfReport = flutterFocusData.selfReport || flutterFocusData.selfReportResponses;
+          // Check for selfReport and scores
+          const flutterSelfReport = flutterFocusData.selfReport;
+          const flutterScores = flutterFocusData.scores;
           
-          if (flutterFocusData.scores && flutterSelfReport) {
-            // For FlutterFocus, we only want to show the 3 main levels, not all individual rounds
-            // Create a simplified rounds array with just the 3 levels using real data
+          // Get reaction times from the rounds array in the main document
+          let levelReactionTimes = [0, 0, 0];
+          console.log('[GameResultsPage] DEBUG - flutterFocusData.rounds:', flutterFocusData.rounds);
+          console.log('[GameResultsPage] DEBUG - rounds length:', flutterFocusData.rounds?.length);
+          
+          if (flutterFocusData.rounds && flutterFocusData.rounds.length >= 3) {
+            console.log('[GameResultsPage] DEBUG - Processing rounds array');
+            flutterFocusData.rounds.slice(0, 3).forEach((round: any, index: number) => {
+              console.log(`[GameResultsPage] DEBUG - Round ${index + 1}:`, round);
+              if (round.reactionTime) {
+                levelReactionTimes[index] = round.reactionTime;
+                console.log(`[GameResultsPage] DEBUG - Set reaction time for level ${index + 1}:`, round.reactionTime);
+              }
+            });
+            console.log('[GameResultsPage] DEBUG - Final levelReactionTimes:', levelReactionTimes);
+          } else {
+            console.log('[GameResultsPage] DEBUG - No rounds array found or insufficient length');
+          }
+          
+          if (flutterScores) {
+            // For FlutterFocus, use the rounds data directly since it contains all the information
             const levelRounds: GameRound[] = [];
             
-            // Try to get data from individual level documents first, then fall back to finalResults
-            for (let i = 1; i <= 3; i++) {
-              const levelData = flutterFocusData[`level${i}Data`];
-              const finalLevelData = flutterFocusData.finalResults;
-              
-              levelRounds.push({
-                roundScore: levelData?.score || finalLevelData?.levelScores?.[i-1] || 0,
-                timeToComplete: levelData?.duration || 0,
-                asteroidsHit: levelData?.livesLost || 0,
-                asteroidsAvoided: levelData?.debrisAvoided || 0,
-                aliensDefeated: 0,
-                questionsAnswered: 0,
-                questionsCorrect: 0,
-                reactionTime: levelData?.reactionTime || 0,
-                focusBreaks: 0,
-                navigationErrors: 0,
-                optimalPathDeviation: 0
-              });
-            }
+                         // Use the rounds array data which contains the most accurate information
+             if (flutterFocusData.rounds && flutterFocusData.rounds.length >= 3) {
+               console.log('[GameResultsPage] DEBUG - Using rounds array for levelRounds');
+               flutterFocusData.rounds.slice(0, 3).forEach((round: any, index: number) => {
+                 console.log(`[GameResultsPage] DEBUG - Processing round ${index + 1} for levelRounds:`, round);
+                 
+                 const roundData = {
+                   roundScore: round.score || round.roundScore || 0,
+                   timeToComplete: round.duration || round.timeToComplete || 0,
+                   asteroidsHit: round.debrisHit || round.asteroidsHit || 0,
+                   asteroidsAvoided: round.debrisAvoided || round.asteroidsAvoided || 0,
+                   aliensDefeated: round.aliensDefeated || 0,
+                   questionsAnswered: round.questionsAnswered || 0,
+                   questionsCorrect: round.questionsCorrect || 0,
+                   reactionTime: round.reactionTime || 0,
+                   focusBreaks: round.focusBreaks || 0,
+                   navigationErrors: round.navigationErrors || 0,
+                   optimalPathDeviation: round.optimalPathDeviation || 0
+                 };
+                 
+                 console.log(`[GameResultsPage] DEBUG - Level ${index + 1} roundData created:`, roundData);
+                 levelRounds.push(roundData);
+               });
+             } else {
+               // Fallback to individual level data if rounds array is not available
+               console.log('[GameResultsPage] Rounds array not available, falling back to level data');
+               for (let i = 1; i <= 3; i++) {
+                 const levelDataKey = `level${i}Data`;
+                 const levelData = flutterFocusData[levelDataKey];
+                 
+                 // Use individual level data if available, otherwise fall back to aggregated data
+                 const levelScore = levelData?.score || flutterFocusData.levelScores?.[i-1] || 0;
+                 const levelTime = levelData?.duration || flutterFocusData.levelCompletionTimes?.[i-1] || 0;
+                 const levelReactionTime = levelData?.reactionTime || levelReactionTimes[i-1] || 0;
+                 const levelLivesLost = levelData?.livesLost || 0;
+                 const levelDebrisHit = levelData?.debrisHit || 0;
+                 const levelDebrisAvoided = levelData?.debrisAvoided || 0;
+                 
+                 // Debug logging for level data
+                 console.log(`[GameResultsPage] Level ${i} data:`, {
+                   levelData,
+                   score: levelScore,
+                   time: levelTime,
+                   reactionTime: levelReactionTime,
+                   livesLost: levelLivesLost,
+                   debrisHit: levelDebrisHit,
+                   debrisAvoided: levelDebrisAvoided
+                 });
+                 
+                 const roundData = {
+                   roundScore: levelScore,
+                   timeToComplete: levelTime,
+                   asteroidsHit: levelDebrisHit,
+                   asteroidsAvoided: levelDebrisAvoided,
+                   aliensDefeated: 0,
+                   questionsAnswered: 0,
+                   questionsCorrect: 0,
+                   reactionTime: levelReactionTime,
+                   focusBreaks: 0,
+                   navigationErrors: 0,
+                   optimalPathDeviation: 0
+                 };
+                 
+                 console.log(`[GameResultsPage] Level ${i} round data:`, roundData);
+                 levelRounds.push(roundData);
+               }
+             }
             
             results.flutterFocus = {
-              scores: flutterFocusData.scores,
+              scores: flutterFocusData.adhdScores || flutterFocusData.scores, // Use adhdScores if available
               selfReport: flutterSelfReport,
               rounds: levelRounds
             };
+            
+            console.log('[GameResultsPage] Final FlutterFocus results:', results.flutterFocus);
           }
         }
         
