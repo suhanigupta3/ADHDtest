@@ -132,11 +132,7 @@ export interface GameState {
   reactionTimes: number[];
 }
 
-export interface Question {
-  id: string;
-  text: string;
-  category: 'attention' | 'impulsivity' | 'frustration' | 'focus' | 'persistence';
-}
+
 
 export interface QuestionAnswer {
   questionId: string;
@@ -237,6 +233,12 @@ export interface SaturnRingParticle {
   life: number;
   maxLife: number;
   isActive: boolean;
+}
+
+export interface Question {
+  id: string;
+  text: string;
+  category: string;
 }
 
 export type ShootingStarSpeed = 'slow' | 'medium' | 'fast';

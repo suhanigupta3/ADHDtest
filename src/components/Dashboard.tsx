@@ -1,10 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useConsent } from '../hooks/useConsent';
+import { useAuth } from '../contexts/AuthContext';
+import { deleteAllUserData } from '../utils/deleteUserData';
 
 const Dashboard: React.FC = () => {
   const { hasConsent, loading } = useConsent();
+  const { currentUser } = useAuth();
+  const [easterEggCount, setEasterEggCount] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Easter egg trigger - click 5 times on the title to activate
+  const handleEasterEgg = () => {
+    const newCount = easterEggCount + 1;
+    setEasterEggCount(newCount);
+    
+    if (newCount === 5) {
+      setShowDeleteConfirm(true);
+      setEasterEggCount(0); // Reset count
+    }
+  };
+
+  // Handle data deletion
+  const handleDeleteData = async () => {
+    if (!currentUser) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteAllUserData(currentUser);
+      alert('🎉 All user data deleted successfully!');
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      alert(`❌ Error deleting data: ${error}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200">
@@ -16,7 +49,11 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            <h2 
+              className="text-3xl font-bold text-gray-800 mb-4 cursor-pointer select-none hover:text-gray-700 transition-colors duration-200"
+              onClick={handleEasterEgg}
+              title={`Click ${5 - easterEggCount} more times to activate easter egg`}
+            >
               Welcome to Your Dashboard
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
@@ -138,6 +175,55 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Easter Egg: Delete Data Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md mx-4">
+            <h3 className="text-lg font-bold text-red-800 mb-4">🧹 Easter Egg Activated!</h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                You found the secret data cleanup tool! This will <strong>permanently delete</strong> all data for:
+              </p>
+              <p className="text-sm text-gray-600 font-mono bg-gray-100 p-2 rounded">
+                {currentUser?.email}
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+              <p className="text-sm text-red-800">
+                <strong>This will delete:</strong>
+              </p>
+              <ul className="text-sm text-red-700 mt-1 list-disc list-inside">
+                <li>All game data and scores</li>
+                <li>User consents and progress</li>
+                <li>Any other user-specific data</li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-red-600 mb-4">
+              <strong>This action cannot be undone!</strong>
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteData}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete All Data'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,16 +1,12 @@
 import React, { RefObject } from 'react';
 import GameInstructions from './GameInstructions';
-import Countdown from './Countdown';
-import LevelComplete from './LevelComplete';
+import LevelTransition from './LevelTransition';
 import GameComplete from './GameComplete';
 import GameOver from './GameOver';
 import GameCanvas from './GameCanvas';
 
 interface GameStateManagerProps {
-  gameState: 'instructions' | 'countdown' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete' | 'selfReport';
-  showQuestions: boolean;
-  currentQuestionIndex: number;
-  questionResponses: { [key: string]: number };
+  gameState: 'instructions' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete';
   level: number;
   score: number;
   lives: number;
@@ -32,13 +28,20 @@ interface GameStateManagerProps {
     reactionCount: number;
     spawnTimesCount: number;
   };
+  // Add transition data for LevelTransition
+  transitionData?: {
+    type: 'level-complete' | 'game-over';
+    level?: number;
+    score: number;
+    time: number;
+    debrisAvoided: number;
+    totalDebris: number;
+    livesLost: number;
+  } | null;
 }
 
 const GameStateManager: React.FC<GameStateManagerProps> = ({
   gameState,
-  showQuestions,
-  currentQuestionIndex,
-  questionResponses,
   level,
   score,
   lives,
@@ -52,7 +55,8 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
   onPlayAgain,
   onJump,
   userId,
-  debugData
+  debugData,
+  transitionData
 }) => {
   // Render instructions
   if (gameState === 'instructions') {
@@ -64,30 +68,21 @@ const GameStateManager: React.FC<GameStateManagerProps> = ({
     );
   }
 
-  // Render countdown
-  if (gameState === 'countdown') {
+  // Render level transition (replaces level complete)
+  if (gameState === 'levelComplete' && transitionData) {
     return (
-      <Countdown
-        onCancel={onCancel}
+      <LevelTransition
+        type={transitionData.type}
+        level={transitionData.level}
+        score={transitionData.score}
+        time={transitionData.time}
+        debrisAvoided={transitionData.debrisAvoided}
+        totalDebris={transitionData.totalDebris}
+        livesLost={transitionData.livesLost}
+        onContinue={onNextLevel}
       />
     );
   }
-
-  // Render level complete
-  if (gameState === 'levelComplete') {
-    return (
-      <LevelComplete
-        level={level}
-        score={score}
-        onNextLevel={onNextLevel}
-        onCancel={onCancel}
-      />
-    );
-  }
-
-
-
-
 
   // Render game complete
   if (gameState === 'gameComplete') {

@@ -72,7 +72,7 @@ export interface GameData {
   levelLivesLost?: number[];
   levelTotalBricks?: number[];
   levelTotalHits?: number[]; // Total hits per level
-  selfReportResponses: { [key: string]: number };
+  selfReport: { [key: string]: number };
   // New metrics for better ADHD assessment
   consecutiveErrors: number;
   maxConsecutiveErrors: number;

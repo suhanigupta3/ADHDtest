@@ -1,0 +1,29 @@
+{
+  "questions": [
+    {
+      "id": "q1_focus_difficulty",
+      "text": "How often do you find it difficult to focus on tasks that require sustained mental effort?",
+      "category": "attention"
+    },
+    {
+      "id": "q2_careless_mistakes",
+      "text": "How often do you make careless mistakes in work or school tasks due to inattention?",
+      "category": "attention"
+    },
+    {
+      "id": "q3_act_without_thinking",
+      "text": "How often do you feel the urge to act quickly without thinking through the consequences?",
+      "category": "impulsivity"
+    },
+    {
+      "id": "q4_rule_following_difficulty",
+      "text": "How often do you find it difficult to stick to rules or instructions when they change?",
+      "category": "executive_function"
+    },
+    {
+      "id": "q5_mind_shifting",
+      "text": "How often do you feel like you're constantly shifting between thoughts or actions?",
+      "category": "attention"
+    }
+  ]
+}

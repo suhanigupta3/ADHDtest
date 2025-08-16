@@ -127,13 +127,13 @@ const GameResultsPage: React.FC = () => {
           }
         }
         // Fetch PatternMatch data
-        const patternMatchDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'PatternMatch'));
+        const patternMatchDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'pattern-match'));
         if (patternMatchDoc.exists()) {
           const patternMatchData = patternMatchDoc.data();
           if (patternMatchData.scores && patternMatchData.selfReport) {
             let rounds: GameRound[] = [];
             try {
-              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'PatternMatch', 'rounds'));
+              const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'pattern-match', 'rounds'));
               rounds = roundsSnapshot.docs.map(doc => doc.data() as GameRound);
             } catch (roundsError) {
               if (patternMatchData.rounds && Array.isArray(patternMatchData.rounds)) {
@@ -1125,10 +1125,6 @@ const GameResultsPage: React.FC = () => {
       <div className="space-y-8">
         {/* Progress Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-forest-900 mb-4">Your Assessment Progress</h1>
-          <p className="text-lg text-forest-700 max-w-3xl mx-auto">
-            Complete all games to get your comprehensive A(rDx)HD assessment results
-          </p>
         </div>
 
         {/* Progress Bar */}
@@ -1453,8 +1449,11 @@ const GameResultsPage: React.FC = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-forest-900 mb-4">Your Assessment Results</h1>
-            <p className="text-lg text-forest-700 max-w-3xl mx-auto">
+            <p className="text-lg text-forest-700 max-w-3xl mx-auto mb-2">
               Comprehensive analysis of your A(rDx)HD assessment performance across all games
+            </p>
+            <p className="text-lg text-forest-700 max-w-3xl mx-auto">
+              Complete all games to get your comprehensive A(rDx)HD assessment results
             </p>
           </div>
 

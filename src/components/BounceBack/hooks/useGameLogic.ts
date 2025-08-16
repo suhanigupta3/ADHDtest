@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ball, Brick, GameData } from '../types';
 import { LEVELS, CANVAS_WIDTH, CANVAS_HEIGHT, PADDLE_WIDTH, PADDLE_Y_OFFSET, BALL_RADIUS } from '../constants';
-import { createInitialBricks, createInitialBall, updateBallPosition, calculateAccuracy, calculateAverageReactionTime, calculateAverageRecoveryTime, calculatePaddlePositionAccuracy, calculateBallSpeedConsistency, testADHDScores } from '../utils';
+import { createInitialBricks, createInitialBall, updateBallPosition, calculateAccuracy, calculateAverageReactionTime, calculateAverageRecoveryTime, calculatePaddlePositionAccuracy, calculateBallSpeedConsistency } from '../utils';
 import { db } from '../../../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -12,11 +12,7 @@ interface UseGameLogicProps {
 }
 
 export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicProps) => {
-  // Test the ADHD score calculations
-  useEffect(() => {
-    testADHDScores();
-  }, []);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
   const outOfBoundsProcessedRef = useRef<boolean>(false);
   
@@ -76,7 +72,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     levelLivesLost: [],
     levelTotalBricks: [],
     levelTotalHits: [],
-    selfReportResponses: {},
+    selfReport: {},
     // New metrics for better ADHD assessment
     consecutiveErrors: 0,
     maxConsecutiveErrors: 0,
@@ -144,6 +140,9 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         if (ball.dx === 0 && ball.dy === 0) {
           const ballSpeed = currentLevelData.ballSpeed * ballSpeedMultiplier;
           console.log('[BounceBack] Launching ball with speed:', ballSpeed, 'gameStarted:', gameStarted);
+          
+
+          
           setBall(prev => ({
             ...prev,
             dx: ballSpeed,
@@ -195,8 +194,26 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     try {
       console.log('[BounceBack][FIREBASE] Saving game data to Firebase:', finalGameData);
       
-      // Calculate ADHD scores based on game performance and self-report
-      const selfReport = finalGameData.selfReportResponses;
+      // Only calculate ADHD scores if self-report data is available
+      const selfReport = finalGameData.selfReport;
+      const hasSelfReport = selfReport && Object.keys(selfReport).length > 0;
+      
+      if (!hasSelfReport) {
+        console.log('[BounceBack][FIREBASE] No self-report data available, skipping ADHD score calculation');
+        
+        // Save basic game data without scores
+        const firebaseData = { 
+          gameData: finalGameData,
+          timestamp: new Date().toISOString()
+        };
+        
+        await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), firebaseData, { merge: true });
+        console.log('[BounceBack][FIREBASE] Basic game data saved (no scores calculated yet)');
+        return;
+      }
+      
+      console.log('[BounceBack][FIREBASE] Self-report data available, calculating ADHD scores');
+      
       const gameMetrics = {
         accuracy: finalGameData.accuracy,
         averageReactionTime: finalGameData.averageReactionTime,
@@ -277,14 +294,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         inattentionScore = Math.max(2, inattentionScore);
       }
 
-      console.log('[BounceBack][SCORES] Inattention calculation:', {
-        accuracyComponent,
-        consistencyComponent,
-        focusComponent,
-        inattentionSelfReportComponent,
-        inattentionBonus,
-        inattentionScore
-      });
+
 
       // Calculate Hyperactivity Score (0-10) - HIGHER score = MORE hyperactivity
       const movementFrequency = gameMetrics.movementPatterns.length / Math.max(1, gameMetrics.totalPlayTime / 1000);
@@ -297,34 +307,22 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         (selfReport.q3_frustration_level - 1) / 4 * 3 : 0; // 30% weight (3 points)
       
       // Fallback: if no movement patterns tracked, use paddle movements as proxy
-      const hyperactivityScore = gameMetrics.movementPatterns.length === 0 
+      let hyperactivityScore = gameMetrics.movementPatterns.length === 0 
         ? Math.min(10, (gameMetrics.paddleMovements / 20) * 2 + hyperactivitySelfReportComponent) // Include self-report in fallback
         : Math.max(0, Math.min(10, movementComponent + erraticComponent + paddleComponent + hyperactivitySelfReportComponent));
 
-      console.log('[BounceBack][SCORES] Hyperactivity calculation:', {
-        movementFrequency,
-        movementComponent,
-        erraticComponent,
-        paddleComponent,
-        hyperactivitySelfReportComponent,
-        hyperactivityScore
-      });
+
 
       // Calculate Impulsivity Score (0-10) - HIGHER score = MORE impulsivity
       const errorComponent = Math.min(1, gameMetrics.totalMistakes / 5) * 4; // Reduced threshold
       const recoveryComponent = Math.min(1, gameMetrics.failedRecoveries / Math.max(1, gameMetrics.totalMistakes)) * 3;
       const selfReportComponent = (selfReport.q2_impulsive_movements ? (selfReport.q2_impulsive_movements - 1) / 4 * 3 : 0);
       
-      const impulsivityScore = Math.max(0, Math.min(10,
+      let impulsivityScore = Math.max(0, Math.min(10,
         errorComponent + recoveryComponent + selfReportComponent
       ));
 
-      console.log('[BounceBack][SCORES] Impulsivity calculation:', {
-        errorComponent,
-        recoveryComponent,
-        selfReportComponent,
-        impulsivityScore
-      });
+
 
       // Calculate Executive Function Score (0-10) - HIGHER score = WORSE executive function
       // Convert from "good executive function = high score" to "poor executive function = high score"
@@ -355,21 +353,27 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         executiveFunctionScore = Math.max(2, executiveFunctionScore);
       }
 
-      console.log('[BounceBack][SCORES] Executive Function calculation:', {
-        planningComponent,
-        execAccuracyComponent,
-        execSelfReportComponent,
-        planningBonus,
-        executiveFunctionScore
-      });
 
-      // Calculate composite ADHD score
+
+      // Add persistence/motivation component from self-report (affects all domains)
+      const persistenceComponent = selfReport.q5_persistence_motivation ? 
+        (5 - selfReport.q5_persistence_motivation) / 4 * 2 : 0; // Higher score for lower motivation
+      
+      // Adjust scores based on persistence (lower motivation = higher ADHD indicators)
+      if (persistenceComponent > 0) {
+        inattentionScore = Math.min(10, inattentionScore + persistenceComponent * 0.5);
+        impulsivityScore = Math.min(10, impulsivityScore + persistenceComponent * 0.3);
+        executiveFunctionScore = Math.min(10, executiveFunctionScore + persistenceComponent * 0.2);
+      }
+      
+
+      
+      // Calculate composite ADHD score with equal weights (25% each) for consistency
       const adhd_composite = Math.max(0, Math.min(10,
-        inattentionScore * 0.35 +
-        hyperactivityScore * 0.25 +
-        impulsivityScore * 0.25 +
-        executiveFunctionScore * 0.15
+        (inattentionScore + hyperactivityScore + impulsivityScore + executiveFunctionScore) / 4
       ));
+      
+
 
       const scores = {
         inattention: inattentionScore,
@@ -379,21 +383,14 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         adhd_composite
       };
 
-      console.log('[BounceBack][FIREBASE] Calculated scores:', scores);
-
       // Save scores to Firebase
       const firebaseData = { 
         scores,
         gameData: finalGameData,
         timestamp: new Date().toISOString()
       };
-      console.log('[BounceBack][FIREBASE] Saving data to Firebase:', firebaseData);
-      console.log('[BounceBack][FIREBASE] Scores structure:', scores);
-      console.log('[BounceBack][FIREBASE] GameData structure:', finalGameData);
       
       await setDoc(doc(db, 'users', userId, 'games', 'BounceBack'), firebaseData, { merge: true });
-
-      console.log('[BounceBack][FIREBASE] Successfully saved scores to Firebase');
 
       // Mark game as completed in gameProgress
       try {
@@ -429,15 +426,26 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
     
     if (transitionData?.type === 'level-complete') {
       if (transitionData.level === 3) {
-        // All levels completed, show questions
+        // All levels completed - call onGameComplete instead of showing questions
         setAllLevelsCompleted(true);
-        setShowQuestions(true);
         setGameData(prev => ({ 
           ...prev, 
           endTime: Date.now(),
           finalScore: score + (lives * 50),
           gameCompleted: true
         }));
+        
+        // Call the completion callback to let GameFlow handle questions
+        if (onGameComplete) {
+          const finalGameData = {
+            ...gameData,
+            gameId: 'bounce-back', // Add the gameId that AssessmentPage expects
+            endTime: Date.now(),
+            finalScore: score + (lives * 50),
+            gameCompleted: true
+          };
+          onGameComplete(finalGameData);
+        }
       } else {
         // Move to next level
         const nextLevel = (transitionData.level || 0) + 1;
@@ -466,15 +474,26 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
         setLevelStartScore(score); // Track the current score as the start score for next level
       }
     } else if (transitionData?.type === 'game-over') {
-      // Game over, show questions
+      // Game over - call onGameComplete instead of showing questions
       setAllLevelsCompleted(true);
-      setShowQuestions(true);
       setGameData(prev => ({ 
         ...prev, 
         endTime: Date.now(),
         finalScore: score,
         gameCompleted: true
       }));
+      
+      // Call the completion callback to let GameFlow handle questions
+      if (onGameComplete) {
+        const finalGameData = {
+          ...gameData,
+          gameId: 'bounce-back', // Add the gameId that AssessmentPage expects
+          endTime: Date.now(),
+          finalScore: score,
+          gameCompleted: true
+        };
+        onGameComplete(finalGameData);
+      }
     }
   }, [transitionData, score, lives]);
 
@@ -733,7 +752,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       levelLivesLost: [],
       levelTotalBricks: [],
       levelTotalHits: [],
-      selfReportResponses: {},
+      selfReport: {},
       // New metrics for better ADHD assessment
       consecutiveErrors: 0,
       maxConsecutiveErrors: 0,
@@ -952,10 +971,16 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
           }
 
           // Handle ball out of bounds
-          if (result.outOfBounds && !outOfBoundsProcessedRef.current) {
-            outOfBoundsProcessedRef.current = true;
+          console.log('[BounceBack] Out of bounds check:', {
+            outOfBounds: result.outOfBounds,
+            currentLives: lives
+          });
+          
+          if (result.outOfBounds) {
+            console.log('[BounceBack] Processing out of bounds - current lives:', lives);
             setLives(prev => {
               const newLives = Math.max(0, prev - 1);
+              console.log('[BounceBack] Life lost - prev lives:', prev, 'new lives:', newLives);
               const currentTime = Date.now();
               
               setGameData(prevData => {
@@ -1050,15 +1075,22 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                 
                 // Check if this is the final level (Level 3)
                 if (currentLevel >= 3) {
-                  // All levels completed, show questions
+                  // All levels completed - call onGameComplete instead of showing questions
                   setAllLevelsCompleted(true);
-                  setShowQuestions(true);
-                  setGameData(prev => ({ 
-                    ...prev, 
+                  
+                  // Create final game data and call completion callback
+                  const finalGameData = {
+                    ...gameData,
+                    gameId: 'bounce-back', // Add the gameId that AssessmentPage expects
                     endTime: Date.now(),
                     finalScore: score,
                     gameCompleted: true
-                  }));
+                  };
+                  
+                  // Call the completion callback to let GameFlow handle questions
+                  if (onGameComplete) {
+                    onGameComplete(finalGameData);
+                  }
                 } else {
                   // Continue to next level even with 0 lives
                   const nextLevel = currentLevel + 1;
@@ -1100,13 +1132,30 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
                 
                 // Reset ball to follow paddle
                 console.log('[BounceBack] Ball out of bounds - resetting ball and setting gameStarted to false');
+                console.log('[BounceBack] About to reset ball - current lives:', lives);
                 setGameStarted(false);
+                
+                // Ensure paddleX is within valid bounds before positioning ball
+                const currentPaddleWidth = getPaddleWidth(currentLevel);
+                const maxPaddleX = CANVAS_WIDTH - currentPaddleWidth;
+                const safePaddleX = Math.max(0, Math.min(paddleX, maxPaddleX));
+                
                 setBall(prev => ({
                   ...prev,
+                  x: safePaddleX + currentPaddleWidth / 2, // Center ball on current paddle width
+                  y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS, // Position above paddle
                   dx: 0,
                   dy: 0
                 }));
-                outOfBoundsProcessedRef.current = false;
+                
+                console.log('[BounceBack] Ball reset to position:', {
+                  x: safePaddleX + currentPaddleWidth / 2,
+                  y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS,
+                  paddleX: safePaddleX,
+                  paddleWidth: currentPaddleWidth
+                });
+                
+
               }
               return newLives;
             });

@@ -103,6 +103,8 @@ export const updateBallPosition = (
   let outOfBounds = false;
   let hitBrickIndex: number | null = null;
 
+
+
   if (!gameStarted || (ball.dx === 0 && ball.dy === 0)) {
     return {
       newBall: { ...ball, x: paddleX + paddleWidth / 2, y: CANVAS_HEIGHT - PADDLE_Y_OFFSET - BALL_RADIUS },
@@ -228,15 +230,20 @@ export const updateBallPosition = (
     }
   }
 
-  // Ball out of bounds
-  if (newY + BALL_RADIUS > CANVAS_HEIGHT - PADDLE_Y_OFFSET + PADDLE_HEIGHT) {
+  // Ball out of bounds - check if ball goes below the paddle level
+  if (newY + BALL_RADIUS > CANVAS_HEIGHT - PADDLE_Y_OFFSET) {
     outOfBounds = true;
+    console.log('[BounceBack] Ball out of bounds detected:', {
+      ballY: newY,
+      ballRadius: BALL_RADIUS,
+      paddleLevel: CANVAS_HEIGHT - PADDLE_Y_OFFSET,
+      threshold: newY + BALL_RADIUS
+    });
   }
 
-  // Safety check: prevent ball from going into extreme positions
-  if (newY > CANVAS_HEIGHT + 100 || newY < -100) {
-    outOfBounds = true;
-  }
+
+
+
 
   return {
     newBall: { x: newX, y: newY, dx: newDx, dy: newDy },

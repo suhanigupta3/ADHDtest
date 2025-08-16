@@ -59,7 +59,6 @@ export interface PatternMatchGameProps {
   onError?: (error: string) => void;
   width?: string;
   height?: string;
-  isStandalone?: boolean;
   userId?: string;
 }
 

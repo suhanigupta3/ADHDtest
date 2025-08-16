@@ -21,15 +21,15 @@ import {
 import { db } from '../../firebase/config';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import GameStateManager from './GameStateManager';
-import SelfReportQuestions from './SelfReportQuestions';
+
 
 /**
  * FlutterFocusGame - ADHD Assessment Game
  * 
  * Game Flow:
- * 1. Instructions → Countdown → Level 1 (3 lives)
- * 2. Level 1 Complete → Countdown → Level 2 (3 lives) 
- * 3. Level 2 Complete → Countdown → Level 3 (3 lives)
+ * 1. Instructions → Level 1 (3 lives)
+ * 2. Level 1 Complete → Level 2 (3 lives) 
+ * 3. Level 2 Complete → Level 3 (3 lives)
  * 4. Level 3 Complete → Assessment Ends (no replay)
  * 
  * Each level: Lose 3 lives to complete, post results to Firebase
@@ -49,8 +49,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const renderCountRef = useRef<number>(0);
   
   // Simple game state
-  const [gameState, setGameState] = useState<'instructions' | 'countdown' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete' | 'selfReport'>('instructions');
-  const [countdown, setCountdown] = useState(3);
+  const [gameState, setGameState] = useState<'instructions' | 'playing' | 'gameOver' | 'levelComplete' | 'gameComplete'>('instructions');
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [lives, setLives] = useState(3);
@@ -58,11 +57,19 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   const [collisionFlash, setCollisionFlash] = useState(false);
   const [collisionParticles, setCollisionParticles] = useState<Array<{x: number, y: number, vx: number, vy: number, life: number}>>([]);
   
-  // Self-reporting questions state
-  const [showQuestions, setShowQuestions] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  // Level transition state
+  const [transitionData, setTransitionData] = useState<{
+    type: 'level-complete' | 'game-over';
+    level?: number;
+    score: number;
+    time: number;
+    debrisAvoided: number;
+    totalDebris: number;
+    livesLost: number;
+  } | null>(null);
+  
+  // Self-reporting questions state - removed for post-game flow
   const [questionResponses, setQuestionResponses] = useState<{ [key: string]: number }>({});
-  const [questionsCompleted, setQuestionsCompleted] = useState(false);
   
   // Background debris system
   const [backgroundDebris, setBackgroundDebris] = useState<Debris[]>([]);
@@ -738,6 +745,12 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
       alien.velocityY = 0;
     }
     
+    // Safety check: if alien somehow gets stuck outside bounds, respawn it
+    if (alien.x < 0 || alien.x > 960 || alien.y < 0 || alien.y > 540) {
+      console.warn('[FlutterFocus] Alien stuck outside bounds, respawning...');
+      alienRef.current = { x: 100, y: 250, width: 120, height: 92, velocityY: 0 };
+    }
+    
     // Update star positions for parallax effect
     updateStars(clampedDeltaTime);
     
@@ -949,13 +962,10 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
               console.log('[FlutterFocus] Moving to next level, setting state to levelComplete');
               setGameState('levelComplete');
             } else {
-              // All 3 levels complete - show self-reporting questions
-              console.log('[FlutterFocus] All levels complete, showing self-reporting questions');
-              console.log('[FlutterFocus] Setting gameState to selfReport and showQuestions to true');
-              setGameState('selfReport');
-              setShowQuestions(true);
-              setCurrentQuestionIndex(0);
-              setQuestionResponses({});
+              // All 3 levels complete - post final results and complete game
+              console.log('[FlutterFocus] All levels complete, posting final results');
+              postFinalResults();
+              setGameState('gameComplete');
             }
             }
             return newLives;
@@ -983,6 +993,11 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
           // Deactivate the debris after collision
           debrisRef.current = debrisRef.current.map(d => d.id === debris.id ? { ...d, isActive: false } : d);
           setBackgroundDebris([...debrisRef.current]); // Update state for React
+          
+          // Respawn alien to starting position after collision with a brief delay
+          setTimeout(() => {
+            alienRef.current = { x: 100, y: 250, width: 120, height: 92, velocityY: 0 };
+          }, 500); // 500ms delay to show collision effects
           
           logDebug(`Alien hit debris! Damage: ${damage}, Lives remaining:`, Math.max(0, lives - damage));
         }
@@ -1060,8 +1075,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   // Start the game
   const startGame = useCallback(() => {
     logDebug('Starting game...');
-    setGameState('countdown');
-    setCountdown(3);
+    // Skip countdown and go directly to playing state
+    setGameState('playing');
     setScore(0);
     setLives(3);
     setLevel(1);
@@ -1117,22 +1132,11 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     lastTimeRef.current = performance.now();
     gameStartTimeRef.current = Date.now();
     
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownInterval);
-          logDebug('Countdown finished, starting game loop');
-          setGameState('playing');
-          
-          setTimeout(() => {
-            startGameLoop();
-          }, 100);
-          
-          return 3;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // Start the game loop immediately instead of waiting for countdown
+    setTimeout(() => {
+      logDebug('Starting game loop immediately');
+      startGameLoop();
+    }, 100);
   }, [logDebug, startGameLoop, initializeStars, loadAlienSprite, loadExplosionSprites, loadBackgroundDebrisSprites, spawnBackgroundDebris, spawnShootingStar, clearExistingObstacles]);
   
   // Calculate ADHD assessment scores based on real gameplay performance
@@ -1347,45 +1351,25 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
 
     
     // Calculate final scores: 70% gameplay + 30% self-report
-    // When self-report is 5 (worst), it contributes 4 points (40% weight)
-    // When self-report is 1 (best), it contributes 0.4 points
+    // When self-report is 5 (worst), it contributes 3 points (30% weight)
+    // When self-report is 1 (best), it contributes 0.3 points
     // 
     // IMPORTANT: gameplayScores.sustainedAttention and gameplayScores.impulseControl are ADHD scores (lower = better)
     // But gameplayScores.overall is a PERFORMANCE score (higher = better) - we need to convert it to ADHD score
-    const inattention = (gameplayScores.sustainedAttention * 0.6) + (selfReportInattention * 0.4);
-    const hyperactivity = (gameplayScores.impulseControl * 0.6) + (selfReportHyperactivity * 0.4);
-    const impulsivity = (gameplayScores.impulseControl * 0.6) + (selfReportImpulsivity * 0.4);
+    const inattention = (gameplayScores.sustainedAttention * 0.7) + (selfReportInattention * 0.3);
+    const hyperactivity = (gameplayScores.impulseControl * 0.7) + (selfReportHyperactivity * 0.3);
+    const impulsivity = (gameplayScores.impulseControl * 0.7) + (selfReportImpulsivity * 0.3);
     
     // Convert overall performance score back to ADHD score: 11 - performanceScore
     const overallADHDScore = 11 - gameplayScores.overall;
-    const executiveFunction = (overallADHDScore * 0.6) + (selfReportExecutiveFunction * 0.4);
+    const executiveFunction = (overallADHDScore * 0.7) + (selfReportExecutiveFunction * 0.3);
     
-    // Debug: Log the calculation breakdown
-    console.log('[FlutterFocus] calculateFinalADHDScores - calculation breakdown:', {
-      gameplayScores,
-      selfReportScores: { selfReportInattention, selfReportHyperactivity, selfReportImpulsivity, selfReportExecutiveFunction },
-      overallADHDScore,
-      weighting: '60% gameplay + 40% self-report',
-      finalScores: { inattention, hyperactivity, impulsivity, executiveFunction }
-    });
+
     
     // Calculate ADHD composite score with proper decimal precision
     const rawSum = inattention + hyperactivity + impulsivity + executiveFunction;
     const rawAverage = rawSum / 4;
     const adhdComposite = Math.round(rawAverage * 10) / 10;
-    
-    // Log the exact calculation for medical precision
-    console.log('[FlutterFocus] Composite calculation details:', {
-      individualScores: { inattention, hyperactivity, impulsivity, executiveFunction },
-      sum: rawSum,
-      average: rawAverage,
-      roundedComposite: adhdComposite,
-      calculation: `${inattention} + ${hyperactivity} + ${impulsivity} + ${executiveFunction} = ${rawSum} / 4 = ${rawAverage} → ${adhdComposite}`
-    });
-    
-
-    
-
     
     // Ensure all ADHD scores are non-negative and within valid range
     const validInattention = Math.max(1, Math.min(10, Math.round(inattention * 10) / 10));
@@ -1393,12 +1377,6 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     const validImpulsivity = Math.max(1, Math.min(10, Math.round(impulsivity * 10) / 10));
     const validExecutiveFunction = Math.max(1, Math.min(10, Math.round(executiveFunction * 10) / 10));
     const validAdhdComposite = Math.max(1, Math.min(10, Math.round(adhdComposite * 10) / 10));
-    
-    // Debug: Log the final validation
-    console.log('[FlutterFocus] calculateFinalADHDScores - final validation:', {
-      raw: { inattention, hyperactivity, impulsivity, executiveFunction, adhdComposite },
-      valid: { validInattention, validHyperactivity, validImpulsivity, validExecutiveFunction, validAdhdComposite }
-    });
     
     return {
       inattention: validInattention,
@@ -1438,13 +1416,7 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
         overall: calculateOverallScore()
       };
       
-      // Debug: Log what we're calculating
-      console.log('[FlutterFocus] calculateAllADHDScores - gameplayScores:', gameplayScores);
-      
       const scores = calculateFinalADHDScores(gameplayScores, questionResponses);
-      
-      // Debug: Log final scores
-      console.log('[FlutterFocus] calculateAllADHDScores - final scores:', scores);
       
       // Validate that all required scores exist
       if (!scores.inattention || !scores.hyperactivity || !scores.impulsivity || !scores.executive_function || !scores.adhd_composite) {
@@ -1467,10 +1439,8 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
         adhd_composite: scores.adhd_composite  // Use the pre-calculated value
       };
       
-      console.log('[FlutterFocus] calculateAllADHDScores - returning:', result);
       return result;
     } catch (error) {
-      console.error('[FlutterFocus] Error in calculateAllADHDScores:', error);
       // Return default scores if calculation fails
       return {
         inattention: 5,
@@ -1486,7 +1456,22 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   // Post level results to Firebase
   const postLevelResults = useCallback(async () => {
     try {
-
+      // Calculate level completion data for transition screen
+      const debrisAvoided = Math.max(0, levelDebrisSpawnedRef.current - levelDebrisHitRef.current);
+      const validScore = Math.max(0, levelScoreRef.current);
+      const validDuration = Math.max(0, Date.now() - levelStartTimeRef.current);
+      const validLivesLost = Math.max(0, levelLivesLostRef.current);
+      
+      // Set transition data for the LevelTransition component
+      setTransitionData({
+        type: 'level-complete',
+        level: levelRef.current,
+        score: validScore,
+        time: validDuration,
+        debrisAvoided: debrisAvoided,
+        totalDebris: levelDebrisSpawnedRef.current,
+        livesLost: validLivesLost
+      });
       
       const levelData = {
         userId,
@@ -1847,213 +1832,23 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     }
   }, [userId, score, logDebug, onGameComplete, calculateReactionTime, calculateImpulseControl, calculateSustainedAttention, calculateOverallScore]);
   
-  // Handle question responses
-  const handleQuestionResponse = useCallback((response: number) => {
-    const currentQuestion = QUESTIONS[currentQuestionIndex];
+  // Handle question responses - removed for post-game flow
 
-    
-    setQuestionResponses(prev => {
-      const newResponses = {
-        ...prev,
-        [currentQuestion.id]: response
-      };
-
-      return newResponses;
-    });
-  }, [currentQuestionIndex]);
-
-  // Handle questions completion
-  const handleQuestionsComplete = useCallback(async () => {
-
-    
-    // Calculate real metrics from all levels data
-    const allLevels = allLevelsDataRef.current.filter(level => level !== undefined);
-    const totalLivesLost = allLevels.reduce((sum, level) => sum + (level?.livesLost || 0), 0);
-    const totalDebrisHit = allLevels.reduce((sum, level) => sum + (level?.debrisHit || 0), 0);
-    const totalDebrisAvoided = allLevels.reduce((sum, level) => sum + ((level?.debrisSpawned || 0) - (level?.debrisHit || 0)), 0);
-    const totalReactionTime = allLevels.reduce((sum, level) => sum + (level?.reactionTime || 0), 0);
-    const averageReactionTime = allLevels.length > 0 ? totalReactionTime / allLevels.length : 0;
-    
-    // Calculate level-specific arrays
-    const levelScores = [];
-    const levelCompletionTimes = [];
-    
-    for (let i = 1; i <= 3; i++) {
-      const levelData = allLevelsDataRef.current[i - 1];
-      if (levelData) {
-        levelScores.push(levelData.score);
-        levelCompletionTimes.push(levelData.duration);
-      } else {
-        levelScores.push(0);
-        levelCompletionTimes.push(0);
-      }
-    }
-    
-    // Ensure all values are non-negative
-    const validTotalPlayTime = Math.max(0, Date.now() - gameStartTimeRef.current);
-    const validFinalScore = Math.max(0, score);
-    const validTotalLivesLost = Math.max(0, totalLivesLost);
-    const validTotalDebrisHit = Math.max(0, totalDebrisHit);
-    const validTotalDebrisAvoided = Math.max(0, totalDebrisAvoided);
-    const validLevelScores = levelScores.map(s => Math.max(0, s));
-    const validLevelCompletionTimes = levelCompletionTimes.map(t => Math.max(0, t));
-    
-    // All questions completed - finish the game
-    const finalGameData = {
-      startTime: gameStartTimeRef.current,
-      endTime: Date.now(),
-      totalPlayTime: validTotalPlayTime,
-      gameCompleted: true,
-      finalScore: validFinalScore,
-      livesLost: validTotalLivesLost,
-      totalCrashes: validTotalDebrisHit,
-      totalObstaclesAvoided: validTotalDebrisAvoided,
-      totalObstaclesHit: validTotalDebrisHit,
-      currentLevel: 3,
-      levelsCompleted: allLevels.length,
-      levelScores: validLevelScores,
-      levelCompletionTimes: validLevelCompletionTimes,
-      adhdScores: calculateAllADHDScores(),
-      selfReportResponses: { ...questionResponses }
-    };
-    
-    // Save to Firebase
-    try {
-      if (userId) {
-        // Save to flutterFocusResults collection for historical data
-        await addDoc(collection(db, 'flutterFocusResults'), {
-          ...finalGameData,
-          userId,
-          timestamp: new Date().toISOString(),
-          finalRound: true
-        });
-        
-
-        
-        // Also update the main game document that GameResultsPage reads from
-        const docRef = doc(db, 'users', userId, 'games', 'FlutterFocus');
-        
-        
-        
-        // First, completely replace the scores to ensure no old data remains
-        // Check if we have the required data to calculate scores
-        const allLevels = allLevelsDataRef.current.filter(level => level !== undefined);
-        console.log('[FlutterFocus] Available level data for score calculation:', {
-          levelCount: allLevels.length,
-          levels: allLevels.map(l => ({ level: l.level, score: l.score, debrisHit: l.debrisHit, debrisAvoided: l.debrisAvoided }))
-        });
-        
-        const scoresToSave = calculateAllADHDScores();
-        console.log('[FlutterFocus] Saving scores to Firebase:', scoresToSave);
-        console.log('[FlutterFocus] Scores validation:', {
-          hasInattention: !!scoresToSave.inattention,
-          hasHyperactivity: !!scoresToSave.hyperactivity,
-          hasImpulsivity: !!scoresToSave.impulsivity,
-          hasExecutiveFunction: !!scoresToSave.executive_function,
-          hasAdhdComposite: !!scoresToSave.adhd_composite,
-          allKeys: Object.keys(scoresToSave)
-        });
-        
-        // Verify the composite calculation manually
-        const manualComposite = (scoresToSave.inattention + scoresToSave.hyperactivity + scoresToSave.impulsivity + scoresToSave.executive_function) / 4;
-        console.log('[FlutterFocus] Manual composite verification:', {
-          individual: [scoresToSave.inattention, scoresToSave.hyperactivity, scoresToSave.impulsivity, scoresToSave.executive_function],
-          sum: scoresToSave.inattention + scoresToSave.hyperactivity + scoresToSave.impulsivity + scoresToSave.executive_function,
-          average: manualComposite,
-          rounded: Math.round(manualComposite * 10) / 10,
-          saved: scoresToSave.adhd_composite
-        });
-        
-        await setDoc(docRef, {
-          scores: scoresToSave
-        }, { merge: false }); // Don't merge - completely replace scores
-        
-        // Verify the save by reading it back
-        const verifyDoc = await getDoc(docRef);
-        if (verifyDoc.exists()) {
-          const savedData = verifyDoc.data();
-          console.log('[FlutterFocus] Verified saved scores:', savedData.scores);
-        }
-        
-        // Then update the rest of the document
-        await setDoc(docRef, {
-          finalResults: finalGameData,
-          gameCompleted: true,
-          lastUpdated: new Date().toISOString(),
-          
-          // Save the self-report data
-          selfReport: questionResponses,
-          
-          // Save individual level data for all levels
-          level1Data: allLevelsDataRef.current[0] || null,
-          level2Data: allLevelsDataRef.current[1] || null,
-          level3Data: allLevelsDataRef.current[2] || {
-            level: 3,
-            score: score,
-            livesLost: totalLivesLost,
-            debrisHit: totalDebrisHit,
-            debrisSpawned: totalDebrisHit + totalDebrisAvoided,
-            debrisAvoided: totalDebrisAvoided,
-            duration: Date.now() - gameStartTimeRef.current,
-            reactionTime: averageReactionTime,
-            startTime: gameStartTimeRef.current,
-            timestamp: new Date().toISOString()
-          }
-        }, { merge: true });
-        
-
-        logDebug('Final results and self-report data successfully posted to Firebase');
-        
-        // Now that Firebase save is complete, we can safely call onGameComplete
-        // Close questions modal
-        setShowQuestions(false);
-        setCurrentQuestionIndex(0);
-        setQuestionResponses({});
-        setQuestionsCompleted(false);
-        
-        // Set game to complete state
-        setGameState('gameComplete');
-        
-        // Call the completion callback AFTER Firebase save is complete
-        if (onGameComplete) {
-
-          onGameComplete(finalGameData);
-        }
-      }
-    } catch (error) {
-      console.error('[FlutterFocus] Failed to save game data to Firebase:', error);
-      if (onError) {
-        onError(`Failed to save game data: ${error}`);
-      }
-      
-      // Even if Firebase save fails, we should still close the questions and complete the game
-      setShowQuestions(false);
-      setCurrentQuestionIndex(0);
-      setQuestionResponses({});
-      setQuestionsCompleted(false);
-      setGameState('gameComplete');
-      
-      if (onGameComplete) {
-
-        onGameComplete(finalGameData);
-      }
-    }
-  }, [score, questionResponses, userId, logDebug, onGameComplete, onError, calculateSustainedAttention, calculateImpulseControl, calculateOverallScore]);
+  // Handle questions completion - removed for post-game flow
   
   // Start next level
   const startNextLevel = useCallback(() => {
     const nextLevel = levelRef.current + 1;
     logDebug('Starting next level:', nextLevel);
 
+    // Clear transition data
+    setTransitionData(null);
     
     // Safety check - prevent going beyond Level 3
     if (nextLevel > 3) {
-
-      logDebug('Cannot start level beyond 3, showing self-reporting questions');
-      setGameState('selfReport');
-      setShowQuestions(true);
-      setCurrentQuestionIndex(0);
-      setQuestionResponses({});
+      logDebug('Cannot start level beyond 3, game complete');
+      postFinalResults();
+      setGameState('gameComplete');
       return;
     }
     
@@ -2572,18 +2367,16 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
     ctx.font = '24px Arial';
     ctx.fillText(`Level: ${levelRef.current}`, 20, 40);
     
-          // Collision flash effect applied
+    // Collision flash effect applied
   }, [gameState, level, logDebug, collisionFlash, collisionParticles, debrisRef]);
   
   // Monitor game state changes
   useEffect(() => {
     console.log('[FlutterFocus] Game state changed to:', gameState, {
-      showQuestions,
-      currentQuestionIndex,
       questionResponsesCount: Object.keys(questionResponses).length
     });
     logDebug('Game state changed', { newState: gameState });
-  }, [gameState, showQuestions, currentQuestionIndex, questionResponses, logDebug]);
+  }, [gameState, questionResponses, logDebug]);
   
   // Monitor debris state for debugging
   useEffect(() => {
@@ -2632,80 +2425,31 @@ const FlutterFocusGame: React.FC<FlutterFocusGameProps> = ({
   
   // Render game based on state using GameStateManager
   return (
-    <>
-      {/* Render self-report questions outside of height constraints when active */}
-      {gameState === 'selfReport' && showQuestions && (
-        <>
-          {console.log('[FlutterFocus] ✅ Rendering SelfReportQuestions - Conditions met:', { 
-            gameState, 
-            showQuestions, 
-            questionsCount: QUESTIONS.length,
-            currentQuestionIndex,
-            questionResponses,
-            questionResponsesKeys: Object.keys(questionResponses)
-          })}
-          <SelfReportQuestions
-            questions={QUESTIONS}
-            currentQuestionIndex={currentQuestionIndex}
-            questionResponses={questionResponses}
-            onQuestionResponse={handleQuestionResponse}
-            onQuestionsComplete={handleQuestionsComplete}
-            onPreviousQuestion={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-            onNextQuestion={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-          />
-        </>
-      )}
-      
-      {/* Debug: Show when conditions are NOT met */}
-      {!(gameState === 'selfReport' && showQuestions) && (
-        <>
-          {console.log('[FlutterFocus] ❌ NOT rendering SelfReportQuestions - Conditions NOT met:', { 
-            gameState, 
-            showQuestions, 
-            gameStateIsSelfReport: gameState === 'selfReport',
-            bothConditionsMet: gameState === 'selfReport' && showQuestions
-          })}
-        </>
-      )}
-      
-      {/* Debug: Show current game state and question status */}
-      {console.log('[FlutterFocus] Current game state:', {
-        gameState,
-        showQuestions,
-        currentQuestionIndex,
-        questionResponsesCount: Object.keys(questionResponses).length,
-        questionResponsesKeys: Object.keys(questionResponses)
-      })}
-      
-      {/* Render main game content */}
-      <GameStateManager
-        gameState={gameState}
-        showQuestions={showQuestions}
-        currentQuestionIndex={currentQuestionIndex}
-        questionResponses={questionResponses}
-        level={level}
-        score={score}
-        lives={lives}
-        questions={QUESTIONS}
-        width={width}
-        height={height}
-        canvasRef={canvasRef}
-        onStartGame={startGame}
-        onCancel={onCancel || (() => {})}
-        onNextLevel={startNextLevel}
-        onPlayAgain={() => setGameState('instructions')}
-        onJump={handleJump}
-        userId={userId}
-        debugData={{
-          level,
-          debrisHit: levelDebrisHitRef.current,
-          debrisAvoided: levelDebrisSpawnedRef.current - levelDebrisHitRef.current,
-          reactionTime: levelReactionTimeRef.current,
-          reactionCount: reactionTimesRef.current.length,
-          spawnTimesCount: obstacleSpawnTimesRef.current.size
-        }}
-      />
-    </>
+    <GameStateManager
+      gameState={gameState}
+      level={level}
+      score={score}
+      lives={lives}
+      questions={QUESTIONS}
+      width={width}
+      height={height}
+      canvasRef={canvasRef}
+      onStartGame={startGame}
+      onCancel={onCancel || (() => {})}
+      onNextLevel={startNextLevel}
+      onPlayAgain={() => setGameState('instructions')}
+      onJump={handleJump}
+      userId={userId}
+      transitionData={transitionData}
+      debugData={{
+        level,
+        debrisHit: levelDebrisHitRef.current,
+        debrisAvoided: levelDebrisSpawnedRef.current - levelDebrisHitRef.current,
+        reactionTime: levelReactionTimeRef.current,
+        reactionCount: reactionTimesRef.current.length,
+        spawnTimesCount: obstacleSpawnTimesRef.current.size
+      }}
+    />
   );
 };
 

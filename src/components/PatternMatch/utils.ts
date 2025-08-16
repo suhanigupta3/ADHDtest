@@ -85,15 +85,15 @@ export const calculateRoundMetrics = (roundTrials: Trial[]): RoundMetrics => {
 export const getRoundInstructions = (round: number) => {
   if (round === 1) {
     return {
-      title: 'Round 1: Match Shape OR Pattern',
-      text: 'Click if the shape OR the pattern matches the target.',
-      example: "Target = Triangle + Stripes. Click for Circle + Stripes or Triangle + Dots. Don't click for Square + Checkers."
+      title: 'Round 1: Match Shape Only',
+      text: 'Click if the SHAPE matches the target (ignore the pattern).',
+      example: "Target = Triangle + Stripes. Click for Triangle + Dots or Triangle + Checkers. Don't click for Circle + Stripes."
     };
   } else if (round === 2) {
     return {
-      title: 'Round 2: Match Shape AND Pattern',
-      text: 'Click only if BOTH the shape AND the pattern match the target.',
-      example: "Target = Square + Dots. Click for Square + Dots. Don't click for Square + Stripes or Triangle + Dots."
+      title: 'Round 2: Match Pattern Only',
+      text: 'Click if the PATTERN matches the target (ignore the shape).',
+      example: "Target = Triangle + Stripes. Click for Circle + Stripes or Square + Stripes. Don't click for Triangle + Dots."
     };
   } else {
     return {
@@ -107,9 +107,9 @@ export const getRoundInstructions = (round: number) => {
 // Helper: Get in-round instruction text
 export const getInRoundInstruction = (round: number) => {
   if (round === 1) {
-    return 'If the shape OR pattern matches the target, Click anywhere or press SPACEBAR.';
+    return 'If the SHAPE matches the target (ignore pattern), Click anywhere or press SPACEBAR.';
   } else if (round === 2) {
-    return 'If BOTH the shape AND pattern match the target, Click anywhere or press SPACEBAR.';
+    return 'If the PATTERN matches the target (ignore shape), Click anywhere or press SPACEBAR.';
   } else {
     return 'If BOTH the shape AND pattern match the target (even if the shape is rotated), Click anywhere or press SPACEBAR.';
   }
@@ -118,21 +118,38 @@ export const getInRoundInstruction = (round: number) => {
 // Helper: Per-round match logic
 export const isStimulusMatch = (stimulus: Target, target: Target, round: number) => {
   if (round === 1) {
-    return stimulus.shape === target.shape || stimulus.pattern === target.pattern;
+    // Round 1: Match only shape (ignore pattern)
+    return stimulus.shape === target.shape;
+  } else if (round === 2) {
+    // Round 2: Match only pattern (ignore shape)
+    return stimulus.pattern === target.pattern;
   } else {
-    // Round 2 and 3: must match both
+    // Round 3: Match both shape AND pattern (may be rotated)
     return stimulus.shape === target.shape && stimulus.pattern === target.pattern;
   }
 };
 
 // Helper to generate a block of 10 stimuli with at least one target match
-export const generateStimulusBlock = (target: Target) => {
+export const generateStimulusBlock = (target: Target, round: number) => {
   const block: Target[] = [];
   // Pick a random index for the guaranteed match
   const matchIndex = Math.floor(Math.random() * 10);
+  
   for (let i = 0; i < 10; i++) {
     if (i === matchIndex) {
-      block.push({ ...target });
+      // Guaranteed match based on round logic
+      if (round === 1) {
+        // Round 1: Same shape, different pattern
+        const differentPattern = PATTERNS.find(p => p !== target.pattern) || PATTERNS[0];
+        block.push({ shape: target.shape, pattern: differentPattern });
+      } else if (round === 2) {
+        // Round 2: Same pattern, different shape
+        const differentShape = SHAPES.find(s => s !== target.shape) || SHAPES[0];
+        block.push({ shape: differentShape, pattern: target.pattern });
+      } else {
+        // Round 3: Exact match (both shape and pattern)
+        block.push({ ...target });
+      }
     } else {
       let stim: Target;
       do {
@@ -140,7 +157,23 @@ export const generateStimulusBlock = (target: Target) => {
           shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
           pattern: PATTERNS[Math.floor(Math.random() * PATTERNS.length)]
         };
-      } while (stim.shape === target.shape && stim.pattern === target.pattern);
+        // Ensure non-matches based on round logic
+        if (round === 1) {
+          // Round 1: Different shape
+          stim = { ...stim, shape: SHAPES.find(s => s !== target.shape) || stim.shape };
+        } else if (round === 2) {
+          // Round 2: Different pattern
+          stim = { ...stim, pattern: PATTERNS.find(p => p !== target.pattern) || stim.pattern };
+        } else {
+          // Round 3: Different shape or pattern
+          while (stim.shape === target.shape && stim.pattern === target.pattern) {
+            stim = {
+              shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+              pattern: PATTERNS[Math.floor(Math.random() * PATTERNS.length)]
+            };
+          }
+        }
+      } while (false); // We're controlling the logic above
       block.push(stim);
     }
   }

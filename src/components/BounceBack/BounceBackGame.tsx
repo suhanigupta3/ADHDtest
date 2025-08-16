@@ -3,6 +3,7 @@ import { BounceBackGameProps } from './types';
 import { useGameLogic } from './hooks/useGameLogic';
 import { QUESTIONS } from './constants';
 import LevelTransition from './LevelTransition';
+import { SelfReportQuestions } from '../shared';
 import { 
   CANVAS_WIDTH, 
   CANVAS_HEIGHT, 
@@ -19,7 +20,7 @@ const ParticleBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<any[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -158,9 +159,6 @@ const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         <Countdown onComplete={handleCountdownComplete} />
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-8">
-          <h1 className="text-4xl font-bold text-[#4eca78] mb-8">
-            Bounce Back
-          </h1>
           <button
             onClick={handleStartClick}
             className="bg-[#4eca78] text-[#2a2e29] px-8 py-4 rounded-lg text-xl font-bold shadow-lg hover:bg-[#3da965] transition-colors animate-pulse mb-8"
@@ -255,7 +253,7 @@ const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
 // Water Animation Component
 const WaterAnimation: React.FC<{ paddleX: number; paddleWidth: number; ballY: number; ballX: number }> = ({ paddleX, paddleWidth, ballY, ballX }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const timeRef = useRef(0);
 
   useEffect(() => {
@@ -522,14 +520,13 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
     // User must click "Next" button to proceed
   }, [currentQuestionIndex, setQuestionResponses]);
 
-  // Handle questions completion
-  const handleQuestionsComplete = useCallback(async () => {
-    
+  // Handle game completion - immediately call onGameComplete when all levels are done
+  const handleGameComplete = useCallback(async () => {
     if (allLevelsCompleted) {
-      // All levels completed - finish the game
+      // All levels completed - finish the game immediately
       const finalGameData = {
         ...gameData,
-        selfReportResponses: { ...gameData.selfReportResponses, ...questionResponses },
+        gameId: 'bounce-back', // Add the gameId that AssessmentPage expects
         endTime: Date.now(),
         finalScore: score + (lives * 50),
         gameCompleted: true
@@ -546,31 +543,23 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
         }
       }
       
-      // Close questions modal
-      setShowQuestions(false);
-      setCurrentQuestionIndex(0);
-      setQuestionResponses({});
-      setQuestionsCompleted(false);
-      
-      // Call the completion callback
+      // Call the completion callback immediately - let GameFlow handle the questions
       if (onGameComplete) {
-        setGameCompleted(true); // Hide the game component
         onGameComplete(finalGameData);
-      } else {
-        // Fallback: force completion by hiding the component
-        setGameCompleted(true);
       }
-    } else {
-      // Continue to next level (this shouldn't happen since questions only show after all levels)
-      setShowQuestions(false);
-      setCurrentQuestionIndex(0);
-      setQuestionResponses({});
-      setQuestionsCompleted(false);
     }
-  }, [allLevelsCompleted, gameData, questionResponses, score, lives, onGameComplete, onError, saveGameDataToFirebase, setShowQuestions, setCurrentQuestionIndex, setQuestionResponses, setQuestionsCompleted]);
+  }, [allLevelsCompleted, gameData, score, lives, onGameComplete, onError, saveGameDataToFirebase]);
 
   // Get current paddle width
   const currentPaddleWidth = getPaddleWidth(currentLevel);
+
+  // Monitor game completion and call onGameComplete when needed
+  useEffect(() => {
+    if (allLevelsCompleted && onGameComplete) {
+      console.log('[BounceBack] All levels completed, calling handleGameComplete');
+      handleGameComplete();
+    }
+  }, [allLevelsCompleted, handleGameComplete]);
   
 
 
@@ -737,233 +726,81 @@ const BounceBackGame: React.FC<BounceBackGameProps> = ({ userId, onGameComplete,
   }
 
   return (
-    <div className="flex w-full justify-center items-start bg-[#2a2e29] p-4 pt-2">
-      <div className="w-full max-w-6xl relative">
-        <div className="bg-[#2a2e29] rounded-lg shadow-lg overflow-hidden">
+    <div className="flex w-full justify-center items-center bg-[#2a2e29]" style={{ height: '100%' }}>
+      <div className="w-full relative">
+        <div className="bg-[#2a2e29] overflow-hidden">
 
-
-          {/* Game Status */}
-          <div className="text-center mb-4">
-            <div className="text-[#4eca78] text-lg">
-              Score: {score} | Lives: {Math.max(0, lives)} | Level: {currentLevel}/3
-            </div>
-            <p className="text-[#4eca78]/80 text-sm mt-2">
-              {currentLevelData.description}
-            </p>
-            
-            {/* Power-up indicators */}
-            {Object.keys(activePowerUps).length > 0 && (
-              <div className="flex justify-center gap-4 mt-2">
-                {Object.entries(activePowerUps).map(([type, powerUp]) => {
-                  const timeLeft = Math.max(0, Math.ceil(((powerUp as any).endTime - Date.now()) / 1000));
-                  const icon = type === 'wider_paddle' ? '🛡️' : '🐌';
+          {/* Only show game content when not showing questions */}
+          {!showQuestions && (
+            <>
+              {/* Game Board */}
+              <div className="mx-auto w-full flex items-center justify-center relative">
+                <div className="bg-[#e8f0e9] rounded-lg p-2 shadow-md relative" style={{
+                  width: width,
+                  height: height,
+                  maxWidth: '100%',
+                  maxHeight: 'calc(100% - 80px)',
+                  display: 'block',
+                  margin: '0 auto'
+                }}>
                   
-                  return (
-                    <div key={type} className="bg-[#4eca78]/20 px-3 py-1 rounded-full text-[#4eca78] text-sm flex items-center gap-1">
-                      <span>{icon}</span>
-                      <span className="capitalize">{type.replace('_', ' ')}</span>
-                      <span>({timeLeft}s)</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Game Board */}
-          <div className="mx-auto w-full flex items-center justify-center mb-2 relative">
-            <div className="bg-[#e8f0e9] rounded-lg p-4 shadow-md relative" style={{
-              width: width,
-              height: height,
-              maxWidth: '100%',
-              maxHeight: 'calc(100vh - 250px)',
-              display: 'block',
-              margin: '0 auto'
-            }}>
-              
-              {/* Game Canvas */}
-              <div className="relative" style={{ width: '100%', height: 'calc(100% - 60px)' }}>
-                <canvas
-                  ref={canvasRef}
-                  width={CANVAS_WIDTH}
-                  height={CANVAS_HEIGHT}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 12,
-                    boxShadow: '0 2px 16px #a7f3d0',
-                    background: BG_COLOR,
-                    display: 'block',
-                    margin: '0 auto',
-                    outline: 'none',
-                    border: 'none',
-                    cursor: gameStarted && !showQuestions && !showLevelTransition && !showInstructions ? 'none' : 'default',
-                  }}
-                  tabIndex={0}
-                  onFocus={() => {
-                    // Ensure canvas can receive keyboard events
-                    canvasRef.current?.focus();
-                  }}
-                />
-                
-                {/* Water Animation Overlay */}
-                <WaterAnimation paddleX={paddleX} paddleWidth={currentPaddleWidth} ballY={ball.y} ballX={ball.x} />
-                
-                {/* Keyboard Controls Hint */}
-                {gameStarted && !showQuestions && !showLevelTransition && !showInstructions && (
-                  <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded opacity-75">
-                    Use ← → keys to move paddle
+                  {/* Game Canvas */}
+                  <div className="relative" style={{ width: '100%', height: 'calc(100% - 60px)' }}>
+                    <canvas
+                      ref={canvasRef}
+                      width={CANVAS_WIDTH}
+                      height={CANVAS_HEIGHT}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 12,
+                        boxShadow: '0 2px 16px #a7f3d0',
+                        background: BG_COLOR,
+                        display: 'block',
+                        margin: '0 auto',
+                        outline: 'none',
+                        border: 'none',
+                        cursor: gameStarted && !showQuestions && !showLevelTransition && !showInstructions ? 'none' : 'default',
+                      }}
+                      tabIndex={0}
+                      onFocus={() => {
+                        // Ensure canvas can receive keyboard events
+                        canvasRef.current?.focus();
+                      }}
+                    />
+                    
+                    {/* Game Status Overlay */}
+                    {gameStarted && !showQuestions && !showLevelTransition && !showInstructions && (
+                      <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded text-sm font-mono">
+                        Score: {score} | Lives: {Math.max(0, lives)} | L{currentLevel}
+                      </div>
+                    )}
+                    
+                    {/* Water Animation Overlay */}
+                    <WaterAnimation paddleX={paddleX} paddleWidth={currentPaddleWidth} ballY={ball.y} ballX={ball.x} />
+                    
+                    {/* Keyboard Controls Hint */}
+                    {gameStarted && !showQuestions && !showLevelTransition && !showInstructions && (
+                      <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded opacity-75">
+                        Use ← → keys to move paddle
+                      </div>
+                    )}
                   </div>
-                )}
+                  
+                  {/* Start Screen Overlay */}
+                  {showInstructions && <StartScreen onStart={() => {
+                    setShowInstructions(false);
+                    setGameStarted(true);
+                    setGameData(prev => ({ ...prev, startTime: Date.now() }));
+                  }} />}
+                </div>
               </div>
-              
-              {/* Start Screen Overlay */}
-              {showInstructions && <StartScreen onStart={() => {
-                setShowInstructions(false);
-                setGameStarted(true);
-                setGameData(prev => ({ ...prev, startTime: Date.now() }));
-              }} />}
-            </div>
-          </div>
-
-
+            </>
+          )}
         </div>
       </div>
 
-      {/* Questions Modal */}
-      {showQuestions && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-emerald-700 mb-2">
-                {allLevelsCompleted ? 'Final Assessment Questions' : `Level ${currentLevel} Complete!`}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Question {currentQuestionIndex + 1} of {QUESTIONS.length}
-              </p>
-            </div>
-            
-            <div className="mb-6">
-              <p className="text-gray-800 font-medium mb-4">
-                {currentQuestion.text}
-              </p>
-              
-              <div className="space-y-3">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
-                    value="1"
-                    checked={questionResponses[currentQuestion.id] === 1}
-                    onChange={() => handleQuestionResponse(1)}
-                    className="text-emerald-600"
-                  />
-                  <span className="text-gray-700">1 - Not at all</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
-                    value="2"
-                    checked={questionResponses[currentQuestion.id] === 2}
-                    onChange={() => handleQuestionResponse(2)}
-                    className="text-emerald-600"
-                  />
-                  <span className="text-gray-700">2 - Slightly</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
-                    value="3"
-                    checked={questionResponses[currentQuestion.id] === 3}
-                    onChange={() => handleQuestionResponse(3)}
-                    className="text-emerald-600"
-                  />
-                  <span className="text-gray-700">3 - Moderately</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
-                    value="4"
-                    checked={questionResponses[currentQuestion.id] === 4}
-                    onChange={() => handleQuestionResponse(4)}
-                    className="text-emerald-600"
-                  />
-                  <span className="text-gray-700">4 - Very</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}-${currentQuestionIndex}`}
-                    value="5"
-                    checked={questionResponses[currentQuestion.id] === 5}
-                    onChange={() => handleQuestionResponse(5)}
-                    className="text-emerald-600"
-                  />
-                  <span className="text-gray-700">5 - Extremely</span>
-                </label>
-              </div>
-            </div>
-            
-            {/* Navigation buttons */}
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                disabled={currentQuestionIndex === 0}
-                className={`px-4 py-2 rounded-lg font-semibold ${
-                  currentQuestionIndex === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                }`}
-              >
-                Previous
-              </button>
-              
-              <button
-                onClick={() => {
-                  const nextIndex = currentQuestionIndex + 1;
-                  if (nextIndex >= QUESTIONS.length) {
-                    // Reached the last question, complete the assessment directly
-                    handleQuestionsComplete();
-                  } else {
-                    // Go to next question
-                    setCurrentQuestionIndex(nextIndex);
-                  }
-                }}
-                disabled={(() => {
-                  const isLastQuestion = currentQuestionIndex === QUESTIONS.length - 1;
-                  const isAnswered = questionResponses[currentQuestion.id];
-                  const shouldBeDisabled = isLastQuestion && !isAnswered;
-                  return shouldBeDisabled;
-                })()}
-                className={`px-4 py-2 rounded-lg font-semibold ${
-                  (currentQuestionIndex === QUESTIONS.length - 1 && !questionResponses[currentQuestion.id])
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                }`}
-              >
-                {currentQuestionIndex === QUESTIONS.length - 1 ? 'Complete' : 'Next'}
-              </button>
-            </div>
-            
-            {questionsCompleted && (
-              <div className="text-center">
-                <p className="text-emerald-600 font-medium mb-4">
-                  Thank you for your responses!
-                </p>
-                <button
-                  onClick={handleQuestionsComplete}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-semibold"
-                >
-                  {allLevelsCompleted ? 'Complete Assessment' : 'Continue to Next Level'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {/* Level Transition Screen */}
       {showLevelTransition && transitionData && (

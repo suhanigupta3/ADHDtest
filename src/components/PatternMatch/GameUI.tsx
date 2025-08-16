@@ -1,7 +1,8 @@
 import React from 'react';
-import { GameState, Target, RoundMetrics } from './types';
+import { GameState, RoundMetrics } from './types';
 import { getRoundInstructions, getInRoundInstruction } from './utils';
 import ShapeRenderer from './ShapeRenderer';
+
 
 // Countdown Component
 const Countdown: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -43,30 +44,12 @@ interface GameUIProps {
   onStartRound: () => void;
   onStimulusClick: () => void;
   onScreenClick: (e: React.MouseEvent) => void;
-  onShowQuestions: () => void;
-  onQuestionAnswer: (questionIndex: number, answer: number) => void;
-  onQuestionNav: (newIndex: number) => void;
-  showSelfReport?: boolean;
-  selfReportSubmitted?: boolean;
-  onSelfReportSubmit?: (answers: number[]) => void;
+
   width?: string;
   height?: string;
 }
 
-const selfReportQuestions = [
-  "How often do you find it difficult to focus on tasks that require sustained mental effort?",
-  "How often do you make careless mistakes in work or school tasks due to inattention?",
-  "How often do you feel the urge to act quickly without thinking through the consequences?",
-  "How often do you find it difficult to stick to rules or instructions when they change?",
-  "How often do you feel like you're constantly shifting between thoughts or actions?"
-];
-const selfReportLabels = [
-  "Never",
-  "Rarely",
-  "Sometimes",
-  "Often",
-  "Very Often"
-];
+
 
 const GameUI: React.FC<GameUIProps> = ({
   gameState,
@@ -77,30 +60,13 @@ const GameUI: React.FC<GameUIProps> = ({
   onStartRound,
   onStimulusClick,
   onScreenClick,
-  onShowQuestions,
-  onQuestionAnswer,
-  onQuestionNav,
-  showSelfReport = false,
-  selfReportSubmitted = false,
-  onSelfReportSubmit,
+
   width = "960px",
   height = "540px"
 }) => {
-  // Self-report state (must be top-level for hooks order)
-  const [answers, setAnswers] = React.useState<number[]>([0, 0, 0, 0, 0]);
-  const [submitted, setSubmitted] = React.useState(false);
-
   // Countdown state (must be top-level for hooks order)
   const [showCountdown, setShowCountdown] = React.useState(false);
   const [showRoundCountdown, setShowRoundCountdown] = React.useState(false);
-
-  // --- Add localAnswer state for question slider ---
-  const currentQuestionIndex = gameState.currentQuestionIndex;
-  const currentAnswer = gameState.questionAnswers[currentQuestionIndex];
-  const [localAnswer, setLocalAnswer] = React.useState<number>(currentAnswer || 3);
-  React.useEffect(() => {
-    setLocalAnswer(currentAnswer || 3);
-  }, [currentQuestionIndex, currentAnswer]);
 
   // Countdown handlers
   const handleStartClick = React.useCallback(() => {
@@ -137,7 +103,7 @@ const GameUI: React.FC<GameUIProps> = ({
         }}>
           
           {/* Game Play Area - matches main game structure */}
-          <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+          <div className="relative w-full h-full flex items-center justify-center" style={{ height: 'calc(100% - 60px)' }}>
             
             {/* Countdown Overlay */}
             {showCountdown && (
@@ -147,8 +113,8 @@ const GameUI: React.FC<GameUIProps> = ({
             )}
             
             {/* Instructions Content */}
-            <div className="flex flex-col justify-center items-center w-full h-full">
-              <div className="text-center max-w-2xl">
+            <div className="flex flex-col justify-center items-center w-full max-w-2xl">
+              <div className="text-center">
                 <h2 className="font-extrabold text-3xl md:text-4xl text-sleek-700 mb-8 tracking-wide">How to Play</h2>
                 <ul className="text-gray-800 space-y-4 text-lg list-disc list-inside px-0 mb-8">
                   <li>Watch for the <b>target shape and pattern</b> shown on the left</li>
@@ -207,8 +173,8 @@ const GameUI: React.FC<GameUIProps> = ({
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">{instructions.title}</h2>
                 <p className="text-lg text-gray-700 mb-4 text-center">{instructions.text}</p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left mb-8 max-w-xl w-full">
-                  <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
-                  <p className="text-emerald-200 text-base">{instructions.example}</p>
+                  <h3 className="font-bold text-emerald-600 mb-2">Example:</h3>
+                  <p className="text-gray-800 text-base">{instructions.example}</p>
                 </div>
                 <button
                   onClick={handleRoundStartClick}
@@ -281,12 +247,10 @@ const GameUI: React.FC<GameUIProps> = ({
                   ))}
                 </div>
                 
-                <button
-                  onClick={onShowQuestions}
-                  className="bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-xl px-12 py-4 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-                >
-                  Answer Questions
-                </button>
+                <div className="text-center">
+                  <p className="text-lg text-gray-600 mb-4">Game completed! Moving to assessment questions...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -308,132 +272,12 @@ const GameUI: React.FC<GameUIProps> = ({
     );
   }
 
-  // Show questions screen
-  if (gameState.showQuestions) {
-    if (currentQuestionIndex >= selfReportQuestions.length) {
-      // All questions answered
-      return (
-        <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
-          <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-12" style={{ maxWidth: '90%', maxHeight: '90%' }}>
-            <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
-            <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
-            <p className="text-gray-500 text-center">You may now close this window.</p>
-          </div>
-        </div>
-      );
-    }
-
-    const currentQuestion = selfReportQuestions[currentQuestionIndex];
-
-    const handleSliderChange = (val: number) => {
-      setLocalAnswer(val);
-    };
-    const handleLabelClick = (val: number) => {
-      setLocalAnswer(val);
-    };
-    const handleNext = () => {
-      if (localAnswer) {
-        onQuestionAnswer(currentQuestionIndex, localAnswer);
-      }
-    };
-    const handleBack = () => {
-      if (currentQuestionIndex > 0) {
-        onQuestionNav(currentQuestionIndex - 1);
-      }
-    };
-
-    return (
-      <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
-        <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8" style={{ maxWidth: '90%', maxHeight: '90%' }}>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-sleek-700 mb-4">Question {currentQuestionIndex + 1} of {selfReportQuestions.length}</h2>
-            <p className="text-lg text-gray-700">{currentQuestion}</p>
-          </div>
-          {/* Slider with labels */}
-          <div className="w-full flex flex-col items-center gap-6">
-            <div className="w-full flex flex-col items-center">
-              <input
-                type="range"
-                min={1}
-                max={5}
-                step={1}
-                value={localAnswer}
-                onChange={e => handleSliderChange(Number(e.target.value))}
-                className="w-full max-w-lg accent-sleek-600 focus:outline-none focus:ring-2 focus:ring-sleek-400"
-                style={{ WebkitAppearance: 'none', appearance: 'none', height: '6px', borderRadius: '3px', background: '#e0e7ff', outline: 'none', marginBottom: '24px' }}
-              />
-              <div className="w-full max-w-lg flex flex-row justify-between mt-[-18px]">
-                {selfReportLabels.map((label, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleLabelClick(idx + 1)}
-                    className={`text-xs md:text-base px-2 py-1 rounded transition-colors duration-150 font-medium focus:outline-none ${
-                      localAnswer === idx + 1
-                        ? 'bg-sleek-100 text-sleek-700 border border-sleek-400'
-                        : 'text-gray-700 hover:bg-sleek-50 border border-transparent'
-                    }`}
-                    style={{ minWidth: 60 }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Back/Next buttons */}
-          <div className="flex flex-row gap-4 mt-8">
-            <button
-              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-sleek-300 ${
-                currentQuestionIndex === 0
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-gray-400 to-sleek-400 text-white hover:from-gray-500 hover:to-sleek-500'
-              }`}
-              disabled={currentQuestionIndex === 0}
-              onClick={handleBack}
-            >
-              Back
-            </button>
-            <button
-              className={`px-8 py-3 rounded-full font-bold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-sleek-300 ${
-                localAnswer
-                  ? 'bg-gradient-to-r from-sleek-600 to-emerald-600 text-white hover:from-sleek-700 hover:to-emerald-700'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-              disabled={!localAnswer}
-              onClick={handleNext}
-            >
-              Next
-            </button>
-          </div>
-          {/* Progress dots */}
-          <div className="mt-8 text-center">
-            <div className="flex justify-center space-x-2">
-              {selfReportQuestions.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-3 h-3 rounded-full ${
-                    index < currentQuestionIndex
-                      ? 'bg-green-500'
-                      : index === currentQuestionIndex
-                      ? 'bg-sleek-500'
-                      : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Show round instructions
   if (!gameState.isPlaying && !gameState.gameComplete && !gameState.showScores && !gameState.showQuestions) {
     const instructions = getRoundInstructions(gameState.currentRound);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50">
-        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-between" style={{ width: '960px', height: '540px' }}>
+      <div className="flex items-center justify-center bg-gradient-to-br from-sleek-50 to-emerald-50" style={{ width: width, height: height }}>
+        <div className="rounded-2xl border border-gray-200 shadow-2xl bg-white flex flex-col justify-between" style={{ width: width, height: height }}>
           <div className="flex flex-col items-center justify-center h-full px-8">
             <h1 className="text-3xl font-extrabold text-sleek-700 mb-6 tracking-wide">
               {instructions.title}
@@ -443,8 +287,8 @@ const GameUI: React.FC<GameUIProps> = ({
                 {instructions.text}
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                <h3 className="font-bold text-emerald-300 mb-2">Example:</h3>
-                <p className="text-emerald-200 text-sm">{instructions.example}</p>
+                <h3 className="font-bold text-emerald-600 mb-2">Example:</h3>
+                <p className="text-gray-800 text-sm">{instructions.example}</p>
               </div>
             </div>
           </div>
@@ -462,62 +306,20 @@ const GameUI: React.FC<GameUIProps> = ({
     );
   }
 
-  // Show self-report form after thank you screen (legacy - keeping for compatibility)
-  if (showSelfReport) {
-    const handleChange = (qIdx: number, value: number) => {
-      setAnswers(prev => prev.map((a, i) => (i === qIdx ? value : a)));
-    };
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (onSelfReportSubmit) onSelfReportSubmit(answers);
-      setSubmitted(true);
-    };
-    if (selfReportSubmitted || submitted) {
-      return (
-        <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
-          <div className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-12" style={{ maxWidth: '90%', maxHeight: '90%' }}>
-            <h2 className="text-3xl font-extrabold text-sleek-700 mb-6">Thank you!</h2>
-            <p className="text-lg text-gray-700 mb-2 text-center">Your responses have been recorded.</p>
-            <p className="text-gray-500 text-center">You may now close this window.</p>
-          </div>
-        </div>
-      );
-    }
+
+
+  // Show self-report questions - this should be handled by the parent component
+  if (gameState.showQuestions) {
     return (
-      <div className="w-full h-full bg-white flex items-center justify-center" style={{ width: width, height: height }}>
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 gap-6" style={{ maxWidth: '90%', maxHeight: '90%' }}>
-          <h2 className="text-2xl font-bold text-sleek-700 mb-2">Self-Report Questionnaire</h2>
-          <p className="text-gray-700 mb-4 text-center">Please answer the following questions about your experience and attention during the game.</p>
-          <div className="flex flex-col gap-6 w-full">
-            {selfReportQuestions.map((q, i) => (
-              <div key={i} className="w-full">
-                <label className="block text-lg font-medium text-gray-800 mb-2">{q}</label>
-                <div className="flex flex-row gap-4 justify-center">
-                  {selfReportLabels.map((label, v) => (
-                    <label key={v} className="flex flex-col items-center">
-                      <input
-                        type="radio"
-                        name={`q${i}`}
-                        value={v + 1}
-                        checked={answers[i] === v + 1}
-                        onChange={() => handleChange(i, v + 1)}
-                        required
-                      />
-                      <span className="text-xs mt-1">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <button
-            type="submit"
-            className="mt-6 bg-gradient-to-r from-sleek-600 to-emerald-600 text-white text-lg px-10 py-3 rounded-full font-bold shadow hover:from-sleek-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-            disabled={answers.some(a => a === 0)}
-          >
-            Submit
-          </button>
-        </form>
+      <div className="w-full h-full bg-gradient-to-br from-sleek-50 to-emerald-50 flex items-center justify-center" style={{ width: width, height: height }}>
+        <div className="bg-white rounded-2xl shadow-2xl flex flex-col justify-center items-center p-8" style={{ maxWidth: '90%', maxHeight: '90%' }}>
+          <h1 className="text-3xl font-extrabold text-sleek-700 mb-6 tracking-wide">
+            Loading Self-Report Questions...
+          </h1>
+          <p className="text-lg text-gray-600 mb-6 text-center">
+            Please wait while we prepare your assessment questions.
+          </p>
+        </div>
       </div>
     );
   }
@@ -546,7 +348,7 @@ const GameUI: React.FC<GameUIProps> = ({
   return (
     <div className="w-full h-full bg-white rounded-lg shadow-lg" style={{ width: width, height: height }}>
       {/* Game Board Container - matches BounceBack structure */}
-      <div className="bg-gray-50 rounded-lg p-4 shadow-md relative" style={{
+      <div className="bg-gray-50 rounded-lg p-2 shadow-md relative" style={{
         width: '100%',
         height: '100%',
         maxWidth: '100%',
@@ -556,12 +358,12 @@ const GameUI: React.FC<GameUIProps> = ({
       }}>
         
         {/* Game Play Area - matches canvas area structure */}
-        <div className="relative w-full h-full" style={{ height: 'calc(100% - 60px)' }}>
+        <div className="relative w-full h-full" style={{ height: 'calc(100% - 40px)' }}>
           
           {/* Game Content */}
           <div className="flex flex-col justify-between w-full h-full" style={{ overflow: 'hidden' }}>
             {/* Simple Centered Header */}
-            <div className="w-full flex justify-between items-center pt-4 pb-2">
+            <div className="w-full flex justify-between items-center pt-2 pb-1">
               <div style={{ width: 80 }} /> {/* Spacer for left */}
               <div className="flex gap-8 text-lg font-semibold">
                 <span className="text-gray-700">Round: <span className="text-sleek-600 font-bold">{gameState.currentRound}/3</span></span>
@@ -573,7 +375,7 @@ const GameUI: React.FC<GameUIProps> = ({
               </div>
             </div>
             {/* Main Content Row */}
-            <div className="flex flex-1 flex-row items-center justify-between px-8 py-4 gap-6">
+            <div className="flex flex-1 flex-row items-center justify-between px-8 py-2 gap-6">
               {/* Left: Current Target (40%) */}
               <div className="flex flex-col items-center justify-center" style={{ flexBasis: '40%', maxWidth: '40%' }}>
                 <h3 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2">
@@ -582,7 +384,7 @@ const GameUI: React.FC<GameUIProps> = ({
                   </svg>
                   Current Target
                 </h3>
-                <div className="mb-2">
+                <div className="mb-1">
                   <ShapeRenderer 
                     shape={gameState.currentTarget.shape} 
                     pattern={gameState.currentTarget.pattern} 
@@ -605,7 +407,7 @@ const GameUI: React.FC<GameUIProps> = ({
                   </svg>
                   Current Stimulus
                 </h3>
-                <div className={`flex justify-center items-center mb-4 transition-all duration-300 ${gameState.showStimulus ? 'animate-pulse' : ''}`} style={{ minHeight: '200px' }}>
+                <div className={`flex justify-center items-center mb-2 transition-all duration-300 ${gameState.showStimulus ? 'animate-pulse' : ''}`} style={{ minHeight: '180px' }}>
                   {gameState.showStimulus && gameState.currentStimulus ? (
                     <button
                       onClick={onStimulusClick}
@@ -633,7 +435,7 @@ const GameUI: React.FC<GameUIProps> = ({
               </div>
             </div>
             {/* Add the instruction tile just above the progress bar */}
-            <div className="w-full flex justify-center items-center pb-2">
+            <div className="w-full flex justify-center items-center pb-1">
               <div className="bg-gray-50 border border-gray-200 rounded-lg px-0 py-3 shadow text-center w-full">
                 <span className="text-base text-gray-700 font-medium">
                   {getInRoundInstruction(gameState.currentRound)}
@@ -641,7 +443,7 @@ const GameUI: React.FC<GameUIProps> = ({
               </div>
             </div>
             {/* Progress Bar (bottom) */}
-            <div className="px-8 pb-6">
+            <div className="px-8">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Round Progress</span>
                 <span>{gameState.currentTrial}/30</span>

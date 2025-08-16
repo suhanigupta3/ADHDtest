@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import GameWrapper from './GameWrapper';
+import GameFlow from './common/GameFlow';
+import { loadGameQuestions } from '../utils/questionLoader';
 import { useDisclaimer } from '../hooks/useDisclaimer';
 
 interface GameProgress {
@@ -324,7 +325,6 @@ const AssessmentPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
 
   // IMPORTANT MEDICAL DISCLAIMER
@@ -365,7 +365,7 @@ const AssessmentPage: React.FC = () => {
       console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
       
       // Check each game's completion status from their actual documents
-      const gameIds = ['BerryBlitz', 'PatternMatch', 'BounceBack', 'FlutterFocus'];
+      const gameIds = ['BerryBlitz', 'pattern-match', 'BounceBack', 'FlutterFocus'];
       const gameProgressMap = {
         game1Completed: false, // BerryBlitz
         game2Completed: false, // PatternMatch  
@@ -375,7 +375,33 @@ const AssessmentPage: React.FC = () => {
         completedAt: null
       };
 
-      // Check each game document for completion
+      // First, check the gameProgress collection for completion flags
+      try {
+        const gameProgressDoc = await getDoc(doc(db, 'gameProgress', currentUser.uid));
+        if (gameProgressDoc.exists()) {
+          const progressData = gameProgressDoc.data();
+          console.log('[AssessmentPage] GameProgress document data:', progressData);
+          
+          // Update completion status from gameProgress collection
+          if (progressData.game1Completed) gameProgressMap.game1Completed = true;
+          if (progressData.game2Completed) gameProgressMap.game2Completed = true;
+          if (progressData.game3Completed) gameProgressMap.game3Completed = true;
+          if (progressData.game4Completed) gameProgressMap.game4Completed = true;
+          
+          console.log('[AssessmentPage] Completion status from gameProgress:', {
+            game1Completed: progressData.game1Completed,
+            game2Completed: progressData.game2Completed,
+            game3Completed: progressData.game3Completed,
+            game4Completed: progressData.game4Completed
+          });
+        } else {
+          console.log('[AssessmentPage] GameProgress document does not exist for user:', currentUser.uid);
+        }
+      } catch (error) {
+        console.error('[AssessmentPage] Error checking gameProgress collection:', error);
+      }
+
+      // Then check each game document for additional completion verification
       for (let i = 0; i < gameIds.length; i++) {
         const gameId = gameIds[i];
         try {
@@ -392,10 +418,11 @@ const AssessmentPage: React.FC = () => {
             const isCompleted = !!(gameData.scores && gameData.selfReport);
             console.log(`[AssessmentPage] Game ${gameId} completed:`, isCompleted);
             
-            if (i === 0) gameProgressMap.game1Completed = isCompleted;
-            else if (i === 1) gameProgressMap.game2Completed = isCompleted;
-            else if (i === 2) gameProgressMap.game3Completed = isCompleted;
-            else if (i === 3) gameProgressMap.game4Completed = isCompleted;
+            // If gameProgress says it's completed OR the game document has scores+selfReport, mark as completed
+            if (i === 0) gameProgressMap.game1Completed = gameProgressMap.game1Completed || isCompleted;
+            else if (i === 1) gameProgressMap.game2Completed = gameProgressMap.game2Completed || isCompleted;
+            else if (i === 2) gameProgressMap.game3Completed = gameProgressMap.game3Completed || isCompleted;
+            else if (i === 3) gameProgressMap.game4Completed = gameProgressMap.game4Completed || isCompleted;
           } else {
             console.log(`[AssessmentPage] Game ${gameId} document not found`);
           }
@@ -411,6 +438,13 @@ const AssessmentPage: React.FC = () => {
                                         gameProgressMap.game4Completed;
 
       console.log('[AssessmentPage] Final game progress:', gameProgressMap);
+      console.log('[AssessmentPage] Individual game completion status:', {
+        'BerryBlitz (game1)': gameProgressMap.game1Completed,
+        'PatternMatch (game2)': gameProgressMap.game2Completed,
+        'BounceBack (game3)': gameProgressMap.game3Completed,
+        'FlutterFocus (game4)': gameProgressMap.game4Completed,
+        'All Games': gameProgressMap.allGamesCompleted
+      });
       setGameProgress(gameProgressMap);
       
     } catch (error) {
@@ -454,14 +488,43 @@ const AssessmentPage: React.FC = () => {
   const closeGameModal = () => {
     loadGameProgress();
     setSelectedGame(null);
-    setGameStarted(false);
     setGameCompleted(false);
   };
 
-  const markGameCompleted = () => {
-    // Mark game as completed and directly close modal
+  const markGameCompleted = (completeGameData: any) => {
+    // Mark game as completed and save complete data to Firebase
     setGameCompleted(true);
-    console.log('[AssessmentPage] Game completed, refreshing progress...');
+    console.log('[AssessmentPage] Game completed with data:', completeGameData);
+    
+    // Save the complete game data (including self-report) to Firebase
+    if (completeGameData && currentUser?.uid) {
+      const gameId = completeGameData.gameId;
+      const firebasePath = `users/${currentUser.uid}/games/${gameId}`;
+      
+      // Save the complete data to Firebase
+      setDoc(doc(db, firebasePath), {
+        ...completeGameData,
+        lastUpdated: new Date().toISOString(),
+        gameCompleted: true,
+        assessmentComplete: true
+      }, { merge: true }).then(() => {
+        console.log('[AssessmentPage] Complete game data saved to Firebase:', firebasePath);
+        
+        // Also update gameProgress to mark this game as completed
+        setDoc(doc(db, 'gameProgress', currentUser.uid), {
+          [getGameProgressField(gameId)]: true,
+          lastUpdated: new Date().toISOString()
+        }, { merge: true }).then(() => {
+          console.log('[AssessmentPage] Game progress updated in Firebase');
+        }).catch(err => {
+          console.error('[AssessmentPage] Failed to update game progress:', err);
+        });
+        
+      }).catch(err => {
+        console.error('[AssessmentPage] Failed to save complete game data:', err);
+      });
+    }
+    
     // Refresh game progress to reflect the newly completed game
     setTimeout(() => {
       loadGameProgress();
@@ -476,6 +539,14 @@ const AssessmentPage: React.FC = () => {
     if (gameId === 'bounce-back') return gameProgress.game3Completed;
     if (gameId === 'flutter-focus') return gameProgress.game4Completed;
     return false;
+  };
+
+  const getGameProgressField = (gameId: string) => {
+    if (gameId === 'berry-blitz') return 'game1Completed';
+    if (gameId === 'pattern-match') return 'game2Completed';
+    if (gameId === 'bounce-back') return 'game3Completed';
+    if (gameId === 'flutter-focus') return 'game4Completed';
+    return 'unknown';
   };
 
   const getCompletedGamesCount = () => {
@@ -960,112 +1031,18 @@ const AssessmentPage: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div
-              className={`card-dark ${gameStarted ? 'max-w-6xl max-h-[95vh] w-[95vw]' : 'max-w-4xl max-h-[90vh] w-[90vw]'} w-full overflow-hidden`}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              {/* Modal Header */}
-              <div className={`${gameStarted ? 'p-4' : 'p-6'} border-b border-sage-700 flex items-center justify-between`}>
-                <div className="flex items-center space-x-4">
-                  <motion.div
-                    className="text-2xl"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    {typeof selectedGame.icon === 'string' ? selectedGame.icon : selectedGame.icon}
-                  </motion.div>
-                  <h2 className="text-2xl font-bold text-forest-200">{selectedGame.title}</h2>
-                </div>
-              <button
-                onClick={closeGameModal}
-                  className="text-sage-400 hover:text-white transition-colors focus-helper"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-              {/* Modal Content */}
-              <div className={`${gameStarted ? 'h-full flex flex-col' : 'flex flex-col h-full'}`}>
-                {!gameStarted ? (
-                  <div className="flex-1 overflow-y-auto p-6">
-                    <div className="w-full max-w-3xl mx-auto">
-                      <p className="text-sage-200 mb-6 text-adhd-friendly-large">{selectedGame.description}</p>
-                      
-                      <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-sleek-400 mb-3">Instructions:</h3>
-                        <ol className="text-sage-200 space-y-3">
-                          {selectedGame.instructions.map((instruction, index) => (
-                            <motion.li 
-                              key={index} 
-                              className="flex items-start text-adhd-friendly"
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                            >
-                              <span className="text-sleek-500 mr-3 mt-1 font-semibold flex-shrink-0">{index + 1}.</span>
-                              {instruction}
-                            </motion.li>
-                          ))}
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 p-4">
-                    <GameWrapper
-                gameId={selectedGame.id}
-                gameName={selectedGame.title}
-                      buildPath={`/games/${selectedGame.id}/Build`}
-                      userId={currentUser?.uid || 'anonymous'}
-                      onGameComplete={markGameCompleted}
-                      onError={(error) => console.error('Game error:', error)}
-                      onCancel={closeGameModal}
-                      width="100%"
-                      height="100%"
-                    />
-                  </div>
-                )}
-
-                {/* Modal Footer */}
-                <div className="p-6 border-t border-sage-700 bg-sage-900/50">
-                  <div className="flex justify-center space-x-4">
-                    {!gameStarted ? (
-                      <button
-                        onClick={() => setGameStarted(true)}
-                        className="btn-primary-dark px-8 py-3 text-lg"
-                      >
-                        Start Game
-                      </button>
-                    ) : gameCompleted ? (
-                      <button
-                        onClick={closeGameModal}
-                        className="btn-primary-dark px-8 py-3 text-lg"
-                      >
-                        Close
-                      </button>
-                    ) : (
-                      // Removed "Back to Instructions" button to prevent exiting during gameplay
-                      <div className="text-sage-400 text-sm">
-                        Complete the game to continue
-                      </div>
-                    )}
-                    {!gameCompleted && (
-                      <button
-                        onClick={closeGameModal}
-                        className="btn-secondary-dark px-6 py-2"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            <GameFlow
+              gameId={selectedGame.id}
+              gameTitle={selectedGame.title}
+              gameIcon={selectedGame.icon}
+              description={selectedGame.description}
+              instructions={selectedGame.instructions}
+              questions={loadGameQuestions(selectedGame.id)}
+              onGameComplete={markGameCompleted}
+              onFlowComplete={closeGameModal}
+              onCancel={closeGameModal}
+              userId={currentUser?.uid || 'anonymous'}
+            />
           </motion.div>
         )}
       </AnimatePresence>

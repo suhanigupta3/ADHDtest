@@ -1,4 +1,5 @@
-import { Level, Question } from './types';
+import { Level } from './types';
+import { loadGameQuestions } from '../../utils/questionLoader';
 
 // Canvas and game dimensions
 export const CANVAS_WIDTH = 960;
@@ -34,7 +35,7 @@ export const LEVELS: Level[] = [
     ballSpeed: 3.5,
     paddleSpeed: 5,
     brickRows: 2,
-    description: "Take your time and get familiar with the controls",
+    description: "",
     toughBrickChance: 0.1, // 10% chance of tough bricks
     powerUpChance: 0.05, // 5% chance of power-up bricks
     multiHitBricks: false // No multi-hit bricks in level 1
@@ -45,7 +46,7 @@ export const LEVELS: Level[] = [
     ballSpeed: 4,
     paddleSpeed: 5.5,
     brickRows: 3,
-    description: "Faster ball, smaller paddle, more bricks with some tough ones",
+    description: "",
     toughBrickChance: 0.3, // 30% chance of tough bricks
     powerUpChance: 0.1, // 10% chance of power-up bricks
     multiHitBricks: true // Multi-hit bricks introduced
@@ -56,38 +57,12 @@ export const LEVELS: Level[] = [
     ballSpeed: 4.5,
     paddleSpeed: 6.5,
     brickRows: 4,
-    description: "Maximum challenge with toughest bricks and power-ups",
+    description: "",
     toughBrickChance: 0.5, // 50% chance of tough bricks
     powerUpChance: 0.15, // 15% chance of power-up bricks
     multiHitBricks: true // Multi-hit bricks throughout
   }
 ];
 
-// Assessment questions
-export const QUESTIONS: Question[] = [
-  {
-    id: 'q1_focus_difficulty',
-    text: 'How difficult was it to maintain focus on the ball throughout the game?',
-    category: 'attention'
-  },
-  {
-    id: 'q2_impulsive_movements',
-    text: 'How often did you find yourself moving the paddle without thinking?',
-    category: 'impulsivity'
-  },
-  {
-    id: 'q3_frustration_level',
-    text: 'How frustrated did you feel when you lost a life?',
-    category: 'frustration'
-  },
-  {
-    id: 'q4_planning_ability',
-    text: 'How well were you able to plan your paddle movements in advance?',
-    category: 'focus'
-  },
-  {
-    id: 'q5_persistence_motivation',
-    text: 'How motivated were you to continue playing after losing a life?',
-    category: 'persistence'
-  }
-]; 
+// Assessment questions - loaded from JSON configuration
+export const QUESTIONS = loadGameQuestions('bounceBack'); 
