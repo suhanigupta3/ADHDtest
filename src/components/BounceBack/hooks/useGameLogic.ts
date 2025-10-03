@@ -314,7 +314,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
       // Convert from "good executive function = high score" to "poor executive function = high score"
       const planningComponent = (1 - Math.min(1, gameMetrics.successfulRecoveries / Math.max(1, gameMetrics.totalMistakes))) * 4; // Higher score for poor planning
       const execAccuracyComponent = (1 - gameMetrics.accuracy / 100) * 3; // Higher score for lower accuracy
-      const execSelfReportComponent = selfReport.q4_planning_ability ? (5 - selfReport.q4_planning_ability) / 4 * 3 : 0; // Higher score for lower self-report
+      const execSelfReportComponent = selfReport.q4_planning_ability ? (selfReport.q4_planning_ability - 1) / 4 * 3 : 0; // Higher score for higher self-report (new question asks about problems)
       
       // Add bonus for poor planning (failed recoveries)
       const planningBonus = gameMetrics.failedRecoveries > 0 ? 2 : 0;
@@ -343,7 +343,7 @@ export const useGameLogic = ({ userId, onGameComplete, onError }: UseGameLogicPr
 
       // Add persistence/motivation component from self-report (affects all domains)
       const persistenceComponent = selfReport.q5_persistence_motivation ? 
-        (5 - selfReport.q5_persistence_motivation) / 4 * 2 : 0; // Higher score for lower motivation
+        (selfReport.q5_persistence_motivation - 1) / 4 * 2 : 0; // Higher score for higher self-report (new question asks about problems)
       
       // Adjust scores based on persistence (lower motivation = higher ADHD indicators)
       if (persistenceComponent > 0) {

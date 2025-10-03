@@ -7,6 +7,7 @@ import PostGameSelfReport from './PostGameSelfReport';
 import PatternMatchGame from '../PatternMatch/PatternMatchGame';
 import BounceBackGame from '../BounceBack/BounceBackGame';
 import FlutterFocusGame from '../FlutterFocus/FlutterFocusGame';
+import BerryBlitzGame from '../BerryBlitz/BerryBlitzGame';
 
 export type GameFlowState = 'instructions' | 'how-to-play' | 'game' | 'self-report' | 'complete';
 
@@ -331,16 +332,14 @@ const GameFlow: React.FC<GameFlowProps> = ({
             {/* Render the actual game based on gameId */}
             {gameId === 'berry-blitz' && (
               <div className="flex items-center justify-center w-full h-full">
-                <div style={{ width: "960px", height: "540px" }}>
-                  <iframe
-                    src="/unity-builds/berry-blitz/index.html"
-                    width="960"
-                    height="540"
-                    frameBorder="0"
-                    title="Berry Blitz"
-                    className="w-full h-full"
-                  />
-                </div>
+                <BerryBlitzGame
+                  width="960px"
+                  height="540px"
+                  onGameComplete={handleGameComplete}
+                  onCancel={handleCancel}
+                  onError={(error) => console.error('BerryBlitz error:', error)}
+                  userId={userId}
+                />
               </div>
             )}
             {gameId === 'pattern-match' && (

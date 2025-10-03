@@ -2,27 +2,27 @@
   "questions": [
     {
       "id": "q1_focus_difficulty",
-      "text": "How difficult was it to maintain focus on the ball throughout the game?",
+      "text": "How often do you leave your seat when you're expected to stay put?",
       "category": "attention"
     },
     {
       "id": "q2_impulsive_movements",
-      "text": "How often did you find yourself moving the paddle without thinking?",
+      "text": "How often do you feel restless during quiet activities, like reading or meetings?",
       "category": "impulsivity"
     },
     {
       "id": "q3_frustration_level",
-      "text": "How frustrated did you feel when you lost a life?",
+      "text": "How often do you find yourself talking more than others in a group?",
       "category": "frustration"
     },
     {
       "id": "q4_planning_ability",
-      "text": "How well were you able to plan your paddle movements in advance?",
+      "text": "How often do you feel like you cannot relax, even during downtime?",
       "category": "focus"
     },
     {
       "id": "q5_persistence_motivation",
-      "text": "How motivated were you to continue playing after losing a life?",
+      "text": "How often do you move quickly into new activities before finishing the first one?",
       "category": "persistence"
     }
   ]

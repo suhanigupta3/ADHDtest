@@ -4,6 +4,7 @@ import { Question } from '../components/shared';
 import flutterFocusQuestions from '../components/FlutterFocus/questions.json';
 import patternMatchQuestions from '../components/PatternMatch/questions.json';
 import bounceBackQuestions from '../components/BounceBack/questions.json';
+import berryBlitzQuestions from '../components/BerryBlitz/questions.json';
 
 // Debug imports
 console.log('[questionLoader] patternMatchQuestions import check:', patternMatchQuestions);
@@ -31,7 +32,9 @@ export const loadGameQuestions = (gameId: string): Question[] => {
     'flutter-focus': 'flutterFocus',
     'flutterFocus': 'flutterFocus',
     'bounce-back': 'bounceBack',
-    'bounceBack': 'bounceBack'
+    'bounceBack': 'bounceBack',
+    'berry-blitz': 'berryBlitz',
+    'berryBlitz': 'berryBlitz'
   };
   
   const normalizedGameId = gameIdMap[gameId] || gameId;
@@ -40,7 +43,8 @@ export const loadGameQuestions = (gameId: string): Question[] => {
   const questionsMap: GameQuestions = {
     'flutterFocus': flutterFocusQuestions.questions,
     'patternMatch': patternMatchQuestions.questions,
-    'bounceBack': bounceBackQuestions.questions
+    'bounceBack': bounceBackQuestions.questions,
+    'berryBlitz': berryBlitzQuestions.questions
   };
 
   const questions = questionsMap[normalizedGameId];
@@ -60,7 +64,8 @@ export const getAllGameQuestions = (): GameQuestions => {
   return {
     'flutterFocus': flutterFocusQuestions.questions,
     'patternMatch': patternMatchQuestions.questions,
-    'bounceBack': bounceBackQuestions.questions
+    'bounceBack': bounceBackQuestions.questions,
+    'berryBlitz': berryBlitzQuestions.questions
   };
 };
 

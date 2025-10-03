@@ -42,30 +42,56 @@ const games: Game[] = [
     color: 'from-darkforest-500 to-emerald-600',
     gradientClass: 'bg-gradient-to-br from-darkforest-500 to-emerald-600',
     icon: (
-      <div className="w-14 h-14 flex items-center justify-center">
-      <img 
-        src="/unity-builds/berry-blitz/Player.png" 
-        alt="Player Character" 
-        className="w-14 h-14 object-contain"
-          onError={(e) => {
-            console.error('Failed to load Player.png');
-            // Hide the image and show fallback
-            e.currentTarget.style.display = 'none';
-            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-            if (fallback) fallback.style.display = 'block';
-          }}
-          onLoad={() => console.log('Player.png loaded successfully')}
-        />
-        <svg 
-          className="w-14 h-14 hidden text-emerald-500" 
-          style={{ display: 'none' }}
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      </div>
+      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 32 32">
+        <defs>
+          {/* Gradient definitions */}
+          <linearGradient id="berryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F97316" />
+            <stop offset="50%" stopColor="#EF4444" />
+            <stop offset="100%" stopColor="#DC2626" />
+          </linearGradient>
+          <linearGradient id="fruitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <linearGradient id="obstacleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#7C3AED" />
+          </linearGradient>
+          <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FEF3C7" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        
+        {/* Background glow */}
+        <circle cx="16" cy="16" r="15" fill="url(#glowGradient)" opacity="0.4"/>
+        
+        {/* Central glowing berry/fruit */}
+        <circle cx="16" cy="16" r="4" fill="url(#berryGradient)" opacity="0.9"/>
+        <circle cx="16" cy="16" r="3" fill="#FFFFFF" opacity="0.3"/>
+        <circle cx="15" cy="15" r="0.8" fill="#FFFFFF" opacity="0.8"/>
+        
+        {/* Orbiting target fruits with glow */}
+        <circle cx="8" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
+        <circle cx="8" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
+        <circle cx="24" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
+        <circle cx="24" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
+        
+        {/* Stylized obstacles (shurikens) with glow */}
+        <polygon points="8,16 10,14 12,16 10,18" fill="url(#obstacleGradient)" opacity="0.7"/>
+        <polygon points="8,16 9,15 10,16 9,17" fill="#FFFFFF" opacity="0.3"/>
+        <polygon points="20,16 22,14 24,16 22,18" fill="url(#obstacleGradient)" opacity="0.7"/>
+        <polygon points="20,16 21,15 22,16 21,17" fill="#FFFFFF" opacity="0.3"/>
+        
+        {/* Additional decorative elements */}
+        <circle cx="8" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
+        <circle cx="24" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
+        
+        {/* Subtle grid lines for structure */}
+        <line x1="16" y1="4" x2="16" y2="28" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
+        <line x1="4" y1="16" x2="28" y2="16" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
+      </svg>
     )
   },
   {

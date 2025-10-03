@@ -1,0 +1,29 @@
+{
+  "questions": [
+    {
+      "id": "q1_berry_forgetfulness",
+      "text": "How often do you forget to do things, even when they are important?",
+      "category": "attention"
+    },
+    {
+      "id": "q2_berry_focus_difficulty",
+      "text": "How often do you find it difficult to focus on tasks that require sustained mental effort?",
+      "category": "attention"
+    },
+    {
+      "id": "q3_berry_task_completion",
+      "text": "How often do you start tasks or projects and have difficulty finishing them?",
+      "category": "executive_function"
+    },
+    {
+      "id": "q4_berry_restlessness",
+      "text": "How often do you feel restless or find it difficult to sit still for long periods?",
+      "category": "hyperactivity"
+    },
+    {
+      "id": "q5_berry_impulsivity",
+      "text": "How often do you make decisions impulsively without considering the consequences?",
+      "category": "impulsivity"
+    }
+  ]
+}

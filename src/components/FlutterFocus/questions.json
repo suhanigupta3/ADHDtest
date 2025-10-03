@@ -2,27 +2,27 @@
   "questions": [
     {
       "id": "q1_flutter_focus_difficulty",
-      "text": "How difficult was it to maintain focus on avoiding obstacles throughout the game?",
+      "text": "How often do you speak out before someone else is finished talking?",
       "category": "attention"
     },
     {
       "id": "q2_flutter_impulsive_movements",
-      "text": "How often did you find yourself jumping or moving without thinking?",
+      "text": "How often do you find yourself interrupting or cutting into conversations?",
       "category": "impulsivity"
     },
     {
       "id": "q3_flutter_frustration_level",
-      "text": "How frustrated did you feel when you crashed or lost a life?",
+      "text": "How often do you feel impatient waiting in lines or during turns?",
       "category": "frustration"
     },
     {
       "id": "q4_flutter_planning_ability",
-      "text": "How well were you able to plan your movements in advance?",
+      "text": "How often do you make choices quickly without thinking about what might happen?",
       "category": "focus"
     },
     {
       "id": "q5_flutter_persistence_motivation",
-      "text": "How motivated were you to continue playing after losing a life?",
+      "text": "How often do you interrupt an activity because you feel the need to do something else right away?",
       "category": "persistence"
     }
   ]

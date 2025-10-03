@@ -2,27 +2,27 @@
   "questions": [
     {
       "id": "q1_focus_difficulty",
-      "text": "How often do you find it difficult to focus on tasks that require sustained mental effort?",
+      "text": "How often do you lose track of instructions once you've started a task?",
       "category": "attention"
     },
     {
       "id": "q2_careless_mistakes",
-      "text": "How often do you make careless mistakes in work or school tasks due to inattention?",
+      "text": "How often do you skip over details that cause mistakes later on?",
       "category": "attention"
     },
     {
       "id": "q3_act_without_thinking",
-      "text": "How often do you feel the urge to act quickly without thinking through the consequences?",
+      "text": "How often do you forget everyday responsibilities, like chores or errands?",
       "category": "impulsivity"
     },
     {
       "id": "q4_rule_following_difficulty",
-      "text": "How often do you find it difficult to stick to rules or instructions when they change?",
+      "text": "How often do you avoid homework or tasks that feel long and effortful?",
       "category": "executive_function"
     },
     {
       "id": "q5_mind_shifting",
-      "text": "How often do you feel like you're constantly shifting between thoughts or actions?",
+      "text": "How often do you misplace objects like schoolwork, tools, or household items?",
       "category": "attention"
     }
   ]
