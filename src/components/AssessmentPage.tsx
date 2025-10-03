@@ -29,72 +29,6 @@ interface Game {
 
 const games: Game[] = [
   {
-    id: 'berry-blitz',
-    title: 'Berry Blitz',
-    description: 'Test your attention and focus by collecting specific fruits while avoiding obstacles.',
-    instructions: [
-      'Control a red panda on a 5x5 grid using the arrow keys (up, down, left, right)',
-      'Collect the target fruit (lemons, strawberries, or oranges)',
-      'Avoid moving shurikens to stay safe',
-      'Complete 3 rounds with different target fruits',
-      'Non-target fruits don\'t count toward your score'
-    ],
-    color: 'from-darkforest-500 to-emerald-600',
-    gradientClass: 'bg-gradient-to-br from-darkforest-500 to-emerald-600',
-    icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 32 32">
-        <defs>
-          {/* Gradient definitions */}
-          <linearGradient id="berryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F97316" />
-            <stop offset="50%" stopColor="#EF4444" />
-            <stop offset="100%" stopColor="#DC2626" />
-          </linearGradient>
-          <linearGradient id="fruitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-          <linearGradient id="obstacleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="100%" stopColor="#7C3AED" />
-          </linearGradient>
-          <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FEF3C7" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        
-        {/* Background glow */}
-        <circle cx="16" cy="16" r="15" fill="url(#glowGradient)" opacity="0.4"/>
-        
-        {/* Central glowing berry/fruit */}
-        <circle cx="16" cy="16" r="4" fill="url(#berryGradient)" opacity="0.9"/>
-        <circle cx="16" cy="16" r="3" fill="#FFFFFF" opacity="0.3"/>
-        <circle cx="15" cy="15" r="0.8" fill="#FFFFFF" opacity="0.8"/>
-        
-        {/* Orbiting target fruits with glow */}
-        <circle cx="8" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
-        <circle cx="8" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
-        <circle cx="24" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
-        <circle cx="24" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
-        
-        {/* Stylized obstacles (shurikens) with glow */}
-        <polygon points="8,16 10,14 12,16 10,18" fill="url(#obstacleGradient)" opacity="0.7"/>
-        <polygon points="8,16 9,15 10,16 9,17" fill="#FFFFFF" opacity="0.3"/>
-        <polygon points="20,16 22,14 24,16 22,18" fill="url(#obstacleGradient)" opacity="0.7"/>
-        <polygon points="20,16 21,15 22,16 21,17" fill="#FFFFFF" opacity="0.3"/>
-        
-        {/* Additional decorative elements */}
-        <circle cx="8" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
-        <circle cx="24" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
-        
-        {/* Subtle grid lines for structure */}
-        <line x1="16" y1="4" x2="16" y2="28" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
-        <line x1="4" y1="16" x2="28" y2="16" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
-      </svg>
-    )
-  },
-  {
     id: 'pattern-match',
           title: 'Signal Snap',
     description: 'Test your pattern recognition and reaction time by matching colored signals in sequence.',
@@ -335,6 +269,72 @@ const games: Game[] = [
         <path d="M16 26 L16 30" stroke="#3B82F6" strokeWidth="1" opacity="0.6"/>
       </svg>
     )
+  },
+  {
+    id: 'berry-blitz',
+    title: 'Berry Blitz',
+    description: 'Test your attention and focus by collecting specific fruits while avoiding obstacles.',
+    instructions: [
+      'Control a red panda on a 5x5 grid using the arrow keys (up, down, left, right)',
+      'Collect the target fruit (lemons, strawberries, or oranges)',
+      'Avoid moving shurikens to stay safe',
+      'Complete 3 rounds with different target fruits',
+      'Non-target fruits don\'t count toward your score'
+    ],
+    color: 'from-darkforest-500 to-emerald-600',
+    gradientClass: 'bg-gradient-to-br from-darkforest-500 to-emerald-600',
+    icon: (
+      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 32 32">
+        <defs>
+          {/* Gradient definitions */}
+          <linearGradient id="berryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F97316" />
+            <stop offset="50%" stopColor="#EF4444" />
+            <stop offset="100%" stopColor="#DC2626" />
+          </linearGradient>
+          <linearGradient id="fruitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <linearGradient id="obstacleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#7C3AED" />
+          </linearGradient>
+          <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FEF3C7" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        
+        {/* Background glow */}
+        <circle cx="16" cy="16" r="15" fill="url(#glowGradient)" opacity="0.4"/>
+        
+        {/* Central glowing berry/fruit */}
+        <circle cx="16" cy="16" r="4" fill="url(#berryGradient)" opacity="0.9"/>
+        <circle cx="16" cy="16" r="3" fill="#FFFFFF" opacity="0.3"/>
+        <circle cx="15" cy="15" r="0.8" fill="#FFFFFF" opacity="0.8"/>
+        
+        {/* Orbiting target fruits with glow */}
+        <circle cx="8" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
+        <circle cx="8" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
+        <circle cx="24" cy="8" r="2.5" fill="url(#fruitGradient)" opacity="0.8"/>
+        <circle cx="24" cy="8" r="1.5" fill="#FFFFFF" opacity="0.4"/>
+        
+        {/* Stylized obstacles (shurikens) with glow */}
+        <polygon points="8,16 10,14 12,16 10,18" fill="url(#obstacleGradient)" opacity="0.7"/>
+        <polygon points="8,16 9,15 10,16 9,17" fill="#FFFFFF" opacity="0.3"/>
+        <polygon points="20,16 22,14 24,16 22,18" fill="url(#obstacleGradient)" opacity="0.7"/>
+        <polygon points="20,16 21,15 22,16 21,17" fill="#FFFFFF" opacity="0.3"/>
+        
+        {/* Additional decorative elements */}
+        <circle cx="8" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
+        <circle cx="24" cy="24" r="1.5" fill="#8B5CF6" opacity="0.5"/>
+        
+        {/* Subtle grid lines for structure */}
+        <line x1="16" y1="4" x2="16" y2="28" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
+        <line x1="4" y1="16" x2="28" y2="16" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.2"/>
+      </svg>
+    )
   }
 ];
 
@@ -391,12 +391,12 @@ const AssessmentPage: React.FC = () => {
       // console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
       
       // Check each game's completion status from their actual documents
-      const gameIds = ['BerryBlitz', 'pattern-match', 'BounceBack', 'FlutterFocus'];
+      const gameIds = ['pattern-match', 'BounceBack', 'FlutterFocus', 'BerryBlitz'];
       const gameProgressMap = {
-        game1Completed: false, // BerryBlitz
-        game2Completed: false, // PatternMatch  
-        game3Completed: false, // BounceBack
-        game4Completed: false, // FlutterFocus
+        game1Completed: false, // PatternMatch
+        game2Completed: false, // BounceBack  
+        game3Completed: false, // FlutterFocus
+        game4Completed: false, // BerryBlitz
         allGamesCompleted: false,
         completedAt: null
       };
@@ -465,10 +465,10 @@ const AssessmentPage: React.FC = () => {
 
       // console.log('[AssessmentPage] Final game progress:', gameProgressMap);
       // console.log('[AssessmentPage] Individual game completion status:', {
-      //   'BerryBlitz (game1)': gameProgressMap.game1Completed,
-      //   'PatternMatch (game2)': gameProgressMap.game2Completed,
-      //   'BounceBack (game3)': gameProgressMap.game3Completed,
-      //   'FlutterFocus (game4)': gameProgressMap.game4Completed,
+      //   'PatternMatch (game1)': gameProgressMap.game1Completed,
+      //   'BounceBack (game2)': gameProgressMap.game2Completed,
+      //   'FlutterFocus (game3)': gameProgressMap.game3Completed,
+      //   'BerryBlitz (game4)': gameProgressMap.game4Completed,
       //   'All Games': gameProgressMap.allGamesCompleted
       // });
       setGameProgress(gameProgressMap);

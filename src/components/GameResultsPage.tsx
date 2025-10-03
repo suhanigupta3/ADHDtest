@@ -324,7 +324,7 @@ const GameResultsPage: React.FC = () => {
 
   const getGameProgress = () => {
     if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
-    const gameOrder = ['berryBlitz', 'patternMatch', 'bounceBack', 'flutterFocus'];
+    const gameOrder = ['patternMatch', 'bounceBack', 'flutterFocus', 'berryBlitz'];
     
     gameOrder.forEach(game => {
       const gameData = userResults[game];
