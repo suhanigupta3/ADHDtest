@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useConsent } from '../hooks/useConsent';
 import { db } from '../firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const ConsentPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const { hasConsent, loading: consentLoading } = useConsent();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -108,6 +110,55 @@ const ConsentPage: React.FC = () => {
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If consent already exists, show a message and prevent editing
+  if (consentLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
+          <p className="text-emerald-700">Checking consent status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasConsent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-forest-100 to-forest-200 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="bg-forest-50/90 backdrop-blur-sm rounded-2xl shadow-xl border border-forest-300 p-8 text-center"
+          >
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-forest-800 mb-4">Consent Already Given</h1>
+            <p className="text-lg text-forest-700 mb-6">
+              You have already provided your consent. Consent cannot be modified after it has been given.
+            </p>
+            <p className="text-gray-600 mb-8">
+              If you need to update your consent information, please contact support.
+            </p>
+            <Link 
+              to="/dashboard" 
+              className="btn-primary inline-flex items-center px-8 py-4 text-lg"
+            >
+              Return to Dashboard
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    );
   }
 
   return (

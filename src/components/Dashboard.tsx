@@ -140,8 +140,8 @@ const Dashboard: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Learn About ADHD</h3>
                 <p className="text-gray-700 mb-4">Access educational resources and management strategies for ADHD.</p>
-                <Link to="/resources" className="bg-gradient-to-r from-sleek-600 to-emerald-600 hover:from-sleek-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 shadow-lg border border-sleek-500 hover:shadow-xl hover:scale-105 active:scale-95 inline-flex items-center">
-                  Explore Resources
+                <Link to="/about-adhd" className="bg-gradient-to-r from-sleek-600 to-emerald-600 hover:from-sleek-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 shadow-lg border border-sleek-500 hover:shadow-xl hover:scale-105 active:scale-95 inline-flex items-center">
+                  Learn About ADHD
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -150,29 +150,6 @@ const Dashboard: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="bg-gradient-to-r from-forest-100/90 to-forest-200/90 rounded-xl p-6 border border-forest-300"
-          >
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/about-adhd" className="bg-forest-200 hover:bg-forest-300 text-forest-800 font-semibold py-3 px-6 rounded-lg border border-forest-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2 hover:shadow-lg hover:scale-105 active:scale-95 inline-flex items-center">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                About ADHD
-              </Link>
-              <Link to="/consent" className="bg-forest-200 hover:bg-forest-300 text-forest-800 font-semibold py-3 px-6 rounded-lg border border-forest-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2 hover:shadow-lg hover:scale-105 active:scale-95 inline-flex items-center">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                Update Consent
-              </Link>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
 

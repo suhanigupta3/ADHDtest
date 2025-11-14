@@ -343,19 +343,12 @@ const AboutUsPage: React.FC = () => {
           </h1>
           
           <div className="bg-[#DDEBDD]/80 backdrop-blur-sm rounded-lg shadow-lg p-8 mb-8 border border-[#C8D8C8]">
-            <div className="w-32 h-32 bg-gradient-to-br from-emerald-50 to-green-50 border-4 border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <img 
-                src="/adhd-logo.png" 
-                alt="A(rDx)HD Logo" 
-                className="w-16 h-16 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-              <svg className="w-16 h-16 text-emerald-700 hidden" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
+            <div className="flex items-center justify-center mx-auto mb-6">
+              <h1 className="text-4xl font-bold text-gray-900">
+                <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                  A(rDx)HD
+                </span>
+              </h1>
             </div>
             
             <h2 className="text-2xl font-semibold text-emerald-800 mb-4">

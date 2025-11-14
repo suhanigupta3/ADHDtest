@@ -308,37 +308,6 @@ const WelcomePage: React.FC = () => {
       >
         {/* Hero Section */}
         <motion.div className="text-center mb-16" variants={itemVariants}>
-          <div className="relative inline-flex items-center justify-center mb-8">
-            {/* Animated rings around logo */}
-            <motion.div 
-              className="absolute w-32 h-32 border-2 border-emerald-600 rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" as const }}
-            />
-            <motion.div 
-              className="absolute w-40 h-40 border border-emerald-600 rounded-full"
-              animate={{ rotate: -360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" as const }}
-            />
-            
-            <div className="w-24 h-24 relative z-10">
-              <img 
-                src="/adhd-logo.png" 
-              alt="A(rDx)HD Logo" 
-                className="w-24 h-24 object-contain drop-shadow-lg"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-emerald-600 to-green-600 rounded-full shadow-lg hidden">
-                <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 leading-tight">
             <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
               A(rDx)HD
