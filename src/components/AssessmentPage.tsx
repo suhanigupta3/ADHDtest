@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import GameFlow from './common/GameFlow';
 import { loadGameQuestions } from '../utils/questionLoader';
 import { useDisclaimer } from '../hooks/useDisclaimer';
+import { useConsent } from '../hooks/useConsent';
 
 interface GameProgress {
   game1Completed: boolean;
@@ -342,6 +343,7 @@ const AssessmentPage: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { isDisclaimerDismissed, dismissDisclaimer } = useDisclaimer();
+  const { hasConsent, loading: consentLoading } = useConsent();
   const [gameProgress, setGameProgress] = useState<GameProgress>({
     game1Completed: false,
     game2Completed: false,
@@ -921,6 +923,30 @@ const AssessmentPage: React.FC = () => {
     return (getCompletedGamesCount() / 4) * 100;
   };
 
+  const handleShowResults = () => {
+    // Check consent status first
+    if (consentLoading) {
+      // Still loading consent status, wait
+      return;
+    }
+
+    if (!hasConsent) {
+      // No consent, redirect to consent page
+      navigate('/consent');
+      return;
+    }
+
+    const completedCount = getCompletedGamesCount();
+    if (completedCount === 0) {
+      // No games completed, redirect to assessment page (games page)
+      navigate('/assessment');
+      return;
+    }
+
+    // Has consent and has completed games, navigate to results
+    navigate('/results');
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -1302,8 +1328,9 @@ const AssessmentPage: React.FC = () => {
                 )}
               <div className="space-y-4">
                 <button
-                  onClick={() => navigate('/results')}
-                  className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4 cursor-pointer"
+                  onClick={handleShowResults}
+                  disabled={consentLoading}
+                  className="btn-primary-dark inline-flex items-center space-x-2 text-lg px-8 py-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ 
                     pointerEvents: 'auto',
                     position: 'relative',

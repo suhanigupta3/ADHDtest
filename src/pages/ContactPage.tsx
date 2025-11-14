@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import emailjs from '@emailjs/browser';
 
 const ContactPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -10,6 +11,8 @@ const ContactPage: React.FC = () => {
     subject: '',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Prefill form with user data when logged in
   useEffect(() => {
@@ -28,15 +31,60 @@ const ContactPage: React.FC = () => {
       ...prev,
       [name]: value
     }));
+    // Clear message when user starts typing
+    if (message) setMessage(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement backend integration (Firebase Functions, EmailJS, or backend API)
-    // Currently messages are logged locally - needs integration with email service
-    console.log('Form submitted:', formData);
-    alert('Thank you for your message! We will get back to you soon. (Note: This form currently requires backend integration to send emails)');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    console.log('Form submitted', formData);
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // Get EmailJS configuration from environment variables
+      const serviceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'service_5te9p1n';
+      const templateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_p3qvhj4';
+      const publicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'c8YGtVlBPTgYLii-H';
+
+      console.log('EmailJS config:', { serviceId, templateId, publicKey: publicKey ? '***' : 'missing' });
+
+      if (!serviceId || !templateId || !publicKey) {
+        console.error('Missing EmailJS configuration:', { serviceId, templateId, publicKey });
+        throw new Error('EmailJS configuration is missing. Please check your environment variables.');
+      }
+
+      // Prepare template parameters
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        to_email: 'ardxhd@gmail.com', // Your support email
+      };
+
+      console.log('Sending email with params:', templateParams);
+
+      // Initialize EmailJS with public key
+      emailjs.init(publicKey);
+
+      // Send email using EmailJS
+      const response = await emailjs.send(serviceId, templateId, templateParams);
+      
+      console.log('EmailJS response:', response);
+
+      // Success
+      setMessage({ type: 'success', text: 'Thank you for your message! We will get back to you soon.' });
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error: any) {
+      console.error('EmailJS error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.text || error.message || 'Failed to send message. Please try again or contact us directly at ardxhd@gmail.com.' 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,6 +114,19 @@ const ContactPage: React.FC = () => {
             >
               <h2 className="text-2xl font-semibold text-forest-800 mb-6 text-heading">Send us a Message</h2>
               
+              {/* Success/Error Message */}
+              {message && (
+                <div
+                  className={`mb-4 p-4 rounded-lg ${
+                    message.type === 'success'
+                      ? 'bg-green-50 border border-green-200 text-green-800'
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}
+                >
+                  <p className="text-sm font-medium">{message.text}</p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-black mb-2">
@@ -139,9 +200,24 @@ const ContactPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-sleek-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-sleek-700 transition-colors focus:ring-2 focus:ring-sleek-500 focus:ring-offset-2"
+                  disabled={loading}
+                  className={`w-full bg-sleek-600 text-white py-3 px-6 rounded-lg font-medium transition-colors focus:ring-2 focus:ring-sleek-500 focus:ring-offset-2 ${
+                    loading
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-sleek-700'
+                  }`}
                 >
-                  Send Message
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </span>
+                  ) : (
+                    'Send Message'
+                  )}
                 </button>
               </form>
             </motion.div>
@@ -166,7 +242,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-black">Email</h3>
-                      <p className="text-black">support@adhdassessment.com</p>
+                      <p className="text-black">ardxhd@gmail.com</p>
                       <p className="text-sm text-black mt-1">We'll respond within 24 hours</p>
                     </div>
                   </div>

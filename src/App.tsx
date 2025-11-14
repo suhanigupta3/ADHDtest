@@ -174,7 +174,9 @@ function App() {
               path="/results" 
               element={
                 <ProtectedRoute>
-                  <GameResultsPage />
+                  <ConsentGuard>
+                    <GameResultsPage />
+                  </ConsentGuard>
                 </ProtectedRoute>
               } 
             />
