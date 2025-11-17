@@ -36,7 +36,10 @@ const GameFlow: React.FC<GameFlowProps> = ({
   onCancel,
   userId
 }) => {
-  const [currentState, setCurrentState] = useState<GameFlowState>('instructions');
+  // For Signal Snap (pattern-match), Bounce Back, Flutter Focus, and Berry Blitz, skip the first instruction screen
+  const [currentState, setCurrentState] = useState<GameFlowState>(
+    (gameId === 'pattern-match' || gameId === 'bounce-back' || gameId === 'flutter-focus' || gameId === 'berry-blitz') ? 'how-to-play' : 'instructions'
+  );
   const [gameData, setGameData] = useState<any>(null);
 
   const handleInstructionsStart = () => {
@@ -309,6 +312,7 @@ const GameFlow: React.FC<GameFlowProps> = ({
               key="how-to-play"
               gameTitle={gameTitle}
               gameIcon={gameIcon}
+              description={(gameId === 'pattern-match' || gameId === 'bounce-back' || gameId === 'flutter-focus' || gameId === 'berry-blitz') ? description : undefined}
               controls={getGameControls(gameId)}
               gameplayRules={getGameplayRules(gameId)}
               onStart={handleHowToPlayStart}

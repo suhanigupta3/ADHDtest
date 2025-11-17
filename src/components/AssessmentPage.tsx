@@ -393,24 +393,33 @@ const AssessmentPage: React.FC = () => {
       // console.log('[AssessmentPage] Loading game progress for user:', currentUser.uid);
       
       // Check each game's completion status from their actual documents
-      const gameIds = ['pattern-match', 'BounceBack', 'FlutterFocus', 'BerryBlitz'];
+      // Firebase document IDs: 'pattern-match', 'bounce-back', 'flutter-focus', 'BerryBlitz'
+      // Map to gameProgress fields: pattern-match->game2Completed, bounce-back->game3Completed, 
+      //                             flutter-focus->game4Completed, BerryBlitz->game1Completed
+      const gameIds = ['pattern-match', 'bounce-back', 'flutter-focus', 'BerryBlitz'];
       const gameProgressMap = {
-        game1Completed: false, // PatternMatch
-        game2Completed: false, // BounceBack  
-        game3Completed: false, // FlutterFocus
-        game4Completed: false, // BerryBlitz
+        game1Completed: false, // BerryBlitz
+        game2Completed: false, // pattern-match
+        game3Completed: false, // bounce-back
+        game4Completed: false, // flutter-focus
         allGamesCompleted: false,
         completedAt: null
       };
 
       // First, check the gameProgress collection for completion flags
+      // Store original values to check if we need to clear them
+      const originalProgressData: any = {};
       try {
         const gameProgressDoc = await getDoc(doc(db, 'gameProgress', currentUser.uid));
         if (gameProgressDoc.exists()) {
           const progressData = gameProgressDoc.data();
-          // console.log('[AssessmentPage] GameProgress document data:', progressData);
+          // Store original values
+          originalProgressData.game1Completed = progressData.game1Completed || false;
+          originalProgressData.game2Completed = progressData.game2Completed || false;
+          originalProgressData.game3Completed = progressData.game3Completed || false;
+          originalProgressData.game4Completed = progressData.game4Completed || false;
           
-          // Update completion status from gameProgress collection
+          // Update completion status from gameProgress collection (will be verified later)
           if (progressData.game1Completed) gameProgressMap.game1Completed = true;
           if (progressData.game2Completed) gameProgressMap.game2Completed = true;
           if (progressData.game3Completed) gameProgressMap.game3Completed = true;
@@ -434,25 +443,80 @@ const AssessmentPage: React.FC = () => {
         const gameId = gameIds[i];
         try {
           const gameDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', gameId));
+          
+          // Map gameId to the correct gameProgress field
+          // Handle both Firebase document ID formats and gameId formats
+          let progressField: string;
+          if (gameId === 'BerryBlitz' || gameId === 'berry-blitz') {
+            progressField = 'game1Completed';
+          } else if (gameId === 'pattern-match') {
+            progressField = 'game2Completed';
+          } else if (gameId === 'bounce-back') {
+            progressField = 'game3Completed';
+          } else if (gameId === 'flutter-focus') {
+            progressField = 'game4Completed';
+          } else {
+            progressField = getGameProgressField(gameId);
+          }
+          
           if (gameDoc.exists()) {
             const gameData = gameDoc.data();
             // console.log(`[AssessmentPage] Game ${gameId} data:`, gameData);
             // console.log(`[AssessmentPage] Game ${gameId} has scores:`, !!gameData.scores);
             // console.log(`[AssessmentPage] Game ${gameId} has selfReport:`, !!gameData.selfReport);
-            // console.log(`[AssessmentPage] Game ${gameId} scores:`, gameData.scores);
-            // console.log(`[AssessmentPage] Game ${gameId} selfReport:`, gameData.selfReport);
             
-            // Check if game has scores (indicates completion)
-            const isCompleted = !!(gameData.scores && gameData.selfReport);
-            // console.log(`[AssessmentPage] Game ${gameId} completed:`, isCompleted);
+            // Check if game has scores AND selfReport (indicates true completion)
+            const hasActualData = !!(gameData.scores && gameData.selfReport);
             
-            // If gameProgress says it's completed OR the game document has scores+selfReport, mark as completed
-            if (i === 0) gameProgressMap.game1Completed = gameProgressMap.game1Completed || isCompleted;
-            else if (i === 1) gameProgressMap.game2Completed = gameProgressMap.game2Completed || isCompleted;
-            else if (i === 2) gameProgressMap.game3Completed = gameProgressMap.game3Completed || isCompleted;
-            else if (i === 3) gameProgressMap.game4Completed = gameProgressMap.game4Completed || isCompleted;
+            // Verify completion: Only mark as completed if actual data exists
+            // If gameProgress says completed but game doc doesn't have scores+selfReport, clear it
+            if (progressField === 'game1Completed') {
+              gameProgressMap.game1Completed = hasActualData;
+            } else if (progressField === 'game2Completed') {
+              gameProgressMap.game2Completed = hasActualData;
+            } else if (progressField === 'game3Completed') {
+              gameProgressMap.game3Completed = hasActualData;
+            } else if (progressField === 'game4Completed') {
+              gameProgressMap.game4Completed = hasActualData;
+            }
+            
+            // If gameProgress collection originally said completed but data doesn't exist, clear it in Firebase too
+            const originalValue = originalProgressData[progressField];
+            if (!hasActualData && originalValue) {
+              try {
+                await setDoc(doc(db, 'gameProgress', currentUser.uid), {
+                  [progressField]: false
+                }, { merge: true });
+                console.log(`[AssessmentPage] Cleared ${progressField} in gameProgress - was marked completed but no actual data found`);
+              } catch (clearError) {
+                console.error(`[AssessmentPage] Failed to clear ${progressField}:`, clearError);
+              }
+            }
           } else {
-            console.log(`[AssessmentPage] Game ${gameId} document not found`);
+            // Game document doesn't exist - clear completion flag if it was originally set
+            const originalValue = originalProgressData[progressField];
+            if (originalValue) {
+              console.log(`[AssessmentPage] Game ${gameId} document not found - clearing completion flag`);
+              if (progressField === 'game1Completed') {
+                gameProgressMap.game1Completed = false;
+              } else if (progressField === 'game2Completed') {
+                gameProgressMap.game2Completed = false;
+              } else if (progressField === 'game3Completed') {
+                gameProgressMap.game3Completed = false;
+              } else if (progressField === 'game4Completed') {
+                gameProgressMap.game4Completed = false;
+              }
+              
+              // Also clear it in Firebase
+              try {
+                await setDoc(doc(db, 'gameProgress', currentUser.uid), {
+                  [progressField]: false
+                }, { merge: true });
+                console.log(`[AssessmentPage] Cleared ${progressField} in Firebase - game document doesn't exist`);
+              } catch (clearError) {
+                console.error(`[AssessmentPage] Failed to clear ${progressField}:`, clearError);
+              }
+            }
           }
         } catch (error) {
           console.error(`[AssessmentPage] Error checking game ${gameId}:`, error);
@@ -497,10 +561,37 @@ const AssessmentPage: React.FC = () => {
 
 
   const isGameUnlocked = (gameIndex: number): boolean => {
-    if (gameIndex === 0) return true; // First game always unlocked
-    if (gameIndex === 1) return gameProgress.game1Completed; // Game 2 unlocked after Game 1
-    if (gameIndex === 2) return gameProgress.game1Completed && gameProgress.game2Completed; // Game 3 unlocked after Game 2
-    if (gameIndex === 3) return gameProgress.game1Completed && gameProgress.game2Completed && gameProgress.game3Completed; // Game 4 unlocked after Game 3
+    const game = games[gameIndex];
+    if (!game) return false;
+    
+    // Check if this game is already completed - if so, lock it
+    const isCompleted = getGameProgress(game.id);
+    if (isCompleted) return false;
+    
+    // First game (pattern-match at index 0) is always unlocked if not completed
+    if (gameIndex === 0) return true;
+    
+    // For subsequent games, unlock only if previous games in the array are completed
+    // Game order in array: pattern-match (0), bounce-back (1), flutter-focus (2), berry-blitz (3)
+    // Progress mapping: berry-blitz -> game1Completed, pattern-match -> game2Completed, 
+    //                   bounce-back -> game3Completed, flutter-focus -> game4Completed
+    
+    if (gameIndex === 1) {
+      // bounce-back (index 1) unlocks after pattern-match (index 0) is completed
+      // pattern-match maps to game2Completed
+      return gameProgress.game2Completed;
+    }
+    if (gameIndex === 2) {
+      // flutter-focus (index 2) unlocks after pattern-match AND bounce-back are completed
+      // pattern-match -> game2Completed, bounce-back -> game3Completed
+      return gameProgress.game2Completed && gameProgress.game3Completed;
+    }
+    if (gameIndex === 3) {
+      // berry-blitz (index 3) unlocks after pattern-match AND bounce-back AND flutter-focus are completed
+      // pattern-match -> game2Completed, bounce-back -> game3Completed, flutter-focus -> game4Completed
+      return gameProgress.game2Completed && gameProgress.game3Completed && gameProgress.game4Completed;
+    }
+    
     return false;
   };
 
@@ -524,9 +615,11 @@ const AssessmentPage: React.FC = () => {
     setGameCompleted(true);
     // console.log('[AssessmentPage] Game completed with data:', completeGameData);
     
+    // Extract gameId early so it's available throughout the function
+    const gameId = completeGameData?.gameId;
+    
     // Save the complete game data (including self-report) to Firebase
     if (completeGameData && currentUser?.uid) {
-      const gameId = completeGameData.gameId;
       const firebasePath = `users/${currentUser.uid}/games/${gameId}`;
       
       // For BounceBack and FlutterFocus, calculate ADHD scores here since the games can't do it
@@ -888,7 +981,25 @@ const AssessmentPage: React.FC = () => {
       });
     }
     
-    // Refresh game progress to reflect the newly completed game
+    // Immediately update local state to unlock next game without waiting for Firebase read
+    if (gameId) {
+      const progressField = getGameProgressField(gameId);
+      setGameProgress(prev => {
+        const updated = { ...prev };
+        if (progressField === 'game1Completed') updated.game1Completed = true;
+        if (progressField === 'game2Completed') updated.game2Completed = true;
+        if (progressField === 'game3Completed') updated.game3Completed = true;
+        if (progressField === 'game4Completed') updated.game4Completed = true;
+        // Recalculate allGamesCompleted
+        updated.allGamesCompleted = updated.game1Completed && 
+                                    updated.game2Completed && 
+                                    updated.game3Completed && 
+                                    updated.game4Completed;
+        return updated;
+      });
+    }
+    
+    // Refresh game progress from Firebase to ensure consistency
     setTimeout(() => {
       loadGameProgress();
     }, 100); // Small delay to ensure Firebase write is complete
@@ -897,6 +1008,8 @@ const AssessmentPage: React.FC = () => {
   };
 
   const getGameProgress = (gameId: string) => {
+    // Return completion status from gameProgress state
+    // Note: loadGameProgress now verifies that actual game data exists before marking as completed
     if (gameId === 'berry-blitz') return gameProgress.game1Completed;
     if (gameId === 'pattern-match') return gameProgress.game2Completed;
     if (gameId === 'bounce-back') return gameProgress.game3Completed;

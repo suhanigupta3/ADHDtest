@@ -60,6 +60,7 @@ export type { UserResults, GameData, GameScores, GameRound, SelfReport };
 const GameResultsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [userResults, setUserResults] = useState<UserResults | null>(null);
+  const [gameProgressData, setGameProgressData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>('combined');
@@ -99,7 +100,19 @@ const GameResultsPage: React.FC = () => {
         
         const results: UserResults = {};
         
-        // Fetch Berry Blitz data
+        // First, check gameProgress collection for completion status (source of truth)
+        let localGameProgressData: any = null;
+        try {
+          const gameProgressDoc = await getDoc(doc(db, 'gameProgress', currentUser.uid));
+          if (gameProgressDoc.exists()) {
+            localGameProgressData = gameProgressDoc.data();
+            setGameProgressData(localGameProgressData);
+          }
+        } catch (progressError) {
+          console.error('[GameResultsPage] Error fetching gameProgress:', progressError);
+        }
+        
+        // Fetch Berry Blitz data (Firebase document ID is 'BerryBlitz')
         const berryBlitzDoc = await getDoc(doc(db, 'users', currentUser.uid, 'games', 'BerryBlitz'));
         if (berryBlitzDoc.exists()) {
           const berryBlitzData = berryBlitzDoc.data();
@@ -149,8 +162,12 @@ const GameResultsPage: React.FC = () => {
           // Check for both old and new data structures
           const hasScores = bounceBackData.scores;
           const hasSelfReport = bounceBackData.selfReport;
+          const hasGameData = bounceBackData.gameData;
           
-          if (hasScores && hasSelfReport) {
+          // Include if it has scores+selfReport OR if gameProgress says it's completed (even if data structure is incomplete)
+          const isCompletedInProgress = localGameProgressData?.game3Completed;
+          
+          if ((hasScores && hasSelfReport) || (isCompletedInProgress && hasGameData)) {
             let rounds: GameRound[] = [];
             try {
               const roundsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'games', 'bounce-back', 'rounds'));
@@ -163,7 +180,7 @@ const GameResultsPage: React.FC = () => {
             
             // Handle both data structures
             const scores = bounceBackData.scores || bounceBackData.gameData?.scores;
-            const selfReport = bounceBackData.selfReport;
+            const selfReport = bounceBackData.selfReport || bounceBackData.gameData?.selfReport;
             const gameData = bounceBackData.gameData || bounceBackData;
             
             results.bounceBack = {
@@ -323,20 +340,37 @@ const GameResultsPage: React.FC = () => {
   };
 
   const getGameProgress = () => {
-    if (!userResults) return { completed: 0, total: 4, percentage: 0, nextGame: null };
     const gameOrder = ['patternMatch', 'bounceBack', 'flutterFocus', 'berryBlitz'];
     
-    gameOrder.forEach(game => {
-      const gameData = userResults[game];
-    });
+    // Map game keys to gameProgress field names
+    const gameProgressMap: { [key: string]: string } = {
+      'berryBlitz': 'game1Completed',
+      'patternMatch': 'game2Completed',
+      'bounceBack': 'game3Completed',
+      'flutterFocus': 'game4Completed'
+    };
     
-    const completedGames = gameOrder.filter(game => userResults[game]?.scores);
+    // Use gameProgress collection as source of truth (matches AssessmentPage)
+    // Fallback to checking userResults scores if gameProgress not available
+    const checkCompletion = (gameKey: string): boolean => {
+      if (gameProgressData) {
+        // Use gameProgress collection as primary source
+        const progressField = gameProgressMap[gameKey];
+        return !!gameProgressData[progressField];
+      } else if (userResults) {
+        // Fallback to checking if game has scores
+        return !!userResults[gameKey]?.scores;
+      }
+      return false;
+    };
+    
+    const completedGames = gameOrder.filter(game => checkCompletion(game));
     const completedCount = completedGames.length;
     const totalGames = gameOrder.length;
     const percentage = (completedCount / totalGames) * 100;
     let nextGame = null;
     for (const game of gameOrder) {
-      if (!userResults[game]?.scores) {
+      if (!checkCompletion(game)) {
         nextGame = game;
         break;
       }

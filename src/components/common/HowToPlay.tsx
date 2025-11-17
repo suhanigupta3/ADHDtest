@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 interface HowToPlayProps {
   gameTitle: string;
   gameIcon?: React.ReactNode;
+  description?: string;
   controls: string[];
   gameplayRules: string[];
   onStart: () => void;
@@ -15,6 +16,7 @@ interface HowToPlayProps {
 const HowToPlay: React.FC<HowToPlayProps> = ({
   gameTitle,
   gameIcon,
+  description,
   controls,
   gameplayRules,
   onStart,
@@ -58,7 +60,17 @@ const HowToPlay: React.FC<HowToPlayProps> = ({
       {/* How to Play Content */}
       <div className="flex-1 p-6 overflow-y-auto min-h-0">
         <div className="w-full max-w-3xl mx-auto">
-
+          {/* Description at the top (for Signal Snap) */}
+          {description && (
+            <motion.p 
+              className="text-sage-200 mb-6 text-adhd-friendly-large text-center"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {description}
+            </motion.p>
+          )}
           
           {/* Controls Section */}
           <div className="mb-6">

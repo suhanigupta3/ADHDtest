@@ -41,6 +41,21 @@ import {
 import { QUESTIONS } from './constants';
 
 /**
+ * Format seconds into hours:minutes:seconds format
+ */
+const formatTime = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+};
+
+/**
  * BerryBlitzGame - ADHD Assessment Game
  * 
  * Game Flow:
@@ -149,7 +164,7 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
     const roundData: BerryBlitzRound = {
       roundNumber: gameState.currentRound,
       targetFruit: currentRoundData.targetFruit,
-      startTime: roundStartTimeRef.current,
+      startTime: Date.now() - (performance.now() - roundStartTimeRef.current), // Convert back to Date.now() for storage
       endTime: Date.now(),
       duration: ROUND_DURATION,
       score: roundScore,
@@ -170,7 +185,7 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
       score: roundScore,
       targetFruitsCollected,
       obstaclesHit,
-      timeRemaining: Math.ceil((ROUND_DURATION - (Date.now() - roundStartTimeRef.current)) / 1000)
+      timeRemaining: Math.ceil((ROUND_DURATION - (performance.now() - roundStartTimeRef.current)) / 1000)
     });
     
     setShowRoundTransition(true);
@@ -233,7 +248,7 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
         
         // Track movement patterns
         if (newPlayer.x !== prevPlayer.x || newPlayer.y !== prevPlayer.y) {
-          setMovementPatterns(prev => [...prev, Date.now() - roundStartTimeRef.current]);
+          setMovementPatterns(prev => [...prev, performance.now() - roundStartTimeRef.current]);
         }
         
         return newPlayer;
@@ -266,6 +281,13 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
       lastTimeRef.current = currentTime;
       
       // Update round timer
+      // Ensure roundStartTimeRef is valid (should be set by startRound)
+      // Check if it's an old Date.now() value (unreasonably large) or invalid
+      if (roundStartTimeRef.current === 0 || roundStartTimeRef.current > 1000000000) {
+        // If ref is invalid or contains a Date.now() timestamp, reset it to current time
+        console.warn('[BerryBlitz] Invalid roundStartTimeRef detected, resetting to current time');
+        roundStartTimeRef.current = currentTime;
+      }
       const elapsed = currentTime - roundStartTimeRef.current;
       const timeLeft = Math.max(0, ROUND_DURATION - elapsed);
       setRoundTimeLeft(Math.ceil(timeLeft / 1000));
@@ -397,8 +419,12 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
   
   // Start a new round
   const startRound = useCallback(() => {
-    roundStartTimeRef.current = Date.now();
+    // Reset round start time using performance.now() to match requestAnimationFrame timing
+    const now = performance.now();
+    roundStartTimeRef.current = now;
+    lastTimeRef.current = now; // Also reset lastTimeRef to avoid delta issues
     fruitSpawnTimerRef.current = 0; // Reset fruit spawn timer
+    setRoundTimeLeft(ROUND_DURATION / 1000); // Reset timer display
     console.log('[BerryBlitz] Starting round at time:', roundStartTimeRef.current);
     console.log('[BerryBlitz] OBSTACLE_SPAWN_DELAY:', OBSTACLE_SPAWN_DELAY);
     console.log('[BerryBlitz] OBSTACLE_SPAWN_RATE:', OBSTACLE_SPAWN_RATE);
@@ -798,7 +824,7 @@ const BerryBlitzGame: React.FC<BerryBlitzGameProps> = ({
           </div>
           <div className="text-right">
             <div className="text-lg font-bold text-emerald-600">Score: {gameState.score + roundScore}</div>
-            <div className="text-sm text-gray-600">Time: {roundTimeLeft}s</div>
+            <div className="text-sm text-gray-600">Time: {formatTime(roundTimeLeft)}</div>
           </div>
         </div>
         
